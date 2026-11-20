@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hallo
+  labels:
+    app: hallo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hallo
+  template:
+    metadata:
+      labels:
+        app: hallo
+    spec:
+      containers:
+        - name: hallo
+          image: hallo-app:1.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - containerPort: 8080

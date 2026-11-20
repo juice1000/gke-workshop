@@ -1,0 +1,6 @@
+target
+.git
+*.log
+README.md
+k8s
+betrieb

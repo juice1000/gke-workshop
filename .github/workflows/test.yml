@@ -1,0 +1,37 @@
+name: Workshop labs
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/validate.sh
+  local-labs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install minikube
+        run: |
+          mkdir -p .cache
+          curl -fsSL https://storage.googleapis.com/minikube/releases/v1.39.0/minikube-linux-amd64 -o .cache/minikube
+          chmod +x .cache/minikube
+      - name: Run all local labs including expected failures
+        run: |
+          export MINIKUBE_BIN="$PWD/.cache/minikube"
+          bash scripts/dry-run.sh
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: minikube-diagnostics
+          path: .cache/dry-run.*/minikube.log
+          include-hidden-files: true

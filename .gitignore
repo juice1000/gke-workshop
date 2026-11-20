@@ -1,0 +1,9 @@
+.DS_Store
+.archive/
+.cache/
+out/
+**/target/
+**/__pycache__/
+.env
+*.log
+*.kubeconfig
