@@ -16,7 +16,7 @@
 
 ## Voraussetzungen
 
-Installationsanleitung für Windows mit WSL2, macOS und Linux: [VORBEREITUNG.md](VORBEREITUNG.md). Bitte vor dem ersten Tag durchführen.
+Installationsanleitung für Windows mit WSL2, macOS und Linux: [VORBEREITUNG.md](VORBEREITUNG.md). `bash scripts/setup.sh` installiert fehlende Werkzeuge außer Docker. Wir richten die Rechner gemeinsam am Morgen von Tag 1 ein.
 
 Docker mit laufendem Daemon, Buildx, minikube, kubectl, Git, curl und Python 3.9 oder neuer. Java und Maven laufen im Docker-Build und müssen nicht lokal installiert sein. Unter Windows arbeitet ihr in Bash unter WSL2 mit Docker-Integration. Legt den Klon im Linux-Home ab.
 

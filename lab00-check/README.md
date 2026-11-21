@@ -4,13 +4,15 @@
 
 ## 1. Werkzeuge
 
-Im Hauptordner des Repositorys:
+Unter Windows zuerst WSL2 und Docker einrichten, siehe [VORBEREITUNG.md](../VORBEREITUNG.md). Dann im Hauptordner des Repositorys:
 
 ```bash
-bash lab00-check/check.sh
+bash scripts/setup.sh
 ```
 
-Bei `FEHLT` lest ihr den Hinweis und prüft die Installation oder das Netzwerk. Das Skript installiert nichts. Es legt keinen Cluster an und führt keinen Cloud-Login durch.
+Das Einrichtungsskript installiert fehlende Werkzeuge außer Docker und ruft am Ende den Setup-Check auf. Den Check allein startet ihr mit `bash lab00-check/check.sh`.
+
+Bei `FEHLT` lest ihr den Hinweis und prüft die Installation oder das Netzwerk. Der Check installiert nichts. Er legt keinen Cluster an und führt keinen Cloud-Login durch.
 
 Installationsanleitungen: [Docker](https://docs.docker.com/get-started/get-docker/), [minikube](https://minikube.sigs.k8s.io/docs/start/), [kubectl](https://kubernetes.io/docs/tasks/tools/). Unter Windows laufen alle weiteren Befehle in WSL-Bash. Bei Docker Desktop muss die Integration für eure WSL-Distribution eingeschaltet sein.
 

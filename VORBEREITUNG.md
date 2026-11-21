@@ -1,10 +1,25 @@
-# Vorbereitung für Teilnehmende
+# Einrichtung für Teilnehmende
 
-Bitte vor dem ersten Workshop-Tag erledigen. Dauer: etwa 45 Minuten, davon viel Wartezeit für Downloads. Wenn etwas nicht klappt, schickt uns die Fehlermeldung vorab. Das spart am ersten Morgen Zeit für alle.
+Wir richten die Rechner gemeinsam am Morgen von Tag 1 ein. Dauer: etwa 45 bis 60 Minuten, davon viel Wartezeit für Downloads.
+
+Kurzfassung:
+
+1. Nur Windows: WSL2 und Docker einrichten (Abschnitt 3), danach alles in der Ubuntu-Shell.
+2. Repository klonen und das Einrichtungsskript starten. Es installiert fehlende Werkzeuge und endet mit dem Setup-Check:
+
+   ```bash
+   git clone https://github.com/juice1000/gke-workshop.git
+   cd gke-workshop
+   bash scripts/setup.sh
+   ```
+
+3. Google-Konto nennen (Abschnitt 1) und den Probelauf starten (Abschnitt 4).
+
+Die Abschnitte unten beschreiben jeden Schritt einzeln, falls das Skript abbricht.
 
 ## 1. Google-Konto
 
-Ab Tag 2 arbeitet ihr in unserem Google-Cloud-Projekt. Dafür braucht jede Person ein Google-Konto. Am Morgen von Tag 1 sammeln wir die Adressen ein und richten über Nacht euren Zugang ein.
+Ab Tag 2 arbeitet ihr in unserem Google-Cloud-Projekt. Dafür braucht jede Person ein Google-Konto. Am Morgen von Tag 1 sammeln wir die Adressen ein und richten bis zum nächsten Morgen euren Zugang ein.
 
 - Habt ihr schon ein Google-Konto (z. B. Gmail), nutzt dieses.
 - Sonst könnt ihr eure Firmenadresse als Google-Konto registrieren, ohne Gmail: auf [accounts.google.com/signup](https://accounts.google.com/signup) "Meine aktuelle E-Mail-Adresse verwenden" wählen.
@@ -19,6 +34,8 @@ Ab Tag 2 arbeitet ihr in unserem Google-Cloud-Projekt. Dafür braucht jede Perso
 ## 3. Werkzeuge installieren
 
 Ihr braucht: Docker, minikube, kubectl, Git, curl, Python 3 (ab 3.9), die Google Cloud CLI (`gcloud`) und das GKE-Auth-Plugin. Java und Maven braucht ihr nicht, sie laufen im Docker-Build.
+
+`bash scripts/setup.sh` installiert alles außer Docker automatisch, unter macOS mit Homebrew, unter Ubuntu und WSL2 mit apt. Die folgenden Befehle braucht ihr nur, wenn das Skript abbricht. Docker richtet ihr in jedem Fall selbst ein.
 
 ### Windows: alles in WSL2
 
@@ -117,4 +134,4 @@ Falls euer Netzwerk einen Proxy nutzt:
 
 ## Wenn etwas nicht geht
 
-Schickt uns die Ausgabe von `bash lab00-check/check.sh` und die Fehlermeldung. Ein Rechner, auf dem es am ersten Tag nicht läuft, ist kein Problem: Ihr arbeitet dann zu zweit, und für den Cloud-Teil gibt es die Cloud Shell im Browser als Ausweg.
+Zeigt dem Trainer die Ausgabe von `bash lab00-check/check.sh` und die Fehlermeldung. Ein Rechner, auf dem es am ersten Tag nicht läuft, ist kein Problem: Ihr arbeitet dann zu zweit, und für den Cloud-Teil gibt es die Cloud Shell im Browser als Ausweg.

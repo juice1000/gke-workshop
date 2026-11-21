@@ -81,6 +81,19 @@ Beim Probelauf wurden zwei zeitliche Effekte berücksichtigt: Ein Tag-1-Containe
 
 Die GitHub-Actions-Workflowdatei führt diese Prüfungen bei Push/PR aus. Ein Lauf auf GitHub Actions wurde in dieser Arbeitskopie nicht ausgelöst. Die Linux-/amd64-Variante der CI muss daher noch dort bestätigt werden.
 
+## Probelauf als Teilnehmer auf GKE, 21.11.2026
+
+Nach dem Umzug auf den Pool `kurs` (ein `e2-standard-4`). Kubernetes-Aktionen liefen per Impersonation als `system:serviceaccount:workshop-person01:workshop-checker`, also nur mit der Namespace-Rolle aus `trainer/rbac.yaml`. Build und Push liefen mit Trainerrechten, weil diese Identität keine IAM-Rolle hat.
+
+| Schritt | Ergebnis |
+| --- | --- |
+| Rechte | eigener Namespace: Deployments und Secrets `yes`; `kube-system`, `workshop-person02`, Nodes `no` |
+| Lab 4 | eigenes Image `hallo-app-workshop-person01:2.0` (amd64) gepusht, Rollout in 17 s, Checkpoint `gke` grün, HTTP-Antwort aus GKE, `/fehler` liefert 500 und Logzeile `FEHLER` |
+| Lab 5 A | Lösung ausgerollt, Checkpoint `abschluss` grün |
+| Release A, B, C | `CreateContainerConfigError`, `OOMKilled`, Readiness 404 beobachtet; jeweils zwei alte Pods bereit und HTTP erreichbar; Rollback und Reparatur grün |
+
+Gesamtdauer 8 Minuten. Der gleichzeitige lokale Probelauf `scripts/dry-run.sh` bestand ebenfalls. Danach blieb Lab 4 in `workshop-person01` zum Ansehen in der Konsole stehen.
+
 ## Vor Durchführung noch nötig
 
 - [x] GKE-Standard bereitstellen, Anwendung und fehlerhafte Releases mit Trainerrechten durchspielen.
