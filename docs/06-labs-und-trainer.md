@@ -22,13 +22,15 @@ Alle Befehle werden aus dem Repository-Hauptordner ausgeführt. Die Übungsanwen
 | 3.5 Abschluss | `lab05-abschluss` | [Lab 5](https://app.notion.com/p/41b7a614759581e3a5aada0b4749c2ff) |
 | 3.6 Betrieb | `lab06-betrieb` | [Lab 6](https://app.notion.com/p/41b7a614759581a0b0a7f5e9e0c02041) |
 
-Notion wurde für diese Implementierung gelesen. Die Notion-Seiten wurden nicht verändert. Vor Veröffentlichung der Kursunterlagen die folgenden Unterschiede dort übernehmen:
+Die folgenden Unterschiede wurden am 21.11.2026 in die Notion-Kapitel übernommen. Die Theorie in Notion blieb, Lab-Schritte, Lösungen und Trainerhinweise folgen jetzt den READMEs. Die Seite "Repository und Lernumgebung" entspricht [VORBEREITUNG.md](../VORBEREITUNG.md). Zusätzlich geändert: kein GitHub-Konto nötig, kein öffentlicher LoadBalancer als Bonus in Lab 4, Google-Konten werden in 1.1 eingesammelt. Bei späteren Änderungen an den Labs beide Stellen anpassen.
 
 - Ein lokaler Namespace `workshop` statt Übungen in `default`.
 - Der Pod-Name wird ausdrücklich über `fieldRef: metadata.name` als `HOSTNAME` gesetzt. Das vermeidet die Abhängigkeit von einer automatisch gesetzten Container-Umgebungsvariable.
 - Befehle laufen aus dem Repository-Hauptordner, der Docker-Build bekommt `lab02-hallo-app` als Kontext.
 - Die Tag-2-Manifeste liegen vollständig unter `lab02-hallo-app/betrieb/`.
 - Cloud-Images tragen einen gruppenspezifischen Namen und werden für die tatsächliche Node-Architektur gebaut.
+- Der vorbereitete GKE-Cluster verwendet DNS-basierten API-Zugriff. Die Verbindungsbefehle nutzen ausdrücklich `--dns-endpoint`. IP-basierter API-Zugriff ist dort deaktiviert.
+- Der Maven-Build verwendet die native Build-Plattform. Das portable Java-Archiv wird in das Laufzeitimage der Zielplattform kopiert. So funktioniert der amd64-Build auch auf ARM-Laptops ohne x86-Emulation.
 - `scripts/render.py` erstellt Arbeitskopien mit passendem Image. Dadurch bleiben Registry-Platzhalter nicht versehentlich im Cluster.
 - Cloud-Deployments geben neuen Nodes und Image-Pulls ein Fortschrittsbudget von zehn Minuten. Die absichtlichen Fehler-Rollouts werden weiterhin nach 60 Sekunden untersucht.
 - Release B nutzt einen fest vorbelegten 512-MiB-Heap bei 512-MiB-Containerlimit. Die Korrektur erhöht das Limit auf 1 GiB. Das ersetzt das unzuverlässigere Beispiel mit 64 MiB, das auf Autopilot auch angepasst oder abgelehnt werden könnte.

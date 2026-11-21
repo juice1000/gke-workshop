@@ -16,6 +16,8 @@
 
 ## Voraussetzungen
 
+Installationsanleitung für Windows mit WSL2, macOS und Linux: [VORBEREITUNG.md](VORBEREITUNG.md). Bitte vor dem ersten Tag durchführen.
+
 Docker mit laufendem Daemon, Buildx, minikube, kubectl, Git, curl und Python 3.9 oder neuer. Java und Maven laufen im Docker-Build und müssen nicht lokal installiert sein. Unter Windows arbeitet ihr in Bash unter WSL2 mit Docker-Integration. Legt den Klon im Linux-Home ab.
 
 Plant für den lokalen Cluster 2 CPUs und 4 GiB freien Arbeitsspeicher ein, zusätzlich zu Docker und euren anderen Anwendungen. Downloads brauchen Zugriff auf GitHub, Maven Central, Docker Hub und die Kubernetes-Registries. Für GKE kommen gcloud, das GKE-Auth-Plugin und ein vom Trainer vorbereiteter Zugang hinzu.
@@ -47,8 +49,10 @@ Die Anwendung ist textbasiert. So bleiben Kubernetes und die Fehlersuche im Mitt
 
 ## Für den Trainer
 
+- Auf diesem vorbereiteten Rechner: `source scripts/workshop-env.sh`. Das lädt die Werkzeuge aus `.cache/bin`, die eigene Workshop-kubeconfig und die gcloud-Konfiguration `gke-workshop`. Mit `workshop_local` und `workshop_gke` zwischen den Umgebungen wechseln. Details stehen im [Runbook](trainer/RUNBOOK.md).
 - [Lab-Zuordnung, Lösungen und Kürzungen](docs/06-labs-und-trainer.md)
 - [Teststatus und noch nötige Prüfungen](docs/07-teststatus.md)
+- [Sitzungsübergabe und Wiedereinstieg](docs/09-uebergabe.md)
 - [Cloud-Vorbereitung, Zugriffe und Aufräumen](trainer/README.md)
 - [Pipeline-Einordnung und Cheat-Sheet](docs/08-pipeline-und-cheatsheet.md)
 - [Kundenkontext](docs/01-kontext.md), [Lernziele](docs/02-bedarf-und-lernziele.md), [Curriculum](docs/03-curriculum-entscheidungen.md), [offene Umgebungspunkte](docs/04-lernumgebung-und-offene-punkte.md)

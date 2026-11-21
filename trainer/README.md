@@ -2,6 +2,14 @@
 
 Diese Schritte gehören zur Vorbereitung durch den Trainer. Teilnehmende erstellen keine Cluster, Node-Pools oder IAM-Bindings. Das Repository provisioniert keine kostenpflichtige Infrastruktur automatisch. Eine Befehlsfolge zum Abarbeiten steht im [Runbook](RUNBOOK.md).
 
+## Vorbereitete Trainerumgebung
+
+Projekt `lookbeyond-gke-workshop`, Standard-Cluster `workshop` in `europe-west3-b`, Artifact-Registry-Repository `workshop` in `europe-west3`. Einstieg auf dem vorbereiteten Rechner: `source scripts/workshop-env.sh`, danach `workshop_gke` oder `workshop_local`.
+
+Der Cluster nutzt den Node-Pool `kurs` mit `e2-standard-4`, 50 GB Balanced-Persistent-Disk. Bis zum Cloud-Teil läuft ein Node, während des Kurses drei. Die Rechnung dazu steht im [Runbook](RUNBOOK.md#kurs-node-pool-umgesetzt-am-21112026). Die Anwendung liegt im Namespace `workshop-trainer`. Die Namespaces `workshop-person01` und `workshop-person02` enthalten Entwicklerrollen mit isolierten Kubernetes-Testidentitäten. Teilnehmerkonten werden am Abend von Tag 1 mit [teilnehmer-anlegen.sh](teilnehmer-anlegen.sh) aus der Kontoliste gebunden. Der Laufzeitnachweis und seine Grenzen stehen im [Teststatus](../docs/07-teststatus.md).
+
+Der Node verwendet ein eigenes IAM-Servicekonto mit der GKE-Node-Rolle und Leserecht am Workshop-Repository. Workload Identity Federation ist aktiviert. API-Zugriffe erfolgen über den DNS-Endpunkt; IP-basierter API-Zugriff ist deaktiviert. Die Anwendung bleibt als `ClusterIP` erreichbar und wird zum Testen per Port-Forward geöffnet.
+
 ## Vor dem Kurs
 
 1. Ein eigenes Übungsprojekt mit geklärter Abrechnung und einem GKE-Cluster bereitstellen. Standard ist der geplante Kursmodus. Autopilot ist als weitere Variante vorgesehen und braucht einen eigenen Probelauf.

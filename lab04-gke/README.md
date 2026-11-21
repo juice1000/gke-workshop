@@ -19,14 +19,14 @@ export WORKSHOP_NAMESPACE=workshop-person01
 gcloud auth login
 gke-gcloud-auth-plugin --version
 gcloud container clusters get-credentials "$CLUSTER_NAME" \
-  --location "$LOCATION" --project "$PROJECT_ID"
+  --location "$LOCATION" --project "$PROJECT_ID" --dns-endpoint
 export WORKSHOP_CONTEXT="$(kubectl config current-context)"
 kubectl config set-context "$WORKSHOP_CONTEXT" --namespace="$WORKSHOP_NAMESPACE"
 kubectl config get-contexts
 bash lab00-check/check.sh cloud
 ```
 
-Erwartet: ein `gke_...`-Kontext und euer zugewiesener Namespace. Der Cluster muss aus eurem Netzwerk erreichbar sein. Bei privaten Endpunkten nennt der Trainer den passenden VPN-/Zugangsweg. Ein erfolgreicher Login allein garantiert noch keinen Netzwerkzugang.
+Erwartet: ein `gke_...`-Kontext und euer zugewiesener Namespace. Die vorbereitete Trainerumgebung verwendet einen DNS-Endpunkt mit Google-Authentifizierung. Falls ein anderer Übungscluster ausschließlich private IP-Endpunkte bereitstellt, nennt der Trainer den passenden VPN-/Zugangsweg und die angepassten Verbindungsoptionen. Ein erfolgreicher Login allein garantiert noch keinen Netzwerkzugang.
 
 ## 2. Image bauen und hochladen
 
@@ -42,7 +42,7 @@ docker build --platform linux/amd64 --build-arg APP_VERSION=2.0 \
 docker push "$IMAGE"
 ```
 
-Erwartet: Der Push endet mit einem Digest. Auf einem ARM-Laptop ist ein normales lokales Image meist ebenfalls ARM. Einfaches Taggen genügt dann nicht für einen amd64-Node. Deshalb legt der Build hier die Zielplattform fest. Falls eure Umgebung keine Emulation unterstützt, stellt der Trainer ein passendes Image bereit.
+Erwartet: Der Push endet mit einem Digest. Auf einem ARM-Laptop ist ein normales lokales Image meist ebenfalls ARM. Einfaches Taggen genügt dann nicht für einen amd64-Node. Deshalb legt der Build hier die Zielplattform fest. Der Maven-Build läuft auf der nativen Laptop-Plattform und kopiert das portable Java-Archiv in das Laufzeitimage der Zielplattform. Für diesen Build ist keine x86-Emulation auf dem ARM-Laptop nötig.
 
 Push und Pull sind getrennte Rechte: Euer Konto lädt hoch. Die Node-Identität des Clusters lädt das private Image herunter. Workload Identity Federation ist für Anwendungszugriffe auf Cloud-APIs gedacht und ersetzt diese Image-Pull-Berechtigung nicht.
 

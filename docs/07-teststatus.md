@@ -1,10 +1,59 @@
 # Teststatus
 
-Stand: 17.11.2026. Dieser Status trennt lokale Laufzeitprüfungen von noch nötigen Cloud-Prüfungen.
+Stand: 21.11.2026. Dieser Status dokumentiert lokale und tatsächliche GKE-Prüfungen sowie verbleibende Nachweise.
+
+## Persistente Trainerumgebung, 21.11.2026
+
+Die lokale Umgebung wurde dauerhaft im Arbeitsordner eingerichtet. Einstieg aus dem Repository-Hauptordner: `source scripts/workshop-env.sh`.
+
+| Bestandteil | Zustand |
+| --- | --- |
+| Werkzeuge | minikube 1.39.0 und kubectl 1.35.0 in `.cache/bin` |
+| Lokaler Cluster | Profil `minikube`, Kubernetes 1.35.0, Docker-Treiber, 2 CPUs und 4096 MiB RAM |
+| Clusterdaten | `.cache/minikube-home`, eigene kubeconfig `.cache/workshop.kubeconfig` |
+| Anwendung | `hallo-app:2.0`, Deployment `hallo`, zwei verfügbare Replikas im Namespace `workshop` |
+| Checkpoint `betrieb` | alle Prüfungen bestanden, inklusive Probes, ConfigMap-/Secret-Referenzen, bereiter Service-Adressen und HTTP-Antwort mit tatsächlichem Pod-Namen |
+| Erneuter App-Build | drei Tests bestanden |
+| Cloud-CLI | separate Konfiguration `gke-workshop` mit dem autorisierten Look-Beyond-Gmail-Konto; GKE-Auth-Plugin installiert |
+| Cloud-Infrastruktur | Projekt `lookbeyond-gke-workshop` mit aktiver Abrechnung, GKE-Standard-Cluster und privater Artifact Registry eingerichtet |
+| Kontextwechsel | `workshop_local` und `workshop_gke` aus zsh erfolgreich geprüft; beide Umgebungen haben zwei verfügbare Replikas |
+
+Die Anmeldung erfolgte mit dem autorisierten Look-Beyond-Gmail-Konto. Lokale Clusterdaten und Zugangsdaten bleiben vom Git-Repository ausgeschlossen. Der folgende GKE-Nachweis wurde im tatsächlichen Cloud-Cluster erbracht.
+
+## GKE-Standard-Probelauf, 21.11.2026
+
+| Bestandteil | Beobachteter Zustand |
+| --- | --- |
+| Projekt und Standort | `lookbeyond-gke-workshop`, `europe-west3-b` (Frankfurt) |
+| Cluster | `workshop`, Status `RUNNING`, Kubernetes `1.36.4-gke.2377000`, Regular Channel |
+| Node | Probelauf auf einem `e2-standard-2`. Danach Pool `kurs` mit `e2-standard-4`, 50 GB Balanced-PD; Trainer-App umgezogen, Checkpoint `gke` erneut bestanden |
+| Netzwerk | eigenes VPC und Subnetz `gke-workshop`; Nodes `10.60.0.0/20`, Pods `10.64.0.0/16`, Services `10.65.0.0/20` |
+| API-Zugriff | DNS-Endpunkt mit Google-Authentifizierung; IP-basierter Zugriff deaktiviert |
+| Identität | eigenes Node-Servicekonto mit GKE-Node-Rolle und Leserecht am Workshop-Repository; Workload Identity Federation aktiviert |
+| Registry | privates Docker-Repository `workshop` in `europe-west3`; Push und Pull auf GKE erfolgreich |
+| Image | amd64-Laufzeitimage aus nativem Java-Build auf dem ARM-Mac; drei App-Tests im Build bereits bestanden |
+| Bereitgestelltes Image | `europe-west3-docker.pkg.dev/lookbeyond-gke-workshop/workshop/hallo-app@sha256:71e9a121eacd630c520aeb64311ebb71cbccfb8485095ba8a6b823492093e8e2` |
+| Anwendung | zwei bereite Replikas von `hallo` im Namespace `workshop-trainer`; Version 2.0 über HTTP erreichbar |
+| Service und DNS | zwei bereite EndpointSlice-Adressen; HTTP-Aufruf der internen Service-DNS-Adresse aus einem Anwendungs-Pod erfolgreich |
+| Probes und Konfiguration | Checkpoint `gke` bestanden: Startup, Readiness, Liveness, Requests/Limit, ConfigMap und tatsächlicher Pod-Name |
+| Fehlerroute | `/fehler` liefert absichtlich HTTP 500, danach bleibt Liveness `UP` |
+| Cloud Logging | die ausgelöste `FEHLER`-Zeile aus dem Container wurde über die Logging-API abgerufen |
+| Cloud Monitoring | Datenpunkte für CPU-Verbrauch, Speicherverbrauch und `kubernetes.io/container/restart_count` über die Monitoring-API abgerufen |
+| Release A | `CreateContainerConfigError` wegen fehlendem Schlüssel beobachtet; Verfügbarkeit, Rollback und Reparatur bestanden |
+| Release B | `OOMKilled` beobachtet; Verfügbarkeit, Rollback und Reparatur mit 1-GiB-Limit bestanden |
+| Release C | Readiness-404 beobachtet; Verfügbarkeit, Rollback und Reparatur bestanden |
+| Namespace-RBAC | `workshop-person01` und `workshop-person02`: per Kubernetes-ServiceAccount-Impersonation im eigenen Namespace Deployments/Secrets erlaubt, anderer Namespace, `kube-system` und Node-Liste verweigert |
+| Zustand nach dem Probelauf | gesundes Lab-4-Deployment wiederhergestellt, temporäres Übungs-Secret entfernt |
+
+Die Cloud-kubeconfig bindet den Auth-Plugin-Aufruf ausdrücklich an die Workshop-Konfiguration und den autorisierten Account. Die Daten unter `.cache/` und die gerenderten Arbeitskopien unter `out/` sind lokal und nicht versioniert.
+
+Der RBAC-Nachweis verwendet Kubernetes-Testidentitäten. Er ersetzt nicht den noch ausstehenden Test mit zwei echten Google-Teilnehmerkonten und deren IAM-Rollen. Cloud-Logging- und Monitoring-Abfragen liefen mit Trainerrechten. Die Konsole wurde dabei nicht per UI geprüft. Autopilot wurde nicht angelegt oder getestet.
+
+Der Cluster ist für Vorbereitung und Probelauf dimensioniert. Vor dem Kurs sind Teilnehmerkonten und Kapazität an die tatsächlich gleichzeitig arbeitenden Gruppen anzupassen. Der Node bleibt laufend; Anhalten bzw. Löschen ist im [Runbook](../trainer/RUNBOOK.md) beschrieben.
 
 ## Lokale Prüfungen
 
-`bash scripts/validate.sh` und `bash scripts/dry-run.sh` sind lokal erfolgreich durchgelaufen.
+`bash scripts/validate.sh` und `bash scripts/dry-run.sh` sind am 17.11.2026 lokal erfolgreich durchgelaufen.
 
 Umgebung: macOS auf ARM64 mit OrbStack/Docker 29.4.0, minikube 1.39.0, Kubernetes 1.35.0 und passendem kubectl 1.35.0. Der Testcluster hatte einen Node, 2 CPUs und 4096 MiB Speicher. Der Container-Build verwendet Maven 3.9.11, Java 21 und Spring Boot 3.5.16. Die Basisimages sind im Dockerfile per Digest fixiert.
 
@@ -34,14 +83,18 @@ Die GitHub-Actions-Workflowdatei führt diese Prüfungen bei Push/PR aus. Ein La
 
 ## Vor Durchführung noch nötig
 
-- [ ] Alle Cloud-Schritte in einem echten GKE-Standard-Cluster mit Teilnehmerkonten ausführen.
+- [x] GKE-Standard bereitstellen, Anwendung und fehlerhafte Releases mit Trainerrechten durchspielen.
+- [ ] Alle Cloud-Schritte mit echten Google-Teilnehmerkonten ausführen.
 - [ ] Autopilot separat testen, wenn dieser Modus im Kurs verwendet werden soll. Admission-Änderungen, Speicherfall und Wartezeiten dokumentieren.
-- [ ] Registry-Push und privater Image-Pull mit der tatsächlichen Node-Identität prüfen.
+- [x] Registry-Push und privater Image-Pull mit der tatsächlichen Node-Identität prüfen.
 - [ ] Test mit zwei Teilnehmerkonten und getrennten Namespaces; IAM darf die RBAC-Trennung nicht aufheben.
 - [ ] Logs Explorer, CPU-/Speicher-Metriken und Restart-Metrik mit Teilnehmerrechten nachweisen.
 - [ ] Konsolennavigation, Release Channel, Wartungsfenster und Node-Pools im tatsächlichen Projekt prüfen.
-- [ ] Frischen Windows-/WSL-Rechner einschließlich Proxy, Docker-Integration und Registryzugriff testen.
+- [ ] Frischen Windows-/WSL-Rechner testen: bewusst ausgelassen, siehe unten.
 - [ ] Noch offene Kursdetails aus [Lernumgebung](04-lernumgebung-und-offene-punkte.md) mit dem Kunden klären.
-- [ ] Notion-Differenzen aus [Lab-Zuordnung](06-labs-und-trainer.md) in die Kursunterlagen übernehmen.
+- [x] Notion-Differenzen aus [Lab-Zuordnung](06-labs-und-trainer.md) in die Kursunterlagen übernehmen (21.11.2026).
+- [x] Node-Pool für 15 Personen bemessen und angelegt (`kurs`, siehe [Runbook](../trainer/RUNBOOK.md#kurs-node-pool-umgesetzt-am-21112026)). Am Morgen von Tag 2 auf drei Nodes skalieren.
+- [x] `trainer/teilnehmer-anlegen.sh` mit Testliste im Planmodus und unter Bash 3.2 geprüft. Das Anwenden mit echten Konten steht aus.
+- [ ] Installationsbefehle aus [VORBEREITUNG.md](../VORBEREITUNG.md) auf Windows/WSL2 und Linux: bewusst nicht vorab getestet (Entscheidung 21.11.2026). Die Befehle folgen den Herstelleranleitungen. Probleme fängt Lab 0 am ersten Morgen ab, Ausweg Paararbeit und Cloud Shell.
 
-Lokale Läufe beweisen keine GKE-IAM-Freigaben, Cloud-Kosten, Autopilot-Admission oder Verfügbarkeit der Konsole.
+Die GKE-Ergebnisse beziehen sich auf Standard mit Trainerrechten. Autopilot, Kundennetz, Konsolennavigation und tatsächliche Teilnehmerkonten brauchen getrennte Prüfungen.

@@ -24,6 +24,20 @@ case "${1:-lokal}" in
     check 'Docker Buildx verfuegbar' docker buildx version
     check 'GitHub erreichbar (sonst Proxy/Netzwerk pruefen)' curl -fsSI --connect-timeout 5 --max-time 15 https://github.com
     check 'Maven Central erreichbar' curl -fsSI --connect-timeout 5 --max-time 15 https://repo.maven.apache.org/maven2/
+    check 'Python 3.9 oder neuer' python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))'
+    # Fuer Tag 2 noetig, am ersten Tag nur ein Hinweis.
+    for tool in gcloud gke-gcloud-auth-plugin; do
+      if ! command -v "$tool" >/dev/null 2>&1; then
+        printf 'HINWEIS: %s fehlt, wird ab Tag 2 gebraucht (siehe VORBEREITUNG.md)\n' "$tool"
+      fi
+    done
+    # WSL: Repository unter /mnt/... ist langsam und macht Rechteprobleme.
+    if grep -qi microsoft /proc/version 2>/dev/null; then
+      case "$(pwd -P)" in
+        /mnt/*) printf 'HINWEIS: Repository liegt unter /mnt. Besser im Linux-Home klonen (~/gke-workshop).\n' ;;
+        *) printf 'INFO: WSL erkannt, Repository liegt im Linux-Dateisystem.\n' ;;
+      esac
+    fi
     printf 'INFO: Registry-Pulls werden beim Image-Build geprueft. Dieser Check startet keinen Cluster.\n'
     ;;
   cloud)

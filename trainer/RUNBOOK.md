@@ -2,19 +2,65 @@
 
 Ergaenzt [README.md](README.md) (Zugriffsmodell, Probelauf, Aufraeumen) um eine Befehlsfolge zum Abarbeiten. Alles wird vom Trainer von Hand ausgefuehrt. Das Repository legt nichts automatisch an. Jeder Abschnitt endet mit einer Pruefung.
 
-Status: Die Befehle sind noch nicht gegen ein echtes Projekt gelaufen. Nach dem Probelauf Ergebnis in [Teststatus](../docs/07-teststatus.md) eintragen und Abweichungen hier korrigieren. Flags vor dem ersten Lauf mit `gcloud ... --help` gegenpruefen.
+Die Trainerumgebung wird im Projekt `lookbeyond-gke-workshop` in Frankfurt aufgebaut. Der tatsaechliche Laufzeitnachweis steht im [Teststatus](../docs/07-teststatus.md). Die Erstellungsbefehle sind fuer den initialen Aufbau gedacht. Vor einem erneuten Lauf vorhandene Ressourcen pruefen und wiederverwenden.
+
+## Lokale Trainerumgebung
+
+Auf dem vorbereiteten Mac liegen minikube 1.39.0 und kubectl 1.35.0 in `.cache/bin`. Das GKE-Auth-Plugin ist im vorhandenen Google Cloud SDK installiert. Diese lokalen Dateien, Clusterdaten und Zugangsdaten werden nicht eingecheckt.
+
+Aus dem Repository-Hauptordner in jedem neuen Terminal:
+
+```bash
+source scripts/workshop-env.sh
+kubectl config get-contexts
+minikube -p minikube status
+```
+
+Das Skript verwendet `.cache/workshop.kubeconfig`, den minikube-Datenordner `.cache/minikube-home` und die eigene gcloud-Konfiguration `gke-workshop`. Die global aktive gcloud-Konfiguration bleibt erhalten. Den Workshop-Account vor Cloud-Befehlen mit `gcloud config get-value account` pruefen.
+
+Cloud-Metadaten liegen lokal in `.cache/workshop-cloud.env`. Nach dem Laden wechselt `workshop_gke` zum Trainer-Namespace auf GKE. `workshop_local` wechselt zurueck zu minikube. Beide Funktionen setzen die Checkpoint-Variablen passend zum Kontext. Mit `workshop_gke workshop-person01` kann ein anderer vorbereiteter Namespace gewaehlt werden.
+
+Der persistente lokale Cluster verwendet 2 CPUs und 4096 MiB RAM. Der Namespace heisst `workshop`. Ein Kontextwechsel zur lokalen Umgebung geht nach dem Laden des Skripts mit `workshop_local`.
+
+```bash
+minikube start -p minikube --driver=docker --cpus=2 --memory=4096 --nodes=1 --kubernetes-version=v1.35.0
+workshop_local
+kubectl get pods -n workshop
+kubectl port-forward -n workshop service/hallo 18081:80
+```
+
+Im zweiten Terminal `curl http://127.0.0.1:18081/`. Port 8080 ist auf diesem Mac bereits durch die IaC-Beispielanwendung belegt. Fuer GKE wird deshalb Port 18080 verwendet:
+
+```bash
+workshop_gke
+kubectl port-forward service/hallo 18080:80
+```
+
+Dann `http://127.0.0.1:18080/` oeffnen. Beide Tunnel koennen in getrennten Terminals laufen. Mit Strg+C den jeweiligen Tunnel beenden. Nach der Arbeit kann der lokale Cluster mit `minikube stop -p minikube` angehalten und mit dem Startbefehl fortgesetzt werden. Der Trainer-Probelauf `scripts/dry-run.sh` verwendet weiterhin ein eigenes temporaeres Profil.
+
+Auf einem anderen Rechner zuerst minikube und kubectl installieren, das GKE-Auth-Plugin einrichten und die gcloud-Konfiguration erstellen:
+
+```bash
+gcloud config configurations create gke-workshop --no-activate
+gcloud config set account EIGENES_GOOGLE_KONTO --configuration=gke-workshop
+gcloud auth login EIGENES_GOOGLE_KONTO --no-activate
+```
+
+Anschliessend die lokale Umgebung aus Lab 0 aufbauen. Die folgenden Cloud-Befehle erst mit dem richtigen Workshop-Account und einem Projekt mit aktiver Abrechnung ausfuehren.
 
 ## 0. Variablen
 
 Nur im aktuellen Terminal gueltig. Werte anpassen.
 
 ```bash
-export PROJECT_ID="gke-workshop-CHANGEME"
+source scripts/workshop-env.sh
+export PROJECT_ID="lookbeyond-gke-workshop"
 export BILLING_ACCOUNT="XXXXXX-XXXXXX-XXXXXX"   # gcloud billing accounts list
 export REGION="europe-west3"
-export ZONE="europe-west3-a"
+export ZONE="europe-west3-b"
 export CLUSTER="workshop"
 export REPO="workshop"
+export NODE_SA="gke-workshop-nodes@${PROJECT_ID}.iam.gserviceaccount.com"
 export TRAINER_CONTEXT="gke_${PROJECT_ID}_${ZONE}_${CLUSTER}"   # Standard, zonal
 # Autopilot: Standort ist die Region, also gke_${PROJECT_ID}_${REGION}_${CLUSTER}
 ```
@@ -22,31 +68,65 @@ export TRAINER_CONTEXT="gke_${PROJECT_ID}_${ZONE}_${CLUSTER}"   # Standard, zona
 ## 1. Projekt und APIs
 
 ```bash
-gcloud auth login
+gcloud auth login "$(gcloud config get-value account)" --no-activate
 gcloud components install gke-gcloud-auth-plugin
 gcloud projects create "$PROJECT_ID"
 gcloud billing projects link "$PROJECT_ID" --billing-account="$BILLING_ACCOUNT"
-gcloud services enable container.googleapis.com artifactregistry.googleapis.com \
-  logging.googleapis.com monitoring.googleapis.com --project="$PROJECT_ID"
+gcloud services enable compute.googleapis.com container.googleapis.com artifactregistry.googleapis.com \
+  logging.googleapis.com monitoring.googleapis.com iam.googleapis.com iamcredentials.googleapis.com \
+  --project="$PROJECT_ID"
 ```
 
-Pruefen: `gcloud services list --enabled --project="$PROJECT_ID"` zeigt die vier APIs. Budget-Alert in der Konsole unter Billing anlegen.
+Pruefen: `gcloud services list --enabled --project="$PROJECT_ID"` zeigt die angeforderten APIs. Budget-Alert in der Konsole unter Billing anlegen.
 
-## 2. Cluster (Variante Standard)
+## 2. Netzwerk und Node-Identitaet
 
-Groesse an die Gruppen anpassen, Kapazitaet je Rollout siehe [README](README.md), Punkt 6.
+Ein eigenes VPC-Netz verwendet getrennte Bereiche fuer Nodes, Pods und Services. Fuer Nodes wird ein eigenes Servicekonto ohne Schluesseldateien verwendet.
+
+```bash
+gcloud compute networks create gke-workshop --subnet-mode=custom --bgp-routing-mode=regional \
+  --project="$PROJECT_ID"
+gcloud compute networks subnets create gke-workshop --network=gke-workshop --region="$REGION" \
+  --range=10.60.0.0/20 --secondary-range=pods=10.64.0.0/16,services=10.65.0.0/20 \
+  --enable-private-ip-google-access --project="$PROJECT_ID"
+gcloud iam service-accounts create gke-workshop-nodes --display-name='GKE Workshop Nodes' \
+  --project="$PROJECT_ID"
+gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:${NODE_SA}" \
+  --role=roles/container.defaultNodeServiceAccount --condition=None
+```
+
+Pruefen: Subnetz und Sekundaerbereiche mit `gcloud compute networks subnets describe gke-workshop --region="$REGION" --project="$PROJECT_ID"` ansehen. Keine allgemeinen SSH-/RDP-Freigaben anlegen. Die fuer Kubernetes erforderlichen Firewall-Regeln legt GKE beim Clusteraufbau an.
+
+## 3. Cluster (Variante Standard)
+
+Der Vorbereitungscluster startet mit einem Node `e2-standard-2` und 30 GB Standard-Persistent-Disk. Die Groesse vor dem Kurs an die Zahl gleichzeitig arbeitender Gruppen anpassen, Kapazitaet je Rollout siehe [README](README.md), Punkt 6. Die Nodezahl ist fest, Cluster-Autoscaling ist nicht aktiviert.
 
 ```bash
 gcloud container clusters create "$CLUSTER" \
-  --location="$ZONE" --num-nodes=3 --machine-type=e2-standard-4 \
+  --location="$ZONE" --release-channel=regular --cluster-version=1.36.4-gke.2377000 \
+  --num-nodes=1 --machine-type=e2-standard-2 --disk-size=30 --disk-type=pd-standard \
+  --image-type=COS_CONTAINERD --network=gke-workshop --subnetwork=gke-workshop \
+  --enable-ip-alias --cluster-secondary-range-name=pods --services-secondary-range-name=services \
+  --max-pods-per-node=32 --service-account="$NODE_SA" --scopes=cloud-platform \
+  --workload-pool="${PROJECT_ID}.svc.id.goog" --workload-metadata=GKE_METADATA \
+  --enable-dns-access --no-enable-ip-access --no-enable-basic-auth --no-issue-client-certificate \
+  --enable-shielded-nodes --shielded-secure-boot --shielded-integrity-monitoring \
+  --logging=SYSTEM,WORKLOAD --monitoring=SYSTEM --no-enable-managed-prometheus \
+  --maintenance-window=02:00 --labels=purpose=gke-workshop,managed-by=gcloud \
   --project="$PROJECT_ID"
 gcloud container clusters get-credentials "$CLUSTER" \
-  --location="$ZONE" --project="$PROJECT_ID"
+  --location="$ZONE" --project="$PROJECT_ID" --dns-endpoint
 kubectl config get-contexts
 kubectl --context "$TRAINER_CONTEXT" get nodes
 ```
 
-Variante Autopilot (eigener Probelauf noetig):
+Die hier angegebene Version war im Regular Channel verfuegbar. Vor einem spaeteren Neuaufbau mit `gcloud container get-server-config --location="$ZONE" --project="$PROJECT_ID"` erneut pruefen. Auto-Upgrades und Auto-Repair sind aktiv. Das Wartungsfenster beginnt um 02:00 UTC und dauert vier Stunden.
+
+Der API-Zugriff erfolgt ueber den DNS-Endpunkt mit Google-Identitaet. IP-basierte API-Endpunkte sind deaktiviert. Die Nodes verwenden fuer ausgehende Verbindungen externe IPs; es gibt keinen Cloud NAT und keine oeffentlichen Anwendungsservices. Normale Anwendungs-Pods verwenden die GKE-Metadatenidentitaet statt der Node-Identitaet.
+
+Die CLI verlangt `--shielded-secure-boot` und `--shielded-integrity-monitoring` gemeinsam. System- und Workload-Logs sowie Systemmetriken sind aktiviert. Managed Prometheus ist fuer diese Grundlagenumgebung deaktiviert.
+
+Variante Autopilot (nicht angelegt, eigener Probelauf noetig):
 
 ```bash
 gcloud container clusters create-auto "$CLUSTER" --location="$REGION" --project="$PROJECT_ID"
@@ -54,7 +134,34 @@ gcloud container clusters create-auto "$CLUSTER" --location="$REGION" --project=
 
 Pruefen: Nodes `Ready`. Kubernetes-Version und Node-Architektur notieren (`kubectl --context "$TRAINER_CONTEXT" get nodes -o wide`), das vorgebaute Image muss dazu passen.
 
-## 3. Registry
+### Kurs-Node-Pool (umgesetzt am 21.11.2026)
+
+Fuer 15 Teilnehmende wurde `default-pool` durch den Pool `kurs` ersetzt. Grundlage: je Person zwei Pods mit 250m CPU und 512 MiB Request, bei einem Rollout ein dritter. Das ergibt 7,5 vCPU im Normalbetrieb und bis zu 11,25 vCPU, wenn alle gleichzeitig ausrollen. Das globale CPU-Kontingent des Projekts betraegt 12 vCPU (`CPUS_ALL_REGIONS`). Drei `e2-standard-4` nutzen es voll aus und lassen nach Abzug der Systempods etwa 10 vCPU fuer Workloads. Ein vierter Node braucht eine Kontingenterhoehung in der Konsole unter IAM, Kontingente.
+
+```bash
+gcloud container node-pools create kurs \
+  --cluster="$CLUSTER" --location="$ZONE" --project="$PROJECT_ID" \
+  --machine-type=e2-standard-4 --num-nodes=1 --disk-size=50 --disk-type=pd-balanced \
+  --image-type=COS_CONTAINERD --service-account="$NODE_SA" \
+  --scopes=cloud-platform --workload-metadata=GKE_METADATA --max-pods-per-node=32 \
+  --shielded-secure-boot --shielded-integrity-monitoring --enable-autorepair --enable-autoupgrade \
+  --node-labels=workshop-pool=kurs
+# Danach den alten Node sperren, leeren und den alten Pool loeschen.
+kubectl --context "$TRAINER_CONTEXT" drain NODE_NAME --ignore-daemonsets --delete-emptydir-data
+gcloud container node-pools delete default-pool --cluster="$CLUSTER" --location="$ZONE" --project="$PROJECT_ID"
+```
+
+Bis zum Cloud-Teil laeuft ein Node. Am Morgen von Tag 2 auf drei Nodes skalieren und abends wieder auf einen:
+
+```bash
+gcloud container clusters resize "$CLUSTER" --node-pool=kurs --num-nodes=3 \
+  --location="$ZONE" --project="$PROJECT_ID"
+kubectl --context "$TRAINER_CONTEXT" get nodes
+```
+
+Kein Cluster-Autoscaling: Waehrend der Labs sollen keine Pods wegen eines laufenden Scale-ups kurz `Pending` sein. Das waere fuer Einsteiger nicht von einem echten Fehler zu unterscheiden.
+
+## 4. Registry
 
 ```bash
 gcloud artifacts repositories create "$REPO" \
@@ -62,21 +169,28 @@ gcloud artifacts repositories create "$REPO" \
 gcloud auth configure-docker "${REGION}-docker.pkg.dev"
 ```
 
-Die Nodes brauchen Lesezugriff. Bei Standard mit dem Compute-Standardkonto im selben Projekt pruefen, ob er schon besteht. Sonst:
+Die Nodes bekommen Lesezugriff nur auf das Workshop-Repository:
 
 ```bash
-NODE_SA="$(gcloud iam service-accounts list --project="$PROJECT_ID" \
-  --filter='displayName:Compute Engine default service account' --format='value(email)')"
 gcloud artifacts repositories add-iam-policy-binding "$REPO" \
   --location="$REGION" --project="$PROJECT_ID" \
   --member="serviceAccount:${NODE_SA}" --role="roles/artifactregistry.reader"
 ```
 
-Pruefen: Testimage pushen (`docker tag`, `docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/hallo-app:2.0`) und in einem Test-Pod ziehen. Push und Pull getrennt testen.
+Pruefen: Image mit `docker build --platform linux/amd64 --build-arg APP_VERSION=2.0 -t "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/hallo-app:2.0" lab02-hallo-app` bauen und hochladen. Der Maven-Build laeuft dabei nativ, das Laufzeitimage entspricht der Zielarchitektur. Die Cloud-Umgebung muss beim Push geladen sein, damit der Docker-Credential-Helper den richtigen gcloud-Account nutzt. Push und Pull getrennt testen. Fuer die Trainerbereitstellung wird die hochgeladene Image-Version per Digest referenziert (`DEPLOY_IMAGE` in der lokalen Cloud-Umgebung).
 
-## 4. Teilnehmer
+## 5. Teilnehmer
 
-Je Person oder Paar `NN` und Google-Konto. Zuerst die Arbeitskopien der Vorlagen erzeugen und lesen.
+Fuer den Kurs alle Konten in einem Schritt: Adressen in eine Datei schreiben, eine pro Zeile. Die Reihenfolge ergibt die Nummer. Erst ohne `--apply` laufen lassen und die Arbeitskopien in `out/trainer/` lesen:
+
+```bash
+bash trainer/teilnehmer-anlegen.sh out/konten.txt
+bash trainer/teilnehmer-anlegen.sh out/konten.txt --apply
+```
+
+Das Skript legt Namespace und RoleBinding an und vergibt `container.clusterViewer`, `logging.viewer`, `monitoring.viewer` am Projekt und `artifactregistry.writer` am Repository. `out/trainer/teilnehmer.tsv` ordnet Nummer, Namespace und Konto zu. Die Kontoliste und die Tabelle enthalten personenbezogene Daten und bleiben unter `out/` (nicht in Git).
+
+Die Einzelschritte je Person oder Paar `NN` und Google-Konto:
 
 ```bash
 NN=01
@@ -98,7 +212,7 @@ gcloud artifacts repositories add-iam-policy-binding "$REPO" \
 
 `roles/logging.viewer` und `roles/monitoring.viewer` nur vergeben, wenn projektweite Sicht gewollt ist, sonst als Demo zeigen (siehe README). Keine Owner-, Editor- oder Developer-Rollen.
 
-## 5. Pruefung als Teilnehmer
+## 6. Pruefung als Teilnehmer
 
 Mit einem echten Testkonto auf einem Rechner ohne Trainerrechte:
 
@@ -114,7 +228,7 @@ kubectl auth can-i patch nodes                                    # no
 
 Danach Lab 4 als Teilnehmer durchspielen und den GKE-Probelauf aus der [README](README.md) abarbeiten. Aus dem Kundennetz wiederholen (API-Endpunkt, Proxy).
 
-## 6. Aufraeumen
+## 7. Aufraeumen
 
 Siehe README, Abschnitt "Nach dem Kurs". Zusaetzlich Cluster und Registry loeschen, sonst laufen Kosten weiter:
 
@@ -124,3 +238,18 @@ gcloud artifacts repositories delete "$REPO" --location="$REGION" --project="$PR
 ```
 
 Temporaere IAM-Bindings der Teilnehmer entfernen (`remove-iam-policy-binding` mit denselben Mitgliedern und Rollen). Wenn das Projekt nur fuer den Kurs existierte: `gcloud projects delete "$PROJECT_ID"`.
+
+Die loeschbaren Projektressourcen umfassen auch das Subnetz `gke-workshop`, das gleichnamige VPC-Netz und das Servicekonto `gke-workshop-nodes`. Erst den Cluster entfernen, bevor dessen Netzwerk entfernt wird. Fuer eine kuerzere Vorbereitungspause kann der Node-Pool `kurs` auf null Nodes skaliert werden; danach vor den Labs wieder auf die benoetigte Anzahl skalieren. Das entfernt keine Clustergebuehren oder gespeicherten Artefakte.
+
+Nur den passenden Befehl ausfuehren. Bei null Nodes ist die Anwendung nicht erreichbar:
+
+```bash
+# Vorbereitungspause: Node-Pool auf null setzen.
+gcloud container clusters resize "$CLUSTER_NAME" --node-pool=kurs --num-nodes=0 \
+  --location="$LOCATION" --project="$PROJECT_ID"
+
+# Vorbereitung fortsetzen: einen Node bereitstellen und Readiness abwarten.
+gcloud container clusters resize "$CLUSTER_NAME" --node-pool=kurs --num-nodes=1 \
+  --location="$LOCATION" --project="$PROJECT_ID"
+kubectl --context "$TRAINER_CONTEXT" -n workshop-trainer rollout status deployment/hallo --timeout=600s
+```
