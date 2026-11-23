@@ -142,9 +142,9 @@ Die Skripte haben Windows-Zeilenenden. Das passiert, wenn Git unter Windows beim
 
 ```bash
 git config core.autocrlf false
-git pull
 git rm -rq --cached .
 git reset --hard
+git pull
 bash scripts/setup.sh
 ```
 
