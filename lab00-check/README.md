@@ -50,6 +50,8 @@ minikube dashboard
 
 Der Befehl läuft im Vordergrund. Öffnet ein zweites Terminal für weitere Befehle. Im Dashboard den Namespace `workshop` auswählen. Noch sind dort keine Workloads. Beendet das Dashboard mit Strg+C, wenn ihr es nicht mehr braucht.
 
+Den gemeinsamen Rundgang findet ihr in [RUNDGANG.md](RUNDGANG.md). Er erklärt den Aufbau des Dashboards, was minikube in `kube-system` mitbringt und was in den folgenden Labs im Namespace `workshop` entsteht.
+
 **Abgabe:** Kontext, Namespace und Ausgabe von `kubectl get nodes`.
 
 ## Wenn es hakt

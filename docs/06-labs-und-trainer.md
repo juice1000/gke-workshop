@@ -13,6 +13,7 @@ Alle Befehle werden aus dem Repository-Hauptordner ausgeführt. Die Übungsanwen
 | Kapitel | Repository | Notion |
 | --- | --- | --- |
 | 1.1 Setup | `lab00-check` | [Tag 1](https://app.notion.com/p/41b7a614759581e58d69d201411d07e1) |
+| Dashboard-Rundgang | `lab00-check/RUNDGANG.md` | [Rundgang](https://app.notion.com/p/4217a61475958163a766eb65a5906a68) (Trainerhinweise nur in Notion) |
 | 1.5 kubectl | `lab01-kubectl` | [Lab 1](https://app.notion.com/p/41b7a61475958119aacaec95d227da24) |
 | 1.6 Anwendung lokal | `lab02-hallo-app/k8s` | [Lab 2](https://app.notion.com/p/41b7a6147595815d8cd6fc39ede576a9) |
 | 2.2 bis 2.4 Betrieb | `lab02-hallo-app/betrieb` | [Tag 2](https://app.notion.com/p/41b7a614759581b3a351dd044517c281) |
