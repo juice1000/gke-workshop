@@ -36,6 +36,8 @@ Drei Umgebungsvariablen steuern die Antwort: `GREETING` die Begrüßung, `APP_VE
 ### 1.1 Bauen
 
 ```bash
+# Image aus dem Dockerfile in lab02-hallo-app bauen. Maven kompiliert und testet
+# im Build, danach landet nur die JAR im Laufzeit-Image. Version 1.0 als Tag.
 docker build --build-arg APP_VERSION=1.0 -t hallo-app:1.0 lab02-hallo-app
 ```
 
@@ -49,6 +51,8 @@ Deshalb braucht ihr weder Java noch Maven lokal. `-t hallo-app:1.0` gibt dem Ima
 ### 1.2 Optional: ohne Kubernetes testen
 
 ```bash
+# Image ohne Kubernetes als einzelnen Container starten. Port 8080 eures
+# Rechners geht in den Container. --rm entfernt ihn nach Strg+C.
 docker run --rm -p 127.0.0.1:8080:8080 hallo-app:1.0
 ```
 
@@ -59,7 +63,10 @@ So prüft ihr, ob ein Problem am Image oder an Kubernetes liegt.
 ### 1.3 Image an minikube übergeben
 
 ```bash
+# Image aus eurem Docker in den getrennten Image-Speicher von minikube kopieren
 minikube image load hallo-app:1.0
+
+# Alle Images im Cluster auflisten. Gesucht: docker.io/library/hallo-app:1.0
 minikube image ls
 ```
 
@@ -101,24 +108,29 @@ Merkt euch: **Labels verbinden alles.** Der Service kennt keine Pod-Namen, er su
 ### 2.2 Ausrollen
 
 ```bash
+# Mit welchem Cluster spricht kubectl? Erwartet: minikube
 kubectl config current-context
 ```
 
 Zur Sicherheit vor jeder Änderung: Erwartet `minikube`.
 
 ```bash
+# Alle Manifeste im Ordner an den Cluster schicken: Deployment und Service
+# anlegen oder an die Dateien anpassen. Beliebig oft wiederholbar.
 kubectl apply -f lab02-hallo-app/k8s/
 ```
 
 `apply` schickt alle Manifeste im Ordner an den Cluster. Existiert ein Objekt noch nicht, wird es angelegt. Existiert es schon, wird es an die Datei angepasst. Ihr könnt den Befehl also beliebig oft wiederholen. Erwartet: `deployment.apps/hallo created` und `service/hallo created`.
 
 ```bash
+# Warten, bis alle Pods des Deployments bereit sind, hoechstens 180 Sekunden
 kubectl rollout status deployment/hallo --timeout=180s
 ```
 
 Wartet, bis alle Pods des Deployments laufen, höchstens 180 Sekunden. Erwartet: `successfully rolled out`. Bricht der Befehl ab, wendet die Reihenfolge aus Lab 1 an: `get pods`, `describe pod`, `logs`.
 
 ```bash
+# Deployment, Pods und Service auf einen Blick, mit Node und IP
 kubectl get deployment,pods,service -o wide
 ```
 
@@ -131,6 +143,7 @@ An Tag 1 bedeutet `1/1` nur, dass der Container läuft. Ob die Anwendung wirklic
 ### 2.3 Checkpoint
 
 ```bash
+# Checkpoint: Replikas, Service, Selektor, Ports und HTTP-Antwort pruefen
 python3 scripts/pruefen.py lab02
 ```
 
@@ -139,6 +152,8 @@ Das Skript prüft Replikas, Service, Selektor, Ports und die HTTP-Antwort. Jede 
 ### 2.4 Die Anwendung aufrufen
 
 ```bash
+# Tunnel von Port 8080 eures Rechners zu Port 80 des Service.
+# Laeuft im Vordergrund, beenden mit Strg+C.
 kubectl port-forward service/hallo 8080:80
 ```
 
@@ -151,6 +166,7 @@ Baut einen Tunnel von Port 8080 eures Rechners zu Port 80 des Service. Der Befeh
 Öffnet ein weiteres Terminal und lasst dort laufen:
 
 ```bash
+# Pods beobachten: jede Aenderung erscheint als neue Zeile. Beenden mit Strg+C
 kubectl get pods -w
 ```
 
@@ -159,8 +175,13 @@ kubectl get pods -w
 ### 3.1 Einen Pod löschen
 
 ```bash
+# Aktuelle Pods mit Status anzeigen
 kubectl get pods
+
+# Einen Pod loeschen. Das Deployment legt sofort einen neuen an
 kubectl delete pod POD_NAME
+
+# Neuer Pod mit neuem Namen, Node und IP
 kubectl get pods -o wide
 ```
 
@@ -173,15 +194,23 @@ Lief euer Port-Forward über den gelöschten Pod, ist er jetzt abgebrochen. Star
 ### 3.2 Skalieren
 
 ```bash
+# Sollzustand im Cluster auf vier Pods setzen. Die Datei bleibt unveraendert
 kubectl scale deployment hallo --replicas=4
+
+# Warten, bis alle Pods des Deployments bereit sind, hoechstens 180 Sekunden
 kubectl rollout status deployment/hallo --timeout=180s
+
+# Aktuelle Pods mit Status anzeigen
 kubectl get pods
 ```
 
 `scale` ändert die gewünschte Anzahl direkt im Cluster. Erwartet: vier Pods `Running`. Der Service nimmt die neuen Pods automatisch auf, weil sie dasselbe Label tragen.
 
 ```bash
+# Zurueck auf zwei Pods. Kubernetes beendet die ueberzaehligen
 kubectl scale deployment hallo --replicas=2
+
+# Warten, bis alle Pods des Deployments bereit sind, hoechstens 180 Sekunden
 kubectl rollout status deployment/hallo --timeout=180s
 ```
 
@@ -192,6 +221,8 @@ Achtung: `scale` ändert nur den Cluster, nicht eure Datei. Ein erneutes `kubect
 ### 3.3 In einen Pod hineinschauen
 
 ```bash
+# Befehl in einem laufenden Container ausfuehren: Variable HOSTNAME ausgeben.
+# Einfache Anfuehrungszeichen, damit eure Shell $HOSTNAME nicht vorher ersetzt.
 kubectl exec deployment/hallo -- sh -c 'echo "$HOSTNAME"'
 ```
 
@@ -200,6 +231,7 @@ kubectl exec deployment/hallo -- sh -c 'echo "$HOSTNAME"'
 ### 3.4 Logs aller Pods
 
 ```bash
+# Logs aller Pods mit app=hallo, Pod-Name vor jeder Zeile, letzte 20 Zeilen je Pod
 kubectl logs -l app=hallo --prefix --tail=20
 ```
 
@@ -220,21 +252,31 @@ Bisher steckt die gesamte Konfiguration im Image. Für eine andere Begrüßung m
 ### 4.1 Version 2.0 bauen und ausrollen
 
 ```bash
+# Gleicher Code, neue Versionsbezeichnung 2.0. Neuer Tag heisst neues Image
 docker build --build-arg APP_VERSION=2.0 -t hallo-app:2.0 lab02-hallo-app
+
+# Version 2.0 in den Cluster kopieren
 minikube image load hallo-app:2.0
 ```
 
 Gleicher Quellcode, neue Versionsbezeichnung. Neuer Tag heißt für Kubernetes: neues Image.
 
 ```bash
+# Secret direkt per Befehl anlegen, ohne Datei. So steht kein Passwort im Repository
 kubectl create secret generic hallo-secret --from-literal=DB_PASSWORT=uebung123
 ```
 
 Legt ein Secret direkt per Befehl an, ohne Datei. So landet das Passwort nicht im Repository. Bei einem wiederholten Durchlauf meldet der Befehl `AlreadyExists`. Das vorhandene Übungs-Secret reicht dann. `DB_PASSWORT` zeigt nur, wie ein Secret eingebunden wird. Es gibt keine Datenbank, und die Anwendung gibt den Wert nicht aus.
 
 ```bash
+# ConfigMap, Service und erweitertes Deployment anwenden. Das Deployment
+# ersetzt die Pods von Tag 1 schrittweise (Rolling Update).
 kubectl apply -f lab02-hallo-app/betrieb/
+
+# Warten, bis alle Pods des Deployments bereit sind, hoechstens 180 Sekunden
 kubectl rollout status deployment/hallo --timeout=180s
+
+# Checkpoint: ConfigMap, Secret, Probes, Ressourcen und Version 2.0
 python3 scripts/pruefen.py betrieb
 ```
 
@@ -245,13 +287,17 @@ Der Ordner `betrieb/` enthält eine ConfigMap, einen Service und ein erweitertes
 Ändert `GREETING` in [betrieb/configmap.yaml](betrieb/configmap.yaml) und wendet nur diese Datei an:
 
 ```bash
+# Nur die geaenderte ConfigMap anwenden. Laufende Pods merken davon nichts
 kubectl apply -f lab02-hallo-app/betrieb/configmap.yaml
 ```
 
 Startet den Port-Forward neu und ruft die Seite auf. Die alte Begrüßung bleibt. Warum? Umgebungsvariablen werden nur beim Start eines Containers gesetzt. Die laufenden Pods kennen den neuen Wert nicht.
 
 ```bash
+# Alle Pods nacheinander neu starten. Neue Pods lesen die ConfigMap beim Start
 kubectl rollout restart deployment/hallo
+
+# Warten, bis alle Pods des Deployments bereit sind, hoechstens 180 Sekunden
 kubectl rollout status deployment/hallo --timeout=180s
 ```
 
@@ -278,28 +324,40 @@ Ein Secret ist nicht sicher, nur weil sein Wert in Base64 dargestellt wird. Base
 ### 5.2 Ein kaputtes Update ausrollen und zurücknehmen
 
 ```bash
+# Absichtlich kaputtes Update: Container hallo bekommt einen Tag, den es nicht gibt
 kubectl set image deployment/hallo hallo=hallo-app:nicht-vorhanden
 ```
 
 Ändert das Image auf einen Tag, den es nicht gibt. `hallo=` ist der Name des Containers im Deployment.
 
 ```bash
+# Soll nach 30 Sekunden scheitern: Der neue Pod findet sein Image nicht
 kubectl rollout status deployment/hallo --timeout=30s
 ```
 
 Soll nach 30 Sekunden fehlschlagen. Der neue Pod kann das Image nicht laden.
 
 ```bash
+# Aktuelle Pods mit Status anzeigen
 kubectl get pods
+
+# Alle Events im Namespace nach Zeit. Nennt das fehlende Image
 kubectl get events --sort-by=.metadata.creationTimestamp
 ```
 
 Erwartet: zwei alte Pods weiter `Running` und `1/1`, ein neuer Pod in `ErrImagePull` oder `ImagePullBackOff`. Die Events nennen das fehlende Image. Die Anwendung bleibt erreichbar, weil `maxUnavailable: 0` die alten Pods schützt, solange kein neuer bereit ist.
 
 ```bash
+# Gespeicherte Staende (Revisionen) des Deployments anzeigen
 kubectl rollout history deployment/hallo
+
+# Zur vorherigen Revision zurueck. Aendert nur den Cluster, nicht eure Dateien
 kubectl rollout undo deployment/hallo
+
+# Warten, bis alle Pods des Deployments bereit sind, hoechstens 180 Sekunden
 kubectl rollout status deployment/hallo --timeout=180s
+
+# Checkpoint: ConfigMap, Secret, Probes, Ressourcen und Version 2.0
 python3 scripts/pruefen.py betrieb
 ```
 
@@ -314,8 +372,13 @@ Kubernetes rollt ein fehlgeschlagenes Update nicht von selbst zurück. Es wartet
 Nach Tag 1 könnt ihr die Anwendung stehen lassen oder `kubectl delete -f lab02-hallo-app/k8s/` ausführen. Vor Lab 3 nach Tag 2:
 
 ```bash
+# Mit welchem Cluster spricht kubectl? Erwartet: minikube
 kubectl config current-context
+
+# Alle Objekte aus den Dateien in betrieb/ loeschen
 kubectl delete -f lab02-hallo-app/betrieb/
+
+# Das Secret steht in keiner Datei und wird einzeln geloescht
 kubectl delete secret hallo-secret
 ```
 

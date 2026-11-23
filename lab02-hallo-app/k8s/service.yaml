@@ -1,10 +1,18 @@
+# Service: feste Adresse und fester Name "hallo" fuer alle Pods mit app=hallo.
+# Pods kommen und gehen, der Service bleibt. Ohne Angabe von type ist er
+# vom Typ ClusterIP, also nur innerhalb des Clusters erreichbar.
+# Von eurem Rechner aus kommt ihr per "kubectl port-forward" heran.
 apiVersion: v1
 kind: Service
 metadata:
   name: hallo
 spec:
+  # Der Service leitet an alle bereiten Pods mit diesem Label weiter.
+  # Er kennt keine Pod-Namen, nur Labels.
   selector:
     app: hallo
   ports:
+    # port: der Port des Service (http://hallo:80 im Cluster).
+    # targetPort: der Port im Container (containerPort im Deployment).
     - port: 80
       targetPort: 8080

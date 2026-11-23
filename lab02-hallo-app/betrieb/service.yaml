@@ -1,10 +1,17 @@
+# Derselbe Service wie in k8s/service.yaml. Er liegt hier noch einmal, damit
+# "kubectl apply -f lab02-hallo-app/betrieb/" alles fuer Tag 2 enthaelt.
+# Gleicher Name: apply aktualisiert den bestehenden Service, statt einen
+# zweiten anzulegen.
 apiVersion: v1
 kind: Service
 metadata:
   name: hallo
 spec:
+  # An alle bereiten Pods mit app=hallo weiterleiten. Ab Tag 2 entscheidet
+  # die readinessProbe, welcher Pod als bereit gilt.
   selector:
     app: hallo
   ports:
+    # Service-Port 80 auf Container-Port 8080.
     - port: 80
       targetPort: 8080

@@ -1,27 +1,54 @@
+# Deployment fuer Tag 1: haelt zwei Kopien der hallo-app am Laufen.
+# Kubernetes vergleicht staendig diesen Sollzustand mit dem Ist-Zustand
+# und ersetzt fehlende Pods selbststaendig.
+
+# API-Gruppe und Objektart. Deployments liegen in der Gruppe apps.
 apiVersion: apps/v1
 kind: Deployment
+
+# Name und Labels des Deployments selbst.
 metadata:
   name: hallo
   labels:
     app: hallo
+
 spec:
+  # Sollzustand: zwei Pods. "kubectl scale" aendert diesen Wert nur im Cluster,
+  # das naechste "kubectl apply" setzt wieder den Wert aus dieser Datei.
   replicas: 2
+
+  # Woran das Deployment "seine" Pods erkennt. Muss zu den Labels
+  # unter template.metadata.labels passen, sonst lehnt der Cluster ab.
   selector:
     matchLabels:
       app: hallo
+
+  # Vorlage fuer jeden Pod, den das Deployment anlegt.
   template:
     metadata:
+      # Jeder Pod bekommt dieses Label. Ueber dasselbe Label findet
+      # auch der Service die Pods.
       labels:
         app: hallo
     spec:
       containers:
         - name: hallo
+          # Lokal gebautes Image, per "minikube image load" in den Cluster kopiert.
           image: hallo-app:1.0
+          # IfNotPresent: vorhandenes Image im Cluster verwenden, nicht aus dem
+          # Internet laden. Ein lokales Image gibt es in keiner Registry.
           imagePullPolicy: IfNotPresent
+
+          # Umgebungsvariablen fuer den Container.
           env:
+            # Kubernetes setzt den Pod-Namen ein (Downward API). Die Anwendung
+            # nennt ihn in jeder Antwort, so seht ihr, welcher Pod geantwortet hat.
             - name: HOSTNAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+
+          # Port, auf dem die Anwendung im Container hoert. Rein informativ,
+          # der Service leitet ueber targetPort hierher weiter.
           ports:
             - containerPort: 8080

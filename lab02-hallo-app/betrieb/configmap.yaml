@@ -1,3 +1,7 @@
+# ConfigMap: Konfiguration ausserhalb des Images. Fuer eine andere Begruessung
+# muss niemand neu bauen. Das Deployment liest den Schluessel GREETING als
+# Umgebungsvariable. Die wird nur beim Containerstart gesetzt: Nach einer
+# Aenderung hier braucht es "kubectl rollout restart deployment/hallo".
 apiVersion: v1
 kind: ConfigMap
 metadata:

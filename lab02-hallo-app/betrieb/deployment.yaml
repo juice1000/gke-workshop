@@ -1,3 +1,6 @@
+# Deployment fuer Tag 2: wie k8s/deployment.yaml, ergaenzt um Konfiguration
+# aus ConfigMap und Secret, Ressourcen, Probes und eine Update-Strategie.
+# Gleicher Name "hallo": apply ersetzt das Deployment von Tag 1 per Rolling Update.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,14 +9,29 @@ metadata:
     app: hallo
 spec:
   replicas: 2
+
+  # So viele alte ReplicaSets bleiben stehen. Sie sind die Ziele fuer
+  # "kubectl rollout undo" und erscheinen in "kubectl rollout history".
   revisionHistoryLimit: 5
+
+  # Ein neuer Pod muss 3 Sekunden bereit sein, bevor er als verfuegbar zaehlt.
+  # Schuetzt vor Pods, die kurz bereit sind und gleich wieder ausfallen.
   minReadySeconds: 3
+
+  # Kommt ein Rollout 180 Sekunden lang nicht voran, meldet das Deployment
+  # "ProgressDeadlineExceeded". Es rollt aber nicht selbst zurueck.
   progressDeadlineSeconds: 180
+
+  # Rolling Update: Pods werden einzeln ausgetauscht.
   strategy:
     type: RollingUpdate
     rollingUpdate:
+      # Hoechstens ein Pod zusaetzlich zur Sollzahl waehrend des Updates.
       maxSurge: 1
+      # Kein bereiter Pod faellt weg, bevor ein neuer bereit ist. Deshalb
+      # bleibt die Anwendung erreichbar, auch wenn das neue Release kaputt ist.
       maxUnavailable: 0
+
   selector:
     matchLabels:
       app: hallo
@@ -22,34 +40,56 @@ spec:
       labels:
         app: hallo
     spec:
+      # Zeit zwischen dem Signal zum Beenden (SIGTERM) und dem harten Abbruch.
+      # Spring Boot beendet laufende Anfragen in dieser Zeit sauber.
       terminationGracePeriodSeconds: 30
       containers:
         - name: hallo
+          # Neue Version. Neuer Tag heisst fuer Kubernetes: neues Image,
+          # also ein Rolling Update.
           image: hallo-app:2.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+
           env:
+            # Pod-Name, wie an Tag 1.
             - name: HOSTNAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            # Begruessung aus der ConfigMap hallo-config, Schluessel GREETING.
+            # Fehlen ConfigMap oder Schluessel, startet der Container nicht:
+            # Status CreateContainerConfigError.
             - name: GREETING
               valueFrom:
                 configMapKeyRef:
                   name: hallo-config
                   key: GREETING
+            # Wert aus dem Secret hallo-secret. Das Secret legt ihr per Befehl
+            # an, damit kein Passwort im Repository steht. Die Anwendung gibt
+            # den Wert nicht aus.
             - name: DB_PASSWORT
               valueFrom:
                 secretKeyRef:
                   name: hallo-secret
                   key: DB_PASSWORT
+
           resources:
+            # Requests: Reservierung fuer die Planung. Der Scheduler setzt den
+            # Pod nur auf einen Node, der so viel freie Kapazitaet hat.
             requests:
               cpu: 250m
               memory: 512Mi
+            # Speicherlimit fuer den ganzen Container, inklusive Java-Heap und
+            # JVM-Nebenspeicher. Wer es ueberschreitet, wird beendet (OOMKilled).
+            # Ein CPU-Limit fehlt bewusst: Es wuerde die JVM nur bremsen.
             limits:
               memory: 512Mi
+
+          # Startup-Probe: Ist der Start abgeschlossen? Bis zu 30 Versuche im
+          # Abstand von 5 Sekunden, also etwa 150 Sekunden fuer den JVM-Start.
+          # Bis sie erfolgreich ist, laufen Readiness und Liveness noch nicht.
           startupProbe:
             httpGet:
               path: /actuator/health/liveness
@@ -57,6 +97,10 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 2
             failureThreshold: 30
+
+          # Readiness-Probe: Darf der Pod Anfragen bekommen? Schlaegt sie
+          # dreimal fehl, nimmt der Service den Pod aus der Verteilung.
+          # Kein Neustart. READY zeigt dann 0/1.
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -64,6 +108,9 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 2
             failureThreshold: 3
+
+          # Liveness-Probe: Lebt die Anwendung noch? Schlaegt sie dreimal
+          # fehl, startet Kubernetes den Container neu (RESTARTS steigt).
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
