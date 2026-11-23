@@ -122,6 +122,23 @@ Aus den Schritten ergibt sich das Vorgehen für jede Fehlersuche im Kurs:
 3. `kubectl logs NAME`: Was sagt die Anwendung?
 4. `kubectl get events --sort-by=.metadata.creationTimestamp`: Was ist im Namespace passiert?
 
+## Selbst herausfinden: Lösungen
+
+Lösungen zu den Aufgaben im Branch `practice`.
+
+```bash
+# 1. Nur Warnungen
+kubectl get events -n kube-system --field-selector type=Warning
+# 2. Pod-Name und Image
+kubectl get pods -n kube-system -o 'custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[*].image'
+# 3. Nach Neustarts sortiert
+kubectl get pods -n kube-system --sort-by='.status.containerStatuses[0].restartCount'
+# 4. Kurzformen und Spalte NAMESPACED
+kubectl api-resources
+```
+
+Zu 4: `deploy` und `svc`. `namespaces` hat `NAMESPACED false`, ein Namespace liegt also in keinem anderen Namespace.
+
 ## Checkpoint
 
 ```bash
