@@ -1,0 +1,5 @@
+# Immer LF, auch wenn Git unter Windows core.autocrlf=true setzt.
+# Bash-Skripte mit CRLF brechen sonst mit "invalid option name" ab.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
