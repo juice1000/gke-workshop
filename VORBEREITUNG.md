@@ -135,3 +135,17 @@ Falls euer Netzwerk einen Proxy nutzt:
 ## Wenn etwas nicht geht
 
 Zeigt dem Trainer die Ausgabe von `bash lab00-check/check.sh` und die Fehlermeldung. Ein Rechner, auf dem es am ersten Tag nicht läuft, ist kein Problem: Ihr arbeitet dann zu zweit, und für den Cloud-Teil gibt es die Cloud Shell im Browser als Ausweg.
+
+### `invalid option name` oder `$'\r': command not found`
+
+Die Skripte haben Windows-Zeilenenden. Das passiert, wenn Git unter Windows beim Klonen Zeilenenden umwandelt. Repariert es in der Ubuntu-Shell im Repository-Ordner:
+
+```bash
+git config core.autocrlf false
+git pull
+git rm -rq --cached .
+git reset --hard
+bash scripts/setup.sh
+```
+
+`git reset --hard` verwirft eigene Änderungen an Dateien im Repository. Am ersten Morgen gibt es noch keine. Alternativ klont ihr das Repository neu, und zwar in der Ubuntu-Shell im Linux-Home (`~/`), nicht unter `/mnt/c/`.
