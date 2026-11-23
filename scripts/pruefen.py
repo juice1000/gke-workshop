@@ -12,6 +12,11 @@ import urllib.error
 import urllib.request
 
 
+# Wo die Manifeste je Etappe liegen. Fuer Hinweise bei fehlenden Objekten.
+FOLDERS = {"lab02": "lab02-hallo-app/k8s/", "betrieb": "lab02-hallo-app/betrieb/",
+           "gke": "out/lab04/", "abschluss": "out/lab05/starter/"}
+
+
 class Checkpoint:
     def __init__(self, context, namespace):
         self.command = ["kubectl", "--context", context, "--namespace", namespace]
@@ -24,14 +29,33 @@ class Checkpoint:
             self.failures += 1
             print(f"FEHLT: {message}. Hinweis: {hint}")
 
-    def get(self, *args):
+    def get(self, *args, missing=None):
+        """Objekt als JSON lesen. missing=(Meldung, Hinweis) fuer ein fehlendes Objekt."""
         result = subprocess.run(self.command + ["--request-timeout=10s", "get", *args, "-o", "json"],
                                 capture_output=True, text=True, timeout=20)
         if result.returncode:
             # Keine Objektinhalte ausgeben, insbesondere keine Secrets.
-            self.check(False, f"{' '.join(args)} erreichbar", "Kontext, Namespace, Namen und Rechte pruefen")
+            if missing and "NotFound" in result.stderr:
+                self.check(False, *missing)
+            else:
+                self.check(False, f"{' '.join(args)} erreichbar", "Kontext, Namespace, Namen und Rechte pruefen")
             return {}
         return json.loads(result.stdout)
+
+    def pod_problems(self):
+        """Gruende, warum Pods von hallo nicht laufen, z. B. ImagePullBackOff."""
+        reasons = set()
+        for pod in self.get("pods", "-l", "app=hallo").get("items", []):
+            for condition in pod.get("status", {}).get("conditions", []):
+                if condition.get("reason") == "Unschedulable":
+                    reasons.add("Unschedulable")
+            for status in pod.get("status", {}).get("containerStatuses", []):
+                for where in ("state", "lastState"):
+                    detail = status.get(where, {})
+                    reason = detail.get("waiting", {}).get("reason") or detail.get("terminated", {}).get("reason")
+                    if reason and reason not in ("ContainerCreating", "Completed"):
+                        reasons.add(reason)
+        return sorted(reasons)
 
     def response(self):
         # Kurzlebiger Tunnel, nur auf Loopback. Auch bei Fehlern wieder schliessen.
@@ -74,23 +98,37 @@ class Checkpoint:
         return answer
 
     def application(self, stage):
-        deployment = self.get("deployment", "hallo")
+        folder = FOLDERS[stage]
+        deployment = self.get("deployment", "hallo", missing=(
+            "Deployment hallo vorhanden",
+            f"kubectl apply -f {folder} ausfuehren; in deployment.yaml muss metadata.name hallo sein"))
         spec, status = deployment.get("spec", {}), deployment.get("status", {})
-        replicas = spec.get("replicas", 0)
-        generation = deployment.get("metadata", {}).get("generation", 0)
-        self.check(replicas == 2 and status.get("observedGeneration", 0) >= generation
-                   and status.get("updatedReplicas", 0) == replicas
-                   and status.get("availableReplicas", 0) == replicas
-                   and status.get("replicas", 0) == replicas,
-                   "Zwei aktuelle, verfuegbare Replikas", "kubectl rollout status deployment/hallo; dann describe und Events")
-        service = self.get("service", "hallo")
-        ports = service.get("spec", {}).get("ports", [])
-        self.check(service.get("spec", {}).get("selector") == {"app": "hallo"}
-                   and any(p.get("port") == 80 and p.get("targetPort") == 8080 for p in ports),
-                   "Service waehlt app=hallo und leitet 80 auf 8080 weiter", "service.yaml: selector, port und targetPort")
-        containers = spec.get("template", {}).get("spec", {}).get("containers", [])
+        template = spec.get("template", {})
+        containers = template.get("spec", {}).get("containers", [])
         container = next((item for item in containers if item.get("name") == "hallo"), {})
-        if stage != "lab02":
+        if deployment:
+            self.check(spec.get("selector", {}).get("matchLabels") == {"app": "hallo"}
+                       and template.get("metadata", {}).get("labels", {}).get("app") == "hallo",
+                       "Deployment waehlt seine Pods ueber das Label app=hallo",
+                       "deployment.yaml: selector.matchLabels und template.metadata.labels auf app: hallo")
+            self.check(spec.get("replicas") == 2, "Sollzustand: zwei Replikas",
+                       f"deployment.yaml: spec.replicas ist {spec.get('replicas')}, erwartet 2. "
+                       "Nach kubectl scale die Datei erneut anwenden")
+            self.check(bool(container), "Container mit dem Namen hallo vorhanden",
+                       "deployment.yaml: containers[].name: hallo")
+        if deployment and stage == "lab02":
+            self.check(container.get("image") == "hallo-app:1.0", "Image hallo-app:1.0",
+                       f"deployment.yaml: image ist {container.get('image')}, erwartet hallo-app:1.0")
+            self.check(container.get("imagePullPolicy") in ("IfNotPresent", "Never"),
+                       "Image wird aus minikube verwendet, nicht aus dem Internet geladen",
+                       "deployment.yaml: imagePullPolicy: IfNotPresent. Das Image gibt es in keiner Registry")
+            self.check(any(port.get("containerPort") == 8080 for port in container.get("ports", [])),
+                       "Container-Port 8080", "deployment.yaml: ports[].containerPort: 8080")
+            hostname = next((item for item in container.get("env", []) if item.get("name") == "HOSTNAME"), {})
+            self.check(hostname.get("valueFrom", {}).get("fieldRef", {}).get("fieldPath") == "metadata.name",
+                       "HOSTNAME enthaelt den Pod-Namen",
+                       "deployment.yaml: env HOSTNAME mit valueFrom.fieldRef.fieldPath: metadata.name")
+        if deployment and stage != "lab02":
             paths = {"startupProbe": "/actuator/health/liveness",
                      "livenessProbe": "/actuator/health/liveness",
                      "readinessProbe": "/actuator/health/readiness"}
@@ -114,28 +152,70 @@ class Checkpoint:
                            "DB_PASSWORT stammt aus hallo-secret", "valueFrom.secretKeyRef")
             self.check(spec.get("strategy", {}).get("rollingUpdate", {}).get("maxUnavailable") == 0,
                        "Rollout behaelt alle bisherigen bereiten Replikas", "strategy.rollingUpdate.maxUnavailable: 0")
-        response = self.response() if deployment and service else ""
+        if deployment:
+            generation = deployment.get("metadata", {}).get("generation", 0)
+            replicas = spec.get("replicas", 0)
+            ready = (replicas > 0 and status.get("observedGeneration", 0) >= generation
+                     and status.get("updatedReplicas", 0) == replicas
+                     and status.get("availableReplicas", 0) == replicas
+                     and status.get("replicas", 0) == replicas)
+            hint = "kubectl rollout status deployment/hallo abwarten; dann describe und Events"
+            problems = [] if ready else self.pod_problems()
+            if problems:
+                hint = ("Pods melden " + ", ".join(problems)
+                        + ". kubectl describe pod -l app=hallo, Abschnitt Events")
+                if stage in ("lab02", "betrieb") and any("Image" in reason for reason in problems):
+                    hint += ". Image-Name, Tag und minikube image load pruefen"
+            self.check(ready, "Alle Replikas aktuell und verfuegbar", hint)
+
+        service = self.get("service", "hallo", missing=(
+            "Service hallo vorhanden",
+            f"kubectl apply -f {folder} ausfuehren; in service.yaml muss metadata.name hallo sein"))
+        ports_ok = False
+        if service:
+            selector = service.get("spec", {}).get("selector")
+            self.check(selector == {"app": "hallo"}, "Service waehlt Pods mit app=hallo",
+                       f"service.yaml: selector ist {selector}, er muss zum Pod-Label aus dem Deployment passen")
+            ports = service.get("spec", {}).get("ports", [])
+            ports_ok = any(p.get("port") == 80 and p.get("targetPort") == 8080 for p in ports)
+            self.check(ports_ok,
+                       "Service leitet Port 80 auf Container-Port 8080 weiter",
+                       "service.yaml: ports[].port: 80 und targetPort: 8080 (containerPort aus dem Deployment)")
+
         # Der EndpointSlice-Controller kann dem Deployment-Status kurz nachlaufen.
+        expected = spec.get("replicas") or 2
         addresses = set()
         for _ in range(10):
+            if not service:
+                break
             slices = self.get("endpointslices.discovery.k8s.io", "-l", "kubernetes.io/service-name=hallo")
-            addresses = {address for item in slices.get("items", []) for endpoint in item.get("endpoints", [])
-                         if endpoint.get("conditions", {}).get("ready") is True
-                         for address in endpoint.get("addresses", [])}
-            if len(addresses) == 2 or not deployment:
+            # Ohne passende Pods liefert die API "endpoints": null statt einer Liste.
+            addresses = {address for item in slices.get("items") or [] for endpoint in item.get("endpoints") or []
+                         if (endpoint.get("conditions") or {}).get("ready") is True
+                         for address in endpoint.get("addresses") or []}
+            if len(addresses) == expected or not deployment:
                 break
             time.sleep(0.5)
-        self.check(len(addresses) == 2, "Service hat zwei bereite Pod-Adressen",
-                   "Pod-Labels, Service-Selektor und Readiness pruefen")
+        self.check(bool(service) and len(addresses) == expected,
+                   f"Service erreicht alle bereiten Pods ({len(addresses)} von {expected})",
+                   "Service-Selektor mit den Pod-Labels vergleichen (kubectl get pods --show-labels) "
+                   "und warten, bis die Pods bereit sind")
+
+        # Ohne bereite Pod-Adresse oder mit falschem Port erreicht der Tunnel nichts.
+        # Dann nicht 60 Sekunden warten, sondern auf die Fehler oben verweisen.
+        reachable = bool(deployment and service and addresses and ports_ok)
+        response = self.response() if reachable else ""
         expected_version = "1.0" if stage == "lab02" else "2.0"
         self.check("von Pod " in response and f"Version {expected_version}" in response,
                    f"HTTP-Antwort mit Pod-Name und Version {expected_version}",
-                   "Image-Version, rollout status und port-forward pruefen")
+                   "Erst die FEHLT-Zeilen oben beheben" if not reachable
+                   else "Image-Version, rollout status und port-forward pruefen")
         actual_pods = self.get("pods", "-l", "app=hallo")
         names = {pod["metadata"]["name"] for pod in actual_pods.get("items", [])}
         match = re.search(r"von Pod (\S+), Version ", response)
-        self.check(bool(match) and match.group(1) in names,
-                   "HTTP-Antwort nennt einen tatsaechlichen Pod", "HOSTNAME per fieldRef metadata.name setzen")
+        if response:
+            self.check(bool(match) and match.group(1) in names,
+                       "HTTP-Antwort nennt einen tatsaechlichen Pod", "HOSTNAME per fieldRef metadata.name setzen")
         if stage != "lab02":
             config = self.get("configmap", "hallo-config")
             greeting = config.get("data", {}).get("GREETING", "")

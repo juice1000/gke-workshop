@@ -81,11 +81,11 @@ Auf GKE übernimmt diese Rolle später eine Registry: Ihr ladet das Image hoch, 
 
 ## 2. Deployment und Service
 
-### 2.1 Das Deployment lesen
+### 2.1 Aufgabe: Das Deployment schreiben
 
-Öffnet [k8s/deployment.yaml](k8s/deployment.yaml). Ein **Manifest** beschreibt den gewünschten Zustand. Ihr sagt Kubernetes, was laufen soll, nicht wie es zu starten ist.
+[k8s/deployment.yaml](k8s/deployment.yaml) ist leer. Die Kommentare darin beschreiben, was das Deployment leisten soll. Schreibt das Manifest selbst. Ein **Manifest** beschreibt den gewünschten Zustand. Ihr sagt Kubernetes, was laufen soll, nicht wie es zu starten ist.
 
-Im Deployment:
+Diese Felder braucht ihr:
 
 | Feld | Bedeutung |
 | --- | --- |
@@ -100,7 +100,7 @@ Im Deployment:
 
 ### 2.2 Aufgabe: Den Service schreiben
 
-Der Service in [k8s/service.yaml](k8s/service.yaml) ist unvollständig. Ergänzt die drei Stellen mit `TODO`:
+[k8s/service.yaml](k8s/service.yaml) ist ebenfalls leer. Die Kommentare beschreiben, was der Service leisten soll. Neben `apiVersion`, `kind` und `metadata` braucht ihr:
 
 | Feld | Was hineingehört |
 | --- | --- |
@@ -110,7 +110,7 @@ Der Service in [k8s/service.yaml](k8s/service.yaml) ist unvollständig. Ergänzt
 
 Merkt euch: **Labels verbinden alles.** Der Service kennt keine Pod-Namen, er sucht nach dem Label.
 
-Hilfe: `kubectl explain service.spec.selector` und `kubectl explain service.spec.ports`. Wendet ihr die Datei unverändert an, lehnt der Cluster sie ab. Lest die Fehlermeldung, sie nennt das Feld.
+Hilfe: `kubectl explain service.spec.selector` und `kubectl explain service.spec.ports`. Ob eine Datei gültig ist, prüft ihr ohne Änderung am Cluster mit `kubectl apply --dry-run=server -f DATEI`. Lest bei einem Fehler die Meldung, sie nennt das Feld.
 
 ### 2.3 Ausrollen
 

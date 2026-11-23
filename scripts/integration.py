@@ -30,7 +30,7 @@ def get(*args):
 
 
 # Im Branch practice sind diese Dateien Uebungen. Der Probelauf nutzt die Loesung aus main.
-UEBUNGEN = {"lab02-hallo-app/k8s/service.yaml", "lab02-hallo-app/betrieb/deployment.yaml",
+UEBUNGEN = {"lab02-hallo-app/k8s/deployment.yaml", "lab02-hallo-app/k8s/service.yaml", "lab02-hallo-app/betrieb/deployment.yaml",
             "lab06-betrieb/pdb.yaml"}
 
 
@@ -125,7 +125,8 @@ def main():
                               capture_output=True, timeout=60)
     assert negative.returncode != 0, "Checkpoint akzeptiert fehlende Anwendung"
     # Unvollstaendige Uebungsdateien muessen mit einer klaren Fehlermeldung scheitern.
-    for starter in ("lab02-hallo-app/k8s/service.yaml", "lab06-betrieb/pdb.yaml"):
+    for starter in ("lab02-hallo-app/k8s/deployment.yaml", "lab02-hallo-app/k8s/service.yaml",
+                    "lab06-betrieb/pdb.yaml"):
         if (ROOT / starter).read_text() != loesung(starter):
             rejected = command("apply", "--dry-run=server", "-f", str(ROOT / starter), success=False)
             assert rejected.returncode != 0, f"Cluster akzeptiert unvollstaendige Datei {starter}"

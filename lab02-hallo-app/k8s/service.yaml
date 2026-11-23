@@ -1,15 +1,19 @@
-# Uebung: Diesen Service vervollstaendigt ihr selbst.
-# Vorlage fuer Aufbau und Felder: kubectl explain service.spec
-apiVersion: v1
-kind: Service
-metadata:
-  name: hallo
-spec:
-  selector:
-    # TODO: Label, das die Pods aus deployment.yaml tragen.
-    TODO: TODO
-  ports:
-    # TODO: Der Service bietet Port 80 an.
-    - port: 0
-      # TODO: Weiterleiten an den Port, auf dem der Container hoert.
-      targetPort: 0
+# Uebung: Schreibt hier den Service fuer die hallo-app selbst.
+#
+# Was der Service leisten soll:
+#   - Objektart Service aus der API-Version v1, Name: hallo
+#   - Er leitet an alle Pods mit dem Label app: hallo weiter
+#     (dasselbe Label, das ihr im Deployment vergeben habt)
+#   - Der Service bietet Port 80 an
+#   - Er leitet an den Port weiter, auf dem der Container hoert
+#     (steht in eurem Deployment)
+#   - Kein type angeben: Der Standard ClusterIP genuegt. Von eurem Rechner
+#     aus kommt ihr spaeter per kubectl port-forward heran
+#
+# Hilfe:
+#   kubectl explain service.spec.selector
+#   kubectl explain service.spec.ports
+#   Beispiel in der Doku: https://kubernetes.io/docs/concepts/services-networking/service/
+#
+# Pruefen ohne Cluster-Aenderung:
+#   kubectl apply --dry-run=server -f lab02-hallo-app/k8s/service.yaml

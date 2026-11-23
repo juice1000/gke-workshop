@@ -1,27 +1,23 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: hallo
-  labels:
-    app: hallo
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: hallo
-  template:
-    metadata:
-      labels:
-        app: hallo
-    spec:
-      containers:
-        - name: hallo
-          image: hallo-app:1.0
-          imagePullPolicy: IfNotPresent
-          env:
-            - name: HOSTNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-          ports:
-            - containerPort: 8080
+# Uebung: Schreibt hier das Deployment fuer die hallo-app selbst.
+#
+# Was das Deployment leisten soll:
+#   - Objektart Deployment aus der API-Gruppe apps/v1, Name: hallo
+#   - Label app: hallo am Deployment selbst
+#   - Zwei Pods sollen laufen
+#   - Das Deployment erkennt seine Pods am Label app: hallo
+#   - Jeder Pod bekommt das Label app: hallo. Es muss zum Selektor passen
+#   - Ein Container namens hallo mit dem Image hallo-app:1.0
+#   - Das Image liegt nur lokal in minikube. Kubernetes soll es nicht aus
+#     dem Internet laden, sondern das vorhandene verwenden
+#   - Umgebungsvariable HOSTNAME mit dem Namen des Pods als Wert. Den Wert
+#     setzt Kubernetes selbst ein (Stichwort: fieldRef, metadata.name)
+#   - Die Anwendung hoert im Container auf Port 8080
+#
+# Hilfe:
+#   kubectl explain deployment.spec
+#   kubectl explain deployment.spec.template.spec.containers
+#   kubectl explain deployment.spec.template.spec.containers.env.valueFrom
+#   Beispiel in der Doku: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+#
+# Pruefen ohne Cluster-Aenderung:
+#   kubectl apply --dry-run=server -f lab02-hallo-app/k8s/deployment.yaml
