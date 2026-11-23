@@ -72,20 +72,7 @@ Warum antworten die alten Pods weiter? Sucht die beiden Einstellungen unter `str
 
 </details>
 
-<details>
-<summary>Lösungen</summary>
-
-| Release | Erwartetes Symptom | Ursache | Reparatur |
-| --- | --- | --- | --- |
-| A | `CreateContainerConfigError` | ConfigMap-Schlüssel `GRUSS` existiert nicht | `GREETING` referenzieren |
-| B | Container wird mit `OOMKilled` beendet | 512 MiB fest vorbelegter Heap plus JVM-Nebenspeicher passen nicht ins 512-MiB-Limit | Limit auf `1Gi` erhöhen oder Heap verkleinern |
-| C | Neuer Pod läuft, bleibt aber `0/1` | Readiness prüft einen nicht vorhandenen Pfad | `/actuator/health/readiness` eintragen |
-
-Release B nutzt `-Xms512m -Xmx512m -XX:+AlwaysPreTouch`. Das erzeugt die Speicherknappheit gezielt. Die hohe feste Heap-Vorgabe gehört nur zu diesem Fehlerfall. GKE-Admission und Clusterregeln können Manifeste ändern oder ablehnen; der Trainer prüft das Verhalten vorab im echten Cluster.
-
-Die vollständige Ausgangslösung liegt in `out/lab05/loesung/`, korrigierte Releases in `out/lab05/repariert/`. Die Vorlagen im Repository: [Deployment](loesung/deployment.yaml), [A](repariert/release-a.yaml), [B](repariert/release-b.yaml), [C](repariert/release-c.yaml). Vorlagen mit `WORKSHOP_IMAGE` erst rendern.
-
-</details>
+Kommt ihr nicht weiter, fragt den Trainer. Die Auflösung besprechen wir gemeinsam nach dem Lab.
 
 ## Etappe C: Rechte prüfen (10 Minuten)
 

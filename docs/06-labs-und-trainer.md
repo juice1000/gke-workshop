@@ -2,11 +2,36 @@
 
 ## Didaktik
 
-Die Labs übernehmen die Struktur des IaC-Workshops: kleine Ordner, deutsche Aufgaben, beobachtbare Ergebnisse, Checkpoints und direkt auffindbare Lösungen. Statt eines separaten `start`-Branches liegen unvollständige Starter und Lösungen nebeneinander. So bleiben Übungen und Lösungen in einem gemeinsamen Prüfablauf.
+Die Labs übernehmen die Struktur des IaC-Workshops: kleine Ordner, deutsche Aufgaben, beobachtbare Ergebnisse, Checkpoints und direkt auffindbare Lösungen. Übungen und Lösungen liegen in getrennten Branches: `practice` für die Teilnehmenden, `main` als Lösung. Der Probelauf prüft beide gemeinsam.
 
 Die ersten beiden Labs sind geführt. Lab 3 gibt ein festes Diagnoseverfahren vor, nennt die Ursache erst in der Auflösung. Lab 5 fordert das Schreiben der zuvor verwendeten Felder. Ein Repository allein ersetzt keine Erklärung: vor jeder Änderung den erwarteten Zustand abfragen und danach den Beleg ansehen.
 
 Alle Befehle werden aus dem Repository-Hauptordner ausgeführt. Die Übungsanwendung und die Objektnamen bleiben gleich. Lab 3 verwendet eigene Namen. Auf GKE arbeitet jede Person oder Gruppe in einem eigenen Namespace und nutzt einen eigenen Image-Namen.
+
+## Branches: practice und main
+
+Teilnehmende arbeiten im Branch `practice`. Dort sind einige Schritte Übungen: Dateien mit `TODO` und Aufgaben ohne vorgegebenen Befehl. Der Branch `main` enthält die vollständige Fassung und gilt als Lösung.
+
+| Lab | Übung in practice | Lösung in main |
+| --- | --- | --- |
+| 1 | Auflösung der Rallye nicht im README; Teil "Selbst herausfinden": Warning-Events, custom-columns, sort-by, api-resources | Siehe Lösungsskizze unten |
+| 2 Tag 1 | `k8s/service.yaml` schreiben; Pod löschen, skalieren, `logs -l --prefix` selbst finden; `APP_VERSION` per exec | `k8s/service.yaml`, README-Befehle |
+| 2 Tag 2 | Secret per Befehl; `GREETING` und `DB_PASSWORT` in `betrieb/deployment.yaml`; Rollback-Befehle; Bonus Secret dekodieren | `betrieb/deployment.yaml`, README-Befehle |
+| 3 | `diagnose.sh` ergänzen; ConfigMap für Fall 2 per Befehl; Auflösung nicht im README | `diagnose.sh`, `loesungen/`, Lösungstabelle im README |
+| 4 | Images mit `gcloud artifacts docker images list` prüfen | README |
+| 5 | Starter mit TODOs; Auflösung nicht im README | `loesung/`, `repariert/`, Lösungstabelle im README |
+| 6 | cordon und uncordon selbst finden; `pdb.yaml` schreiben | `pdb.yaml`, README-Befehle |
+
+Lösungsskizze Lab 1:
+
+```bash
+kubectl get events -n kube-system --field-selector type=Warning
+kubectl get pods -n kube-system -o 'custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[*].image'
+kubectl get pods -n kube-system --sort-by='.status.containerStatuses[0].restartCount'
+kubectl api-resources
+```
+
+Der Probelauf `scripts/dry-run.sh` läuft auch in `practice`. Für die Übungsdateien nimmt er die Fassung aus `main` und prüft zusätzlich, dass der Cluster die unvollständigen Dateien ablehnt. Änderungen an gemeinsamen Teilen zuerst in `main`, danach `main` in `practice` mergen.
 
 ## Zuordnung zur vorhandenen Notion-Fassung
 
@@ -48,7 +73,7 @@ Die folgenden Unterschiede wurden am 21.11.2026 in die Notion-Kapitel übernomme
 | Tag 2 Konfiguration | geänderte Begrüßung nach Rollout | Env-Werte werden erst beim Start gesetzt |
 | Lab 3 je Fall | Symptom und eine Event-/Logzeile | Nach dem Diagnosebefehl fragen, keine Lösung vorwegnehmen |
 | Lab 4 Push | Digest in der Push-Ausgabe | Push-Recht, Docker-Login, Proxy und Zielarchitektur trennen |
-| Lab 5 A | `pruefen.py abschluss` grün | Muster aus Lab 2, notfalls gerenderte Lösung |
+| Lab 5 A | `pruefen.py abschluss` grün | Muster aus Lab 2, notfalls `lab05-abschluss/loesung/` aus `main` rendern |
 | Lab 5 B | alter Service funktioniert trotz Fehler | neue Pods gezielt untersuchen, `maxUnavailable` erklären |
 | Lab 6 fertig | Node wieder entsperrt | `uncordon` vor dem Wechsel zur nächsten Aufgabe |
 

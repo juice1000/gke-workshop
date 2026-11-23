@@ -1,9 +1,13 @@
+# Uebung: Dieses Pod Disruption Budget vervollstaendigt ihr selbst.
+# Aufbau: kubectl explain poddisruptionbudget.spec
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: hallo-pdb
 spec:
-  minAvailable: 1
+  # TODO: Mindestens ein Pod soll bei freiwilligen Unterbrechungen bereit bleiben.
+  minAvailable: TODO
   selector:
     matchLabels:
-      app: hallo
+      # TODO: Label der Pods von hallo.
+      TODO: TODO

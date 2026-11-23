@@ -1,20 +1,36 @@
 # Lab 3: Fünf defekte Deployments
 
-**Ziel:** Ihr findet Ursachen anhand von Belegen. Dauer: 35 Minuten, zu zweit. Voraussetzung: Image `hallo-app:1.0` in minikube, Kontext `minikube`, Namespace `workshop`. Die Anwendung aus Lab 2 vorher aufräumen.
+**Ziel:** Ihr baut euch ein Diagnose-Werkzeug und findet damit Ursachen anhand von Belegen. Dauer: 50 Minuten, zu zweit. Voraussetzung: Image `hallo-app:1.0` in minikube, Kontext `minikube`, Namespace `workshop`. Die Anwendung aus Lab 2 vorher aufräumen.
 
-## Vorgehen je Fall
+## Teil 1: Ein eigenes Diagnose-Skript (15 Minuten)
 
-Wendet genau eine Datei an. Ersetzt in den folgenden Befehlen `N` durch 1 bis 5:
+Bei jeder Störung tippt ihr dieselben vier, fünf Befehle. Im Betrieb packt man so etwas in ein Skript. [diagnose.sh](diagnose.sh) ist ein Gerüst dafür: Es nimmt ein Label wie `fall1` und führt nacheinander alle Diagnoseschritte aus. Abschnitt 1 ist fertig. Abschnitte 2 bis 5 ergänzt ihr selbst an den `TODO`-Stellen.
+
+Regeln für das Skript:
+
+- Jeder `kubectl`-Aufruf nutzt das vorbereitete Array `"${K[@]}"`. Es setzt Kontext und Namespace ausdrücklich. So trifft das Skript nie versehentlich einen anderen Cluster
+- Filtert immer mit dem Label `app=$APP`, nie mit einem festen Pod-Namen. Pod-Namen ändern sich bei jedem Neustart
+- Abschnitt 4 darf scheitern, wenn es keinen Neustart gab. Das Skript soll dann weiterlaufen. Tipp: `|| true` oder eine eigene Meldung mit `||`
+
+Die Befehle kennt ihr aus Lab 1, auch aus dem Teil "Selbst herausfinden". Testet das Skript, bevor ihr den ersten Fall anwendet:
+
+```bash
+bash lab03-defekt/diagnose.sh fall1
+```
+
+Ohne Pods meldet Abschnitt 1 `No resources found`. Das ist richtig. Wichtig ist, dass das Skript bis Abschnitt 5 durchläuft.
+
+## Teil 2: Fünf Fälle (35 Minuten)
+
+Wendet genau eine Datei an und untersucht sie mit eurem Skript. Ersetzt `N` durch 1 bis 5:
 
 ```bash
 kubectl config current-context
 kubectl apply -f lab03-defekt/fallN.yaml
-kubectl get pods -l app=fallN
-kubectl describe pod -l app=fallN
-kubectl logs deployment/fallN
-kubectl logs deployment/fallN --previous
-kubectl get events --sort-by=.metadata.creationTimestamp
+bash lab03-defekt/diagnose.sh fallN
 ```
+
+Wartet nach dem Anwenden etwa 30 Sekunden, bevor ihr das Skript startet. Manche Fehler zeigen sich erst nach einigen Versuchen. Reicht die Ausgabe nicht, ergänzt das Skript oder arbeitet von Hand mit den Befehlen aus Lab 1 weiter.
 
 Nicht jeder Befehl liefert in jedem Fall Logs. Ein Container, der noch nicht angelegt wurde, kann noch keine Anwendungsausgabe haben. Auch `--previous` liefert nur nach einem tatsächlichen Neustart etwas.
 
@@ -24,11 +40,11 @@ Nicht jeder Befehl liefert in jedem Fall Logs. Ein Container, der noch nicht ang
 4. Prüft mit `kubectl rollout status deployment/fallN --timeout=180s` und `kubectl get pods -l app=fallN`.
 5. Löscht den Fall vor dem nächsten mit `kubectl delete -f lab03-defekt/fallN.yaml`.
 
-Jeder Fall hat einen Fehler. Namen und Labels sind absichtlich getrennt, damit sich die Fälle nicht gegenseitig beeinflussen. Wendet nicht den ganzen Ordner rekursiv an, sonst würden auch Lösungen ausgerollt.
+Jeder Fall hat einen Fehler. Namen und Labels sind absichtlich getrennt, damit sich die Fälle nicht gegenseitig beeinflussen. Wendet immer nur eine Datei an, nicht den ganzen Ordner.
 
-Für Fall 2 gehört zur Reparatur das Anlegen der fehlenden ConfigMap. Räumt sie danach mit `kubectl delete configmap fall2-config` auf.
+Für Fall 2 gehört zur Reparatur das Anlegen der fehlenden ConfigMap. **Aufgabe:** Legt sie per Befehl an, ohne Datei. Den Namen und den erwarteten Schlüssel nennt euch die Diagnose, als Wert genügt ein beliebiger Text. Tipp: `kubectl create --help`. Räumt sie danach mit `kubectl delete configmap fall2-config` auf.
 
-**Abgabe:** Pro Fall eine Zeile: Symptom, Ursache, Diagnosebefehl und Änderung. Beispiel: „Fall N: kein Start, fehlendes Objekt in den Events, Namen korrigiert“.
+**Abgabe:** Euer fertiges `diagnose.sh` und pro Fall eine Zeile: Symptom, Ursache, Diagnosebefehl und Änderung. Beispiel: „Fall N: kein Start, fehlendes Objekt in den Events, Namen korrigiert“.
 
 ## Bonus: Warum hilft port-forward allein nicht beim Service-Debugging?
 
@@ -54,19 +70,4 @@ Danach `kubectl delete service fall5` und das Deployment löschen.
 
 </details>
 
-<details>
-<summary>Lösungen und erwartete Symptome</summary>
-
-| Fall | Symptom | Ursache und Reparatur |
-| --- | --- | --- |
-| 1 | `ErrImagePull`, später `ImagePullBackOff` | Buchstabe `O` statt Ziffer `0` im Tag. `hallo-app:1.0` verwenden. |
-| 2 | `CreateContainerConfigError` | `fall2-config` fehlt. ConfigMap mit Schlüssel `GREETING` anlegen. |
-| 3 | Wiederholter Exit 1, später `CrashLoopBackOff` | Der überschriebene Startbefehl beendet sich absichtlich. `command` entfernen. |
-| 4 | `Pending`, `FailedScheduling` | 100 CPU angefordert. Request auf `250m` senken. |
-| 5 | `Running`, `READY 0/1`, Probe meldet 404 | Readiness prüft `/bereit-aber-falsch`. Auf `/actuator/health/readiness` ändern. |
-
-Fertige Lösungen: [Fall 1](loesungen/fall1.yaml), [Fall 2](loesungen/fall2.yaml), [Fall 3](loesungen/fall3.yaml), [Fall 4](loesungen/fall4.yaml), [Fall 5](loesungen/fall5.yaml).
-
-Bei Bedarf `kubectl apply -f lab03-defekt/loesungen/fallN.yaml`. Mit derselben Lösungsdatei könnt ihr danach alle Ressourcen dieses Falls entfernen. Netzwerk- und Registryfehler können den genauen Eventtext von Fall 1 verändern.
-
-</details>
+Kommt ihr bei einem Fall nicht weiter, holt euch einen Hinweis oben oder fragt den Trainer. Die Auflösung besprechen wir gemeinsam nach dem Lab.

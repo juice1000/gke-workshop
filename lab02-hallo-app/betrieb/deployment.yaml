@@ -34,16 +34,9 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: GREETING
-              valueFrom:
-                configMapKeyRef:
-                  name: hallo-config
-                  key: GREETING
-            - name: DB_PASSWORT
-              valueFrom:
-                secretKeyRef:
-                  name: hallo-secret
-                  key: DB_PASSWORT
+            # TODO: GREETING aus der ConfigMap hallo-config, Schluessel GREETING.
+            #       Hilfe: kubectl explain deployment.spec.template.spec.containers.env.valueFrom
+            # TODO: DB_PASSWORT aus dem Secret hallo-secret, Schluessel DB_PASSWORT.
           resources:
             requests:
               cpu: 250m

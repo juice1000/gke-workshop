@@ -40,13 +40,16 @@ kubectl --context minikube -n workshop apply -f lab02-hallo-app/k8s/
 kubectl --context minikube -n workshop rollout status deployment/hallo --timeout=180s
 ```
 
-Voraussetzung: genau ein Node namens `minikube`, lokal geladenes Image `hallo-app:1.0` und keine andere laufende `hallo`-Übung. Bei einem anderen lokalen Profil die Namen gemeinsam mit dem Trainer anpassen.
+Voraussetzung: genau ein Node namens `minikube`, lokal geladenes Image `hallo-app:1.0` und keine andere laufende `hallo`-Übung. Der Ordner `lab02-hallo-app/k8s/` enthält euren vervollständigten Service aus Lab 2. Bei einem anderen lokalen Profil die Namen gemeinsam mit dem Trainer anpassen.
+
+**Aufgabe: Node sperren.** Sperrt den Node `minikube` für neue Pods. Laufende Pods sollen dabei weiterlaufen. Den Befehl findet ihr in `kubectl --help` unter den Befehlen zur Clusterverwaltung. Vergesst nicht `--context minikube`. Prüft danach:
 
 ```bash
-kubectl --context minikube cordon minikube
 kubectl --context minikube get nodes
 kubectl --context minikube -n workshop get pods
 ```
+
+Erwartet: Der Node zeigt `Ready,SchedulingDisabled`, beide Pods laufen weiter.
 
 Wählt einen Pod-Namen und ersetzt `POD_NAME`:
 
@@ -56,19 +59,25 @@ kubectl --context minikube -n workshop get pods
 kubectl --context minikube -n workshop describe pod -l app=hallo
 ```
 
-Der verbleibende Pod läuft weiter. Der Ersatz-Pod bleibt `Pending`, weil der einzige Node keine neuen Pods annimmt. Hebt die Sperre wieder auf, auch wenn ihr das Experiment abbrecht:
+Der verbleibende Pod läuft weiter. Der Ersatz-Pod bleibt `Pending`, weil der einzige Node keine neuen Pods annimmt. Lest in `describe` das Event, das den Grund nennt.
+
+Hebt die Sperre wieder auf, auch wenn ihr das Experiment abbrecht. Der Befehl steht in `kubectl --help` direkt neben dem zum Sperren. Prüft danach:
 
 ```bash
-kubectl --context minikube uncordon minikube
+kubectl --context minikube get nodes
 kubectl --context minikube -n workshop rollout status deployment/hallo --timeout=180s
 ```
 
 ## Teil 3: Pod Disruption Budget und Alarm (15 Minuten)
 
+**Aufgabe: PDB schreiben.** [pdb.yaml](pdb.yaml) ist unvollständig. Ergänzt die `TODO`-Stellen: Mindestens ein Pod von `hallo` soll bei freiwilligen Unterbrechungen bereit bleiben. Aufbau und Felder: `kubectl explain poddisruptionbudget.spec` und die [Dokumentation zu Disruptions](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/).
+
 ```bash
 kubectl --context minikube -n workshop apply -f lab06-betrieb/pdb.yaml
 kubectl --context minikube -n workshop get pdb
 ```
+
+Erwartet: `ALLOWED DISRUPTIONS` ist `1`. Steht dort `0`, findet der Selektor keine Pods oder es sind nicht genug bereit.
 
 Bei zwei bereiten Pods erlaubt `minAvailable: 1` eine freiwillige Unterbrechung. Ein PDB schützt nicht vor Containerabstürzen, direktem `delete pod` oder jedem Node-Ausfall. Es wird unter anderem von der Eviction-API berücksichtigt. Die Deployment-Rolloutstrategie bleibt eine eigene Einstellung. Ein einzelner Node kann trotz PDB keine Verfügbarkeit während seiner vollständigen Abschaltung garantieren.
 

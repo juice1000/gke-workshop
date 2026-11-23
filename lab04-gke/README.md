@@ -42,7 +42,11 @@ docker build --platform linux/amd64 --build-arg APP_VERSION=2.0 \
 docker push "$IMAGE"
 ```
 
-Erwartet: Der Push endet mit einem Digest. Auf einem ARM-Laptop ist ein normales lokales Image meist ebenfalls ARM. Einfaches Taggen genügt dann nicht für einen amd64-Node. Deshalb legt der Build hier die Zielplattform fest. Der Maven-Build läuft auf der nativen Laptop-Plattform und kopiert das portable Java-Archiv in das Laufzeitimage der Zielplattform. Für diesen Build ist keine x86-Emulation auf dem ARM-Laptop nötig.
+Erwartet: Der Push endet mit einem Digest.
+
+**Aufgabe: Push prüfen.** Zeigt mit `gcloud` alle Images im Repository `$REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY` an und findet euer eigenes mit Tag und Digest. Startet bei `gcloud artifacts --help` und folgt den Unterbefehlen bis zu den Docker-Images. Mit `--include-tags` seht ihr die Tags. Findet danach dasselbe Image in der Konsole unter Artifact Registry.
+
+Hintergrund: Auf einem ARM-Laptop ist ein normales lokales Image meist ebenfalls ARM. Einfaches Taggen genügt dann nicht für einen amd64-Node. Deshalb legt der Build hier die Zielplattform fest. Der Maven-Build läuft auf der nativen Laptop-Plattform und kopiert das portable Java-Archiv in das Laufzeitimage der Zielplattform. Für diesen Build ist keine x86-Emulation auf dem ARM-Laptop nötig.
 
 Push und Pull sind getrennte Rechte: Euer Konto lädt hoch. Die Node-Identität des Clusters lädt das private Image herunter. Workload Identity Federation ist für Anwendungszugriffe auf Cloud-APIs gedacht und ersetzt diese Image-Pull-Berechtigung nicht.
 

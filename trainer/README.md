@@ -64,7 +64,7 @@ Erwartet: `yes`, `yes`, `no`, `no`, `no`. Prüft zusätzlich mit `kubectl auth c
 
 - Lab 4 vollständig als Teilnehmer durchspielen. Registry und Cluster können unterschiedliche Standorte haben.
 - Beide Konten gleichzeitig einsetzen und die Trennung der Namespaces nachweisen. Ein eigener Image-Name pro Namespace verhindert Tag-Kollisionen.
-- Die gerenderten Lösungen aus Lab 5 anwenden und alle drei Fehlerbilder auslösen. Bei B muss `OOMKilled` aus dem Containerzustand belegbar sein. Die Autopilot-Admission darf die beabsichtigte Knappheit nicht aufheben; falls Regeln das Manifest ablehnen oder anpassen, die Übung vorab passend ändern.
+- Die gerenderten Lösungen aus Lab 5 (Branch `main`) anwenden und alle drei Fehlerbilder auslösen. Bei B muss `OOMKilled` aus dem Containerzustand belegbar sein. Die Autopilot-Admission darf die beabsichtigte Knappheit nicht aufheben; falls Regeln das Manifest ablehnen oder anpassen, die Übung vorab passend ändern.
 - Nach jedem fehlgeschlagenen Rollout zwei alte bereite Pods und eine funktionierende HTTP-Antwort nachweisen. Danach Rollback und Reparatur prüfen.
 - `/fehler` aufrufen. Die Logzeile über Cluster und Namespace filtern. Im Monitoring CPU, Speicher und `kubernetes.io/container/restart_count` mit passenden Filtern finden. Logs und Metriken brauchen eventuell Zeit bis zur Anzeige.
 - Konsolennavigation, Rechte, tatsächliche Cluster-Version, Node-Architektur und Laufzeiten in [Teststatus](../docs/07-teststatus.md) eintragen.

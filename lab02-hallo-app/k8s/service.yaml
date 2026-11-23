@@ -1,10 +1,15 @@
+# Uebung: Diesen Service vervollstaendigt ihr selbst.
+# Vorlage fuer Aufbau und Felder: kubectl explain service.spec
 apiVersion: v1
 kind: Service
 metadata:
   name: hallo
 spec:
   selector:
-    app: hallo
+    # TODO: Label, das die Pods aus deployment.yaml tragen.
+    TODO: TODO
   ports:
-    - port: 80
-      targetPort: 8080
+    # TODO: Der Service bietet Port 80 an.
+    - port: 0
+      # TODO: Weiterleiten an den Port, auf dem der Container hoert.
+      targetPort: 0

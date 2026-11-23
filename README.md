@@ -25,7 +25,7 @@ Plant f√ºr den lokalen Cluster 2 CPUs und 4 GiB freien Arbeitsspeicher ein, zus√
 ## Einstieg
 
 ```bash
-git clone https://github.com/juice1000/gke-workshop.git
+git clone -b practice https://github.com/juice1000/gke-workshop.git
 cd gke-workshop
 bash lab00-check/check.sh
 ```

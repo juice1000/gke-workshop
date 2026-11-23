@@ -4,6 +4,16 @@
 
 Alle Befehle aus dem Repository-Hauptordner. Voraussetzung: [Lab 0](../lab00-check/README.md). Kontext `minikube`, Namespace `workshop`.
 
+## So übt ihr
+
+Einige Schritte sind als **Aufgabe** markiert. Dort steht, was ihr erreichen sollt, aber nicht der Befehl oder die fertige Datei. Sucht selbst, so wie später im Betrieb:
+
+- `kubectl --help` listet alle Befehle, `kubectl BEFEHL --help` zeigt Optionen und Beispiele
+- `kubectl explain OBJEKT.FELD` erklärt Felder eines Manifests
+- [kubectl Quick Reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/) und die [Kubernetes-Dokumentation](https://kubernetes.io/docs/home/)
+
+Der Checkpoint sagt euch, ob das Ergebnis stimmt. Kommt ihr nach etwa zehn Minuten nicht weiter, fragt eure Nachbarn oder den Trainer.
+
 ## Worum es geht
 
 In Lab 1 habt ihr einen Cluster gelesen. Jetzt bringt ihr eine eigene Anwendung hinein. Der Weg ist immer derselbe, lokal wie später auf GKE:
@@ -71,9 +81,9 @@ Auf GKE übernimmt diese Rolle später eine Registry: Ihr ladet das Image hoch, 
 
 ## 2. Deployment und Service
 
-### 2.1 Manifeste lesen
+### 2.1 Das Deployment lesen
 
-Öffnet [k8s/deployment.yaml](k8s/deployment.yaml) und [k8s/service.yaml](k8s/service.yaml). Ein **Manifest** beschreibt den gewünschten Zustand. Ihr sagt Kubernetes, was laufen soll, nicht wie es zu starten ist.
+Öffnet [k8s/deployment.yaml](k8s/deployment.yaml). Ein **Manifest** beschreibt den gewünschten Zustand. Ihr sagt Kubernetes, was laufen soll, nicht wie es zu starten ist.
 
 Im Deployment:
 
@@ -88,17 +98,21 @@ Im Deployment:
 | `env HOSTNAME` mit `fieldRef: metadata.name` | Kubernetes trägt den Pod-Namen in die Variable ein. So nennt die Antwort den Pod |
 | `containerPort: 8080` | Die Anwendung hört auf Port 8080 |
 
-Im Service:
+### 2.2 Aufgabe: Den Service schreiben
 
-| Feld | Bedeutung |
+Der Service in [k8s/service.yaml](k8s/service.yaml) ist unvollständig. Ergänzt die drei Stellen mit `TODO`:
+
+| Feld | Was hineingehört |
 | --- | --- |
-| `selector: app: hallo` | Der Service leitet an alle Pods mit diesem Label weiter |
-| `port: 80` | Der Port des Service |
-| `targetPort: 8080` | Der Port im Pod, an den weitergeleitet wird |
+| `selector` | Das Label, das die Pods tragen. Der Service leitet an alle Pods mit diesem Label weiter |
+| `port` | Der Port, den der Service anbietet: 80 |
+| `targetPort` | Der Port im Pod, an den weitergeleitet wird. Steht im Deployment |
 
 Merkt euch: **Labels verbinden alles.** Der Service kennt keine Pod-Namen, er sucht nach dem Label.
 
-### 2.2 Ausrollen
+Hilfe: `kubectl explain service.spec.selector` und `kubectl explain service.spec.ports`. Wendet ihr die Datei unverändert an, lehnt der Cluster sie ab. Lest die Fehlermeldung, sie nennt das Feld.
+
+### 2.3 Ausrollen
 
 ```bash
 kubectl config current-context
@@ -128,15 +142,15 @@ Zeigt alle drei Objektarten auf einmal. Erwartet: Deployment `hallo` mit `READY 
 
 An Tag 1 bedeutet `1/1` nur, dass der Container läuft. Ob die Anwendung wirklich Anfragen beantworten kann, prüft Kubernetes erst mit der Readiness-Probe aus Tag 2.
 
-### 2.3 Checkpoint
+### 2.4 Checkpoint
 
 ```bash
 python3 scripts/pruefen.py lab02
 ```
 
-Das Skript prüft Replikas, Service, Selektor, Ports und die HTTP-Antwort. Jede Zeile meldet `OK` oder `FEHLT` mit einem Hinweis.
+Das Skript prüft Replikas, Service, Selektor, Ports und die HTTP-Antwort. Jede Zeile meldet `OK` oder `FEHLT` mit einem Hinweis. Meldet es `FEHLT` beim Service, korrigiert `service.yaml` und wendet den Ordner erneut an.
 
-### 2.4 Die Anwendung aufrufen
+### 2.5 Die Anwendung aufrufen
 
 ```bash
 kubectl port-forward service/hallo 8080:80
@@ -156,38 +170,25 @@ kubectl get pods -w
 
 `-w` zeigt jede Änderung an Pods als neue Zeile. So seht ihr live, was die folgenden Befehle auslösen.
 
-### 3.1 Einen Pod löschen
+### 3.1 Aufgabe: Einen Pod löschen
 
-```bash
-kubectl get pods
-kubectl delete pod POD_NAME
-kubectl get pods -o wide
-```
+Löscht einen der beiden Pods. Den Namen liefert `kubectl get pods`. Den Befehl zum Löschen findet ihr in `kubectl --help`.
 
-Ersetzt `POD_NAME` durch einen Namen aus der Liste. Im Beobachtungs-Terminal seht ihr den alten Pod in `Terminating` gehen und fast gleichzeitig einen neuen mit anderem Namen entstehen.
+Im Beobachtungs-Terminal seht ihr den alten Pod in `Terminating` gehen und fast gleichzeitig einen neuen mit anderem Namen entstehen.
 
 Warum? Das Deployment verlangt zwei Pods. Ein Controller im Cluster vergleicht ständig Soll und Ist. Fehlt ein Pod, legt er einen neuen an. Ihr habt keinen Pod neu gestartet, ihr habt nur den Ist-Zustand verändert. Das ist der Kern von Kubernetes: **Ihr beschreibt den Sollzustand, der Cluster stellt ihn her.**
 
 Lief euer Port-Forward über den gelöschten Pod, ist er jetzt abgebrochen. Startet ihn neu.
 
-### 3.2 Skalieren
+### 3.2 Aufgabe: Skalieren
 
-```bash
-kubectl scale deployment hallo --replicas=4
-kubectl rollout status deployment/hallo --timeout=180s
-kubectl get pods
-```
+1. Bringt das Deployment `hallo` auf vier Pods, ohne die Datei zu ändern. Sucht in `kubectl --help` nach einem passenden Befehl und lest dessen `--help`.
+2. Wartet mit `kubectl rollout status deployment/hallo --timeout=180s`, bis alle bereit sind. Erwartet: vier Pods `Running`.
+3. Setzt das Deployment wieder auf zwei Pods.
 
-`scale` ändert die gewünschte Anzahl direkt im Cluster. Erwartet: vier Pods `Running`. Der Service nimmt die neuen Pods automatisch auf, weil sie dasselbe Label tragen.
+Der Service nimmt neue Pods automatisch auf, weil sie dasselbe Label tragen. Beim Herunterskalieren beendet Kubernetes die überzähligen Pods.
 
-```bash
-kubectl scale deployment hallo --replicas=2
-kubectl rollout status deployment/hallo --timeout=180s
-```
-
-Zurück auf zwei. Kubernetes beendet zwei der vier Pods.
-
-Achtung: `scale` ändert nur den Cluster, nicht eure Datei. Ein erneutes `kubectl apply -f lab02-hallo-app/k8s/` setzt die Anzahl wieder auf den Wert aus der Datei. Die Datei ist die Wahrheit, der Cluster folgt ihr.
+Achtung: Dieser Befehl ändert nur den Cluster, nicht eure Datei. Ein erneutes `kubectl apply -f lab02-hallo-app/k8s/` setzt die Anzahl wieder auf den Wert aus der Datei. Die Datei ist die Wahrheit, der Cluster folgt ihr.
 
 ### 3.3 In einen Pod hineinschauen
 
@@ -195,15 +196,15 @@ Achtung: `scale` ändert nur den Cluster, nicht eure Datei. Ein erneutes `kubect
 kubectl exec deployment/hallo -- sh -c 'echo "$HOSTNAME"'
 ```
 
-`exec` führt einen Befehl in einem laufenden Container aus. `deployment/hallo` wählt einen seiner Pods. Alles nach `--` läuft im Container. Erwartet: ein Pod-Name. Das zeigt, dass `HOSTNAME` aus dem Manifest im Container angekommen ist. `exec` ist bei der Fehlersuche nützlich, ändert aber nichts dauerhaft: Ein neuer Pod beginnt wieder mit dem Stand des Images.
+`exec` führt einen Befehl in einem laufenden Container aus. `deployment/hallo` wählt einen seiner Pods. Alles nach `--` läuft im Container. Erwartet: ein Pod-Name.
 
-### 3.4 Logs aller Pods
+**Aufgabe:** Gebt mit `exec` die Variable `APP_VERSION` aus. Welcher Wert erscheint, und wo wurde er gesetzt? Das zeigt, dass `HOSTNAME` aus dem Manifest im Container angekommen ist. `exec` ist bei der Fehlersuche nützlich, ändert aber nichts dauerhaft: Ein neuer Pod beginnt wieder mit dem Stand des Images.
 
-```bash
-kubectl logs -l app=hallo --prefix --tail=20
-```
+### 3.4 Aufgabe: Logs aller Pods
 
-`-l app=hallo` holt die Logs aller Pods mit diesem Label, also beider Kopien. `--prefix` schreibt vor jede Zeile, aus welchem Pod sie stammt. Erwartet: die Spring-Boot-Startmeldungen, etwa `Started HalloApplication`.
+Zeigt mit einem einzigen Befehl die letzten 20 Logzeilen beider Pods an. Vor jeder Zeile soll stehen, aus welchem Pod sie stammt. Den Label-Filter kennt ihr aus Lab 1, die übrigen Optionen zeigt `kubectl logs --help`.
+
+Erwartet: die Spring-Boot-Startmeldungen, etwa `Started HalloApplication`, mit dem Pod-Namen davor.
 
 ### 3.5 Im Dashboard vergleichen
 
@@ -226,11 +227,16 @@ minikube image load hallo-app:2.0
 
 Gleicher Quellcode, neue Versionsbezeichnung. Neuer Tag heißt für Kubernetes: neues Image.
 
-```bash
-kubectl create secret generic hallo-secret --from-literal=DB_PASSWORT=uebung123
-```
+**Aufgabe: Secret anlegen.** Legt ein Secret `hallo-secret` mit dem Schlüssel `DB_PASSWORT` und dem Wert `uebung123` an, direkt per Befehl, ohne Datei. So landet das Passwort nicht im Repository. Startet bei `kubectl create --help` und folgt den Unterbefehlen. Prüft das Ergebnis mit `kubectl get secrets`.
 
-Legt ein Secret direkt per Befehl an, ohne Datei. So landet das Passwort nicht im Repository. Bei einem wiederholten Durchlauf meldet der Befehl `AlreadyExists`. Das vorhandene Übungs-Secret reicht dann. `DB_PASSWORT` zeigt nur, wie ein Secret eingebunden wird. Es gibt keine Datenbank, und die Anwendung gibt den Wert nicht aus.
+Bei einem wiederholten Durchlauf meldet der Befehl `AlreadyExists`. Das vorhandene Übungs-Secret reicht dann. `DB_PASSWORT` zeigt nur, wie ein Secret eingebunden wird. Es gibt keine Datenbank, und die Anwendung gibt den Wert nicht aus.
+
+**Aufgabe: Werte einbinden.** In [betrieb/deployment.yaml](betrieb/deployment.yaml) fehlen zwei Umgebungsvariablen. Ergänzt sie an den `TODO`-Stellen:
+
+- `GREETING` aus der ConfigMap `hallo-config`, Schlüssel `GREETING`
+- `DB_PASSWORT` aus dem Secret `hallo-secret`, Schlüssel `DB_PASSWORT`
+
+Als Muster dient der Eintrag `HOSTNAME` direkt darüber. Er holt seinen Wert ebenfalls über `valueFrom`, nur aus einer anderen Quelle. Welche Felder es unter `valueFrom` gibt, zeigt `kubectl explain`. Der Befehl steht als Kommentar in der Datei.
 
 ```bash
 kubectl apply -f lab02-hallo-app/betrieb/
@@ -238,7 +244,7 @@ kubectl rollout status deployment/hallo --timeout=180s
 python3 scripts/pruefen.py betrieb
 ```
 
-Der Ordner `betrieb/` enthält eine ConfigMap, einen Service und ein erweitertes Deployment mit Version 2.0, Probes und Ressourcen. `apply` ersetzt das bisherige Deployment `hallo` durch diese Fassung. Kubernetes tauscht die Pods schrittweise aus, das ist ein **Rolling Update**. Beobachtet es im Terminal mit `kubectl get pods -w`. Der Checkpoint prüft Konfiguration, Secret, Probes und die HTTP-Antwort mit Version 2.0.
+Der Ordner `betrieb/` enthält eine ConfigMap, einen Service und ein erweitertes Deployment mit Version 2.0, Probes und Ressourcen. `apply` ersetzt das bisherige Deployment `hallo` durch diese Fassung. Kubernetes tauscht die Pods schrittweise aus, das ist ein **Rolling Update**. Beobachtet es im Terminal mit `kubectl get pods -w`. Der Checkpoint prüft Konfiguration, Secret, Probes und die HTTP-Antwort mit Version 2.0. Meldet er `FEHLT` bei `GREETING` oder `DB_PASSWORT`, prüft Einrückung, Namen und Schlüssel in eurer Datei.
 
 ### 4.2 Begrüßung ändern
 
@@ -296,16 +302,23 @@ kubectl get events --sort-by=.metadata.creationTimestamp
 
 Erwartet: zwei alte Pods weiter `Running` und `1/1`, ein neuer Pod in `ErrImagePull` oder `ImagePullBackOff`. Die Events nennen das fehlende Image. Die Anwendung bleibt erreichbar, weil `maxUnavailable: 0` die alten Pods schützt, solange kein neuer bereit ist.
 
+**Aufgabe: Zurückrollen.** Alle Befehle rund um Rollouts liegen unter `kubectl rollout --help`. Findet dort heraus,
+
+1. wie ihr die gespeicherten Stände (Revisionen) des Deployments `hallo` anzeigt,
+2. wie ihr zur vorherigen Revision zurückkehrt.
+
+Führt beides aus und prüft danach:
+
 ```bash
-kubectl rollout history deployment/hallo
-kubectl rollout undo deployment/hallo
 kubectl rollout status deployment/hallo --timeout=180s
 python3 scripts/pruefen.py betrieb
 ```
 
-`history` listet die gespeicherten Stände (Revisionen) des Deployments. `undo` kehrt zur vorherigen Revision zurück. Der kaputte Pod verschwindet, der Checkpoint ist wieder grün.
+Der kaputte Pod verschwindet, der Checkpoint ist wieder grün.
 
-Kubernetes rollt ein fehlgeschlagenes Update nicht von selbst zurück. Es wartet. `rollout undo` ändert nur das Objekt im Cluster, eure Dateien bleiben unverändert. Der letzte gesunde Stand steht weiter in `betrieb/deployment.yaml`.
+Kubernetes rollt ein fehlgeschlagenes Update nicht von selbst zurück. Es wartet. Der Rollback ändert nur das Objekt im Cluster, eure Dateien bleiben unverändert. Der letzte gesunde Stand steht weiter in `betrieb/deployment.yaml`.
+
+**Bonus: Ist ein Secret geheim?** Lest den Wert von `DB_PASSWORT` aus dem Secret `hallo-secret` im Klartext aus, nur mit `kubectl` und einem Standardwerkzeug der Shell. Tipp: `kubectl get secret --help`, Stichwort `jsonpath`, und `base64 --help`. Was folgt daraus für die Frage, wer Secrets lesen darf?
 
 **Abgabe Tag 2:** Begrüßung aus ConfigMap, Version 2.0, drei Probe-Pfade und der Befehl zum Rollback.
 
