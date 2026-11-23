@@ -14,7 +14,7 @@ Teilnehmende arbeiten im Branch `practice`. Dort sind einige Schritte Übungen: 
 
 | Lab | Übung in practice | Lösung in main |
 | --- | --- | --- |
-| 1 | Auflösung der Rallye nicht im README; Teil "Selbst herausfinden": Warning-Events, custom-columns, sort-by, api-resources | Siehe Lösungsskizze unten |
+| 1 | Auflösung der Rallye nicht im README; Teil "Selbst herausfinden": Warning-Events, custom-columns, sort-by, api-resources | Abschnitt "Selbst herausfinden: Lösungen" im Lab-1-README |
 | 2 Tag 1 | `k8s/service.yaml` schreiben; Pod löschen, skalieren, `logs -l --prefix` selbst finden; `APP_VERSION` per exec | `k8s/service.yaml`, README-Befehle |
 | 2 Tag 2 | Secret per Befehl; `GREETING` und `DB_PASSWORT` in `betrieb/deployment.yaml`; Rollback-Befehle; Bonus Secret dekodieren | `betrieb/deployment.yaml`, README-Befehle |
 | 3 | `diagnose.sh` ergänzen; ConfigMap für Fall 2 per Befehl; Auflösung nicht im README | `diagnose.sh`, `loesungen/`, Lösungstabelle im README |
@@ -22,16 +22,7 @@ Teilnehmende arbeiten im Branch `practice`. Dort sind einige Schritte Übungen: 
 | 5 | Starter mit TODOs; Auflösung nicht im README | `loesung/`, `repariert/`, Lösungstabelle im README |
 | 6 | cordon und uncordon selbst finden; `pdb.yaml` schreiben | `pdb.yaml`, README-Befehle |
 
-Lösungsskizze Lab 1:
-
-```bash
-kubectl get events -n kube-system --field-selector type=Warning
-kubectl get pods -n kube-system -o 'custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[*].image'
-kubectl get pods -n kube-system --sort-by='.status.containerStatuses[0].restartCount'
-kubectl api-resources
-```
-
-Der Probelauf `scripts/dry-run.sh` läuft auch in `practice`. Für die Übungsdateien nimmt er die Fassung aus `main` und prüft zusätzlich, dass der Cluster die unvollständigen Dateien ablehnt. Änderungen an gemeinsamen Teilen zuerst in `main`, danach `main` in `practice` mergen.
+Der Probelauf `scripts/dry-run.sh` läuft auch in `practice`. Für die Übungsdateien nimmt er die Fassung aus `main` und prüft zusätzlich, dass der Cluster die unvollständigen Dateien ablehnt. Änderungen an gemeinsamen Teilen in beiden Branches vornehmen. Neue Lösungen nur in `main`; danach `git merge -s ours main` in `practice`, damit keine Lösung in `practice` landet.
 
 ## Zuordnung zur vorhandenen Notion-Fassung
 
