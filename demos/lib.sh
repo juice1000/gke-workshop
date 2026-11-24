@@ -92,6 +92,10 @@ require_betrieb() {
        -o jsonpath='{.spec.template.spec.containers[0].readinessProbe}' | grep -q path; then
     fail "hallo laeuft noch ohne betrieb/. Erst: bash demos/tag2/00-vorbereiten/demo.sh"
   fi
+  if ! command kubectl --context "$CONTEXT" -n "$NS" get deployment hallo \
+       -o jsonpath='{.spec.template.spec.containers[0].env[*].name}' | grep -qw GREETING; then
+    fail "hallo laeuft ohne GREETING aus der ConfigMap. Erst die TODOs in lab02-hallo-app/betrieb/deployment.yaml ergaenzen (betrieb/README.md, Schritt 3), dann: bash demos/tag2/00-vorbereiten/demo.sh"
+  fi
 }
 
 title() {
