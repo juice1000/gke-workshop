@@ -1,6 +1,6 @@
 # Lab 2: hallo-app lokal deployen
 
-**Ziel:** Ihr baut ein Image, deployt zwei Kopien und beobachtet Selbstheilung. Dauer: 60 Minuten an Tag 1. Die Abschnitte 4 und 5 sind für Tag 2 und ergänzen Konfiguration, Probes und Updates.
+**Ziel:** Ihr baut ein Image, deployt zwei Kopien und beobachtet Selbstheilung. Dauer: 60 Minuten an Tag 1. Der Teil für Tag 2 steht in [betrieb/README.md](betrieb/README.md).
 
 Alle Befehle aus dem Repository-Hauptordner. Voraussetzung: [Lab 0](../lab00-check/README.md). Kontext `minikube`, Namespace `workshop`.
 
@@ -20,14 +20,14 @@ Quellcode -> docker build -> Image -> Cluster kann es laden -> Deployment -> Pod
 
 Eine kleine Spring-Boot-Anwendung (Java 21), die nur Text zurückgibt. So bleibt Kubernetes im Mittelpunkt.
 
-| Pfad | Zweck |
-| --- | --- |
-| `/` | Begrüßung, Pod-Name und Version als Text |
-| `/actuator/health` | Gesundheitsstatus |
-| `/actuator/health/liveness` | Läuft die Anwendung? |
-| `/actuator/health/readiness` | Ist sie bereit für Anfragen? |
-| `/actuator/info` | Version |
-| `/fehler` | Absichtlich HTTP 500 und Logzeile mit `FEHLER` |
+| Pfad                         | Zweck                                          |
+| ---------------------------- | ---------------------------------------------- |
+| `/`                          | Begrüßung, Pod-Name und Version als Text       |
+| `/actuator/health`           | Gesundheitsstatus                              |
+| `/actuator/health/liveness`  | Läuft die Anwendung?                           |
+| `/actuator/health/readiness` | Ist sie bereit für Anfragen?                   |
+| `/actuator/info`             | Version                                        |
+| `/fehler`                    | Absichtlich HTTP 500 und Logzeile mit `FEHLER` |
 
 Drei Umgebungsvariablen steuern die Antwort: `GREETING` die Begrüßung, `APP_VERSION` die Version, `HOSTNAME` den angezeigten Pod-Namen.
 
@@ -84,24 +84,24 @@ Auf GKE übernimmt diese Rolle später eine Registry: Ihr ladet das Image hoch, 
 
 Im Deployment:
 
-| Feld | Bedeutung |
-| --- | --- |
-| `replicas: 2` | Zwei Pods sollen laufen |
-| `selector.matchLabels: app: hallo` | Diese Pods gehören zum Deployment |
-| `template` | Die Vorlage für jeden neuen Pod |
-| `template.metadata.labels: app: hallo` | Jeder Pod erhält dieses Label. Es muss zum Selektor passen |
-| `image: hallo-app:1.0` | Welches Image läuft |
-| `imagePullPolicy: IfNotPresent` | Das lokal geladene Image verwenden, nicht aus dem Internet holen |
+| Feld                                         | Bedeutung                                                                        |
+| -------------------------------------------- | -------------------------------------------------------------------------------- |
+| `replicas: 2`                                | Zwei Pods sollen laufen                                                          |
+| `selector.matchLabels: app: hallo`           | Diese Pods gehören zum Deployment                                                |
+| `template`                                   | Die Vorlage für jeden neuen Pod                                                  |
+| `template.metadata.labels: app: hallo`       | Jeder Pod erhält dieses Label. Es muss zum Selektor passen                       |
+| `image: hallo-app:1.0`                       | Welches Image läuft                                                              |
+| `imagePullPolicy: IfNotPresent`              | Das lokal geladene Image verwenden, nicht aus dem Internet holen                 |
 | `env HOSTNAME` mit `fieldRef: metadata.name` | Kubernetes trägt den Pod-Namen in die Variable ein. So nennt die Antwort den Pod |
-| `containerPort: 8080` | Die Anwendung hört auf Port 8080 |
+| `containerPort: 8080`                        | Die Anwendung hört auf Port 8080                                                 |
 
 Im Service:
 
-| Feld | Bedeutung |
-| --- | --- |
+| Feld                   | Bedeutung                                               |
+| ---------------------- | ------------------------------------------------------- |
 | `selector: app: hallo` | Der Service leitet an alle Pods mit diesem Label weiter |
-| `port: 80` | Der Port des Service |
-| `targetPort: 8080` | Der Port im Pod, an den weitergeleitet wird |
+| `port: 80`             | Der Port des Service                                    |
+| `targetPort: 8080`     | Der Port im Pod, an den weitergeleitet wird             |
 
 Merkt euch: **Labels verbinden alles.** Der Service kennt keine Pod-Namen, er sucht nach dem Label.
 
@@ -245,141 +245,10 @@ Unter Workloads steht außerdem ein **ReplicaSet**, das in keiner eurer Dateien 
 
 **Abgabe Tag 1:** Zwei laufende Pods, HTTP-Antwort und ein Satz zum Sollzustand.
 
-## 4. Tag 2: ConfigMap und Secret
+## 4. und 5. Tag 2: Konfiguration, Probes und Updates
 
-Bisher steckt die gesamte Konfiguration im Image. Für eine andere Begrüßung müsstet ihr neu bauen. Eine **ConfigMap** hält Konfiguration außerhalb des Images. Ein **Secret** tut dasselbe für vertrauliche Werte. Das Deployment holt die Werte als Umgebungsvariablen in den Container.
-
-### 4.1 Version 2.0 bauen und ausrollen
-
-```bash
-# Gleicher Code, neue Versionsbezeichnung 2.0. Neuer Tag heisst neues Image
-docker build --build-arg APP_VERSION=2.0 -t hallo-app:2.0 lab02-hallo-app
-
-# Version 2.0 in den Cluster kopieren
-minikube image load hallo-app:2.0
-```
-
-Gleicher Quellcode, neue Versionsbezeichnung. Neuer Tag heißt für Kubernetes: neues Image.
-
-```bash
-# Secret direkt per Befehl anlegen, ohne Datei. So steht kein Passwort im Repository
-kubectl create secret generic hallo-secret --from-literal=DB_PASSWORT=uebung123
-```
-
-Legt ein Secret direkt per Befehl an, ohne Datei. So landet das Passwort nicht im Repository. Bei einem wiederholten Durchlauf meldet der Befehl `AlreadyExists`. Das vorhandene Übungs-Secret reicht dann. `DB_PASSWORT` zeigt nur, wie ein Secret eingebunden wird. Es gibt keine Datenbank, und die Anwendung gibt den Wert nicht aus.
-
-```bash
-# ConfigMap, Service und erweitertes Deployment anwenden. Das Deployment
-# ersetzt die Pods von Tag 1 schrittweise (Rolling Update).
-kubectl apply -f lab02-hallo-app/betrieb/
-
-# Warten, bis alle Pods des Deployments bereit sind, hoechstens 180 Sekunden
-kubectl rollout status deployment/hallo --timeout=180s
-
-# Checkpoint: ConfigMap, Secret, Probes, Ressourcen und Version 2.0
-python3 scripts/pruefen.py betrieb
-```
-
-Der Ordner `betrieb/` enthält eine ConfigMap, einen Service und ein erweitertes Deployment mit Version 2.0, Probes und Ressourcen. `apply` ersetzt das bisherige Deployment `hallo` durch diese Fassung. Kubernetes tauscht die Pods schrittweise aus, das ist ein **Rolling Update**. Beobachtet es im Terminal mit `kubectl get pods -w`. Der Checkpoint prüft Konfiguration, Secret, Probes und die HTTP-Antwort mit Version 2.0.
-
-### 4.2 Begrüßung ändern
-
-Ändert `GREETING` in [betrieb/configmap.yaml](betrieb/configmap.yaml) und wendet nur diese Datei an:
-
-```bash
-# Nur die geaenderte ConfigMap anwenden. Laufende Pods merken davon nichts
-kubectl apply -f lab02-hallo-app/betrieb/configmap.yaml
-```
-
-Startet den Port-Forward neu und ruft die Seite auf. Die alte Begrüßung bleibt. Warum? Umgebungsvariablen werden nur beim Start eines Containers gesetzt. Die laufenden Pods kennen den neuen Wert nicht.
-
-```bash
-# Alle Pods nacheinander neu starten. Neue Pods lesen die ConfigMap beim Start
-kubectl rollout restart deployment/hallo
-
-# Warten, bis alle Pods des Deployments bereit sind, hoechstens 180 Sekunden
-kubectl rollout status deployment/hallo --timeout=180s
-```
-
-`rollout restart` ersetzt alle Pods nacheinander durch neue, ohne das Manifest zu ändern. Die neuen Pods lesen die ConfigMap beim Start. Jetzt erscheint die neue Begrüßung.
-
-Ein Secret ist nicht sicher, nur weil sein Wert in Base64 dargestellt wird. Base64 ist keine Verschlüsselung. Wer Secrets lesen darf und wie echte Geheimnisse verwaltet werden, ist ein eigenes Betriebsthema.
-
-## 5. Tag 2: Probes, Ressourcen und Rollback
-
-### 5.1 Probes und Ressourcen lesen
-
-Öffnet [betrieb/deployment.yaml](betrieb/deployment.yaml). Eine **Probe** ist eine regelmäßige Prüfung durch Kubernetes, hier ein HTTP-Aufruf eines Health-Pfads.
-
-| Probe | Frage | Folge bei Fehlschlag |
-| --- | --- | --- |
-| `startupProbe` | Ist der Start abgeschlossen? | Nach zu vielen Fehlschlägen Neustart. Hier bekommt die JVM bis zu etwa 150 Sekunden. Bis zum Erfolg laufen die anderen beiden Probes nicht |
-| `readinessProbe` | Kann der Pod jetzt Anfragen annehmen? | Der Service schickt keinen Verkehr mehr an diesen Pod. Kein Neustart |
-| `livenessProbe` | Lebt die Anwendung noch? | Kubernetes startet den Container neu |
-
-**Requests** sagen dem Scheduler, wie viel CPU und Speicher ein Pod mindestens braucht. Danach wählt er einen Node mit genug freier Kapazität. Das **Speicherlimit** begrenzt den gesamten Container, inklusive Java-Heap und JVM-Nebenspeicher. Wer es überschreitet, wird beendet (`OOMKilled`). Ein CPU-Limit ist bewusst nicht gesetzt.
-
-`maxUnavailable: 0` und `maxSurge: 1` steuern das Rolling Update: Es fällt nie ein bereiter Pod weg, bevor ein neuer bereit ist, und es entsteht höchstens ein zusätzlicher Pod.
-
-### 5.2 Ein kaputtes Update ausrollen und zurücknehmen
-
-```bash
-# Absichtlich kaputtes Update: Container hallo bekommt einen Tag, den es nicht gibt
-kubectl set image deployment/hallo hallo=hallo-app:nicht-vorhanden
-```
-
-Ändert das Image auf einen Tag, den es nicht gibt. `hallo=` ist der Name des Containers im Deployment.
-
-```bash
-# Soll nach 30 Sekunden scheitern: Der neue Pod findet sein Image nicht
-kubectl rollout status deployment/hallo --timeout=30s
-```
-
-Soll nach 30 Sekunden fehlschlagen. Der neue Pod kann das Image nicht laden.
-
-```bash
-# Aktuelle Pods mit Status anzeigen
-kubectl get pods
-
-# Alle Events im Namespace nach Zeit. Nennt das fehlende Image
-kubectl get events --sort-by=.metadata.creationTimestamp
-```
-
-Erwartet: zwei alte Pods weiter `Running` und `1/1`, ein neuer Pod in `ErrImagePull` oder `ImagePullBackOff`. Die Events nennen das fehlende Image. Die Anwendung bleibt erreichbar, weil `maxUnavailable: 0` die alten Pods schützt, solange kein neuer bereit ist.
-
-```bash
-# Gespeicherte Staende (Revisionen) des Deployments anzeigen
-kubectl rollout history deployment/hallo
-
-# Zur vorherigen Revision zurueck. Aendert nur den Cluster, nicht eure Dateien
-kubectl rollout undo deployment/hallo
-
-# Warten, bis alle Pods des Deployments bereit sind, hoechstens 180 Sekunden
-kubectl rollout status deployment/hallo --timeout=180s
-
-# Checkpoint: ConfigMap, Secret, Probes, Ressourcen und Version 2.0
-python3 scripts/pruefen.py betrieb
-```
-
-`history` listet die gespeicherten Stände (Revisionen) des Deployments. `undo` kehrt zur vorherigen Revision zurück. Der kaputte Pod verschwindet, der Checkpoint ist wieder grün.
-
-Kubernetes rollt ein fehlgeschlagenes Update nicht von selbst zurück. Es wartet. `rollout undo` ändert nur das Objekt im Cluster, eure Dateien bleiben unverändert. Der letzte gesunde Stand steht weiter in `betrieb/deployment.yaml`.
-
-**Abgabe Tag 2:** Begrüßung aus ConfigMap, Version 2.0, drei Probe-Pfade und der Befehl zum Rollback.
+Die Anleitung für Tag 2 steht jetzt in [betrieb/README.md](betrieb/README.md): ConfigMap und Secret, Readiness, Rolling Update und Rollback, dazu Extras zum Ausprobieren.
 
 ## Aufräumen
 
-Nach Tag 1 könnt ihr die Anwendung stehen lassen oder `kubectl delete -f lab02-hallo-app/k8s/` ausführen. Vor Lab 3 nach Tag 2:
-
-```bash
-# Mit welchem Cluster spricht kubectl? Erwartet: minikube
-kubectl config current-context
-
-# Alle Objekte aus den Dateien in betrieb/ loeschen
-kubectl delete -f lab02-hallo-app/betrieb/
-
-# Das Secret steht in keiner Datei und wird einzeln geloescht
-kubectl delete secret hallo-secret
-```
-
-`delete -f` entfernt alle Objekte, die in den Dateien beschrieben sind. Das Secret steht in keiner Datei und wird deshalb einzeln gelöscht. Der lokale Cluster bleibt für Lab 3 und Lab 6 bestehen.
+Nach Tag 1 könnt ihr die Anwendung stehen lassen. Tag 2 baut darauf auf. Wollt ihr sie entfernen: `kubectl delete -f lab02-hallo-app/k8s/`. Das Aufräumen nach Tag 2 steht in [betrieb/README.md](betrieb/README.md#aufräumen).

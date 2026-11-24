@@ -1,0 +1,59 @@
+# Extra: Drei Replikas auf verschiedene Nodes verteilen.
+# Kleine Requests, weil alle Teilnehmenden sich drei Nodes teilen.
+# Vor dem Anwenden mit render.py den Platzhalter WORKSHOP_IMAGE ersetzen.
+# Legende FEST, FREI, PASST ZU: siehe Kopf von lab02-hallo-app/k8s/deployment.yaml.
+#
+# Das Label app=hallo-spread kommt viermal vor und muss viermal gleich sein:
+# metadata.labels (frei), selector, template-Labels, labelSelector der Regel.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # FREI. Nur fuer kubectl-Befehle wie "rollout status deployment/hallo-spread".
+  name: hallo-spread
+  # FREI: nur zum Filtern.
+  labels:
+    app: hallo-spread
+spec:
+  replicas: 3
+  # PASST ZU: template.metadata.labels. Bewusst nicht app: hallo, sonst wuerde
+  # der Service hallo diese Pods mit auswaehlen und das Deployment hallo sie
+  # mitzaehlen.
+  selector:
+    matchLabels:
+      app: hallo-spread
+  template:
+    metadata:
+      # PASST ZU: selector.matchLabels oben und labelSelector unten.
+      labels:
+        app: hallo-spread
+    spec:
+      # Regel fuer den Scheduler: Pods mit app=hallo-spread sollen sich auf
+      # die Nodes (topologyKey: Hostname) verteilen. Die Anzahl pro Node darf
+      # hoechstens um 1 abweichen (maxSkew). Geht das nicht, bleibt der Pod
+      # Pending (DoNotSchedule), statt sich zu den anderen zu legen.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          # FEST: Standard-Label, das jeder Node von Kubernetes bekommt.
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          # PASST ZU: template.metadata.labels. Die Regel zaehlt die Pods mit
+          # diesem Label. Passt es nicht, zaehlt sie null Pods und verteilt nichts.
+          labelSelector:
+            matchLabels:
+              app: hallo-spread
+      containers:
+        - name: hallo
+          # PASST ZU: Platzhalter, den scripts/render.py durch den Registry-Pfad
+          # aus Lab 4, Schritt 2 ersetzt. Ohne render.py: ErrImagePull.
+          image: WORKSHOP_IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            # PASST ZU: server.port=8080 der Anwendung.
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 10m
+              memory: 384Mi
+            limits:
+              memory: 384Mi

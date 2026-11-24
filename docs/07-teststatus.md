@@ -94,6 +94,39 @@ Nach dem Umzug auf den Pool `kurs` (ein `e2-standard-4`). Kubernetes-Aktionen li
 
 Gesamtdauer 8 Minuten. Der gleichzeitige lokale Probelauf `scripts/dry-run.sh` bestand ebenfalls. Danach blieb Lab 4 in `workshop-person01` zum Ansehen in der Konsole stehen.
 
+## Umbau Tag 2 auf Kern und Extra, 24.11.2026
+
+Lokal geprüft in eigenen minikube-Profilen (Kubernetes 1.35.0, ein Node), danach gelöscht. Kein GKE-Lauf.
+
+| Schritt | Ergebnis |
+| --- | --- |
+| Lab 2 Tag 2, Schritt 5 | `base64 -d` liefert den Klartext des Übungs-Secrets |
+| Lab 2 Tag 2, Schritt 6 | kaputter Readiness-Pfad: neuer Pod `Running` `0/1`, zwei alte `1/1`, `rollout status` bricht nach 60 s ab, Event `Readiness probe failed ... 404`, Checkpoint `betrieb` meldet den Pfad als `FEHLT`; nach Reparatur der Datei wieder grün |
+| Lab 2 Tag 2, Schritt 7 | `set image` mit falschem Tag hängt, `rollout undo` stellt her |
+| Lab 2 Extras | `config-pod.yaml`: Datei unter `/config` nach 85 s aktualisiert, Umgebungsvariable unverändert; `kubectl diff` zeigt `replicas`; `change-cause` erscheint in `rollout history`; `MaxHeapSize` 334 MiB bei 512-MiB-Limit; HPA mit metrics-server zeigt nach 80 s `cpu: 3%/50%` |
+| Lab 3 Extra 2 | `oom.yaml`: `OOMKilled`, Exit-Code 137 nach 5 s, `logs --previous` liefert nichts |
+| Lab 4 Extra 3 | `spread.yaml` gerendert und lokal ausgerollt, drei Pods bereit. Auf einem Node landen alle drei dort; die Verteilung über drei GKE-Nodes ist **nicht** geprüft |
+| Statisch | `validate.sh` auf `main` und `practice` bestanden |
+
+Nicht geprüft: Lab 4 Extras auf GKE (Logs Explorer, `auth can-i`, Verteilung über drei Nodes), Kapazität bei 15 gleichzeitigen `spread.yaml`. `dry-run.sh` wurde nicht erneut ausgeführt, weil sich Prüfskripte und Kern-Manifeste nicht geändert haben.
+
+## Demonstrationen Tag 2 und Kommentare in den Manifesten, 24.11.2026
+
+Alle 26 Skripte in `demos/tag2/` mit `--auto` nacheinander in einem eigenen minikube-Profil (`--cpus=2 --memory=4096`, Kubernetes 1.35.0) ausgeführt, danach gelöscht. Kein GKE-Lauf.
+
+| Ergebnis | Demos |
+| --- | --- |
+| Exit 0, Ausgangszustand danach wiederhergestellt (`hallo` mit `hallo-app:2.0`, 2 Pods) | alle 26 |
+| Fehlerbild sichtbar wie beschrieben | 2.1d leere EndpointSlice, 2.2a alter Wert bis zum Neustart, 2.2b `CreateContainerConfigError` und Start nach Reparatur, 2.3b `0/1` mit `Readiness probe failed ... 404`, 2.3d `CrashLoopBackOff`, 2.3g `OOMKilled`, 2.4b `ErrImagePull` mit alten Pods bereit, 2.4d `1.0` im Cluster und `2.0` in der Datei |
+| Korrigiert | 2.3f: Docker Desktop meldet dem minikube-Node alle 8 CPUs des Rechners, trotz `--cpus=2`. Mit 10 Kopien blieb kein Pod `Pending`. Neu: CPU-Request neuer Pods auf 60 Prozent des Nodes, Ergebnis `FailedScheduling ... Insufficient cpu`, danach wieder 250m |
+| Angepasst | 2.3h: `kubectl top` lieferte in 60 s noch keine Werte, der HPA kurz danach `cpu: 3%/50%`. Wartezeit auf 90 s. 2.3d: Die Anwendung startet in etwa 2 s; der Neustart kommt, weil die erste Liveness-Prüfung sofort läuft. Text angepasst |
+
+| Korrigiert | `demos/lib.sh`: Auf dem Trainerrechner läuft minikube unter `~/.kube` und `~/.minikube`, nicht in `.cache/`. Fehlt der Kontext in der Workshop-kubeconfig, nutzt `lib.sh` jetzt die Umgebung von vorher. Geprüft mit 2.1b und 2.1e gegen den echten Cluster (nur lesend) |
+
+Nicht geprüft: interaktiver Modus mit Strg+C mitten in einer Demonstration.
+
+Alle Manifeste auf `main` tragen Kommentare `FEST`, `FREI` und `PASST ZU` (Legende im Kopf von `lab02-hallo-app/k8s/deployment.yaml`). Geprüft: Ohne Kommentar- und Leerzeilen sind alle 37 Dateien unverändert, `validate.sh` bestanden. Fehlerdateien aus Lab 3 und Lab 5 haben nur einen Kopfkommentar, damit sie den Fehler nicht verraten. Auf `practice` bleiben die Manifeste ohne diese Kommentare.
+
 ## Vor Durchführung noch nötig
 
 - [x] GKE-Standard bereitstellen, Anwendung und fehlerhafte Releases mit Trainerrechten durchspielen.

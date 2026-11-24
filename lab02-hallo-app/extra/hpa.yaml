@@ -1,0 +1,39 @@
+# Extra: HorizontalPodAutoscaler fuer das Deployment hallo.
+# Er passt die Zahl der Pods an die CPU-Last an, zwischen 2 und 4.
+# Nodes fuegt er nie hinzu. Das waere Aufgabe des Cluster Autoscalers.
+# Braucht Messwerte: lokal "minikube addons enable metrics-server".
+# Legende FEST, FREI, PASST ZU: siehe Kopf von ../k8s/deployment.yaml.
+#
+#   ../betrieb/deployment.yaml  metadata.name hallo --> scaleTargetRef.name
+#                               requests.cpu 250m   --> Basis der 50 Prozent
+
+# FEST: Gruppe autoscaling, Version v2.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  # FREI. Gleich wie das Deployment, damit "kubectl get hpa" verstaendlich ist.
+  name: hallo
+spec:
+  # Welches Objekt skaliert wird. Der HPA findet es ueber den Namen,
+  # nicht ueber Labels.
+  scaleTargetRef:
+    # PASST ZU: apiVersion und kind in ../betrieb/deployment.yaml.
+    apiVersion: apps/v1
+    kind: Deployment
+    # PASST ZU: metadata.name in ../betrieb/deployment.yaml.
+    name: hallo
+  # FREI (Werte). Der HPA ueberschreibt replicas des Deployments im Cluster.
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    # Ziel: im Mittel 50 Prozent der angeforderten CPU.
+    # PASST ZU: Ohne requests.cpu im Deployment gibt es keine Prozentbasis,
+    # der HPA zeigt dann <unknown>. Bei 250m sind 50 Prozent etwa 125m pro Pod.
+    - type: Resource
+      resource:
+        # FEST: cpu oder memory.
+        name: cpu
+        target:
+          type: Utilization
+          # FREI (Wert).
+          averageUtilization: 50

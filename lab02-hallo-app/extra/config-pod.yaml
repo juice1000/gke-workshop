@@ -1,0 +1,53 @@
+# Extra: Konfiguration auf zwei weitere Arten in einen Container bringen.
+# Ein einzelner Pod zum Ausprobieren, kein Deployment.
+# Legende FEST, FREI, PASST ZU: siehe Kopf von ../k8s/deployment.yaml.
+#
+#   ../betrieb/configmap.yaml  name hallo-config --> envFrom.configMapRef.name
+#                                                --> volumes[].configMap.name
+#   volumes[].name: config  ---------------------> volumeMounts[].name
+
+# FEST: Kerngruppe v1, Objektart Pod.
+apiVersion: v1
+kind: Pod
+metadata:
+  # FREI. Nur fuer "kubectl exec hallo-config-extra ..." und delete.
+  name: hallo-config-extra
+  # FREI, aber bewusst NICHT app: hallo. Sonst wuerde der Service hallo
+  # diesen Pod mit auswaehlen und ihm Anfragen schicken.
+  labels:
+    app: hallo-extra
+spec:
+  containers:
+    # FREI. Ein einzelner Container, nichts verweist darauf.
+    - name: hallo
+      # PASST ZU: dem geladenen Image aus ../betrieb/README.md, Schritt 1.
+      image: hallo-app:2.0
+      imagePullPolicy: IfNotPresent
+      # envFrom: jeder Schluessel der ConfigMap wird zu einer Umgebungsvariable
+      # gleichen Namens. Wie bei env gilt: gesetzt beim Containerstart, danach
+      # nicht mehr.
+      envFrom:
+        - configMapRef:
+            # PASST ZU: metadata.name in ../betrieb/configmap.yaml.
+            name: hallo-config
+      volumeMounts:
+        # PASST ZU: volumes[].name weiter unten im selben Pod.
+        - name: config
+          # FREI: Verzeichnis im Container. Jeder Schluessel wird eine Datei,
+          # hier also /config/GREETING.
+          mountPath: /config
+          readOnly: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 512Mi
+  volumes:
+    # FREI: interner Name des Volumes. PASST ZU volumeMounts[].name oben.
+    - name: config
+      configMap:
+        # PASST ZU: metadata.name in ../betrieb/configmap.yaml.
+        # Aendert sich die ConfigMap, aktualisiert Kubernetes die Datei
+        # nach einiger Zeit, ohne Neustart.
+        name: hallo-config

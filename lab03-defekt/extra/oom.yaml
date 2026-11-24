@@ -1,0 +1,46 @@
+# Extra: Ein Container, dem das Speicherlimit nicht reicht.
+# Legende FEST, FREI, PASST ZU: siehe Kopf von lab02-hallo-app/k8s/deployment.yaml.
+# Name und Label "oom" sind frei, aber eigene: So kollidiert nichts mit
+# hallo oder den fuenf Faellen. Genutzt auch von Demo 2.3g.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # FREI. PASST ZU Befehlen mit deployment/oom und demos/tag2/00-vorbereiten.sh.
+  name: oom
+  # FREI: nur zum Filtern.
+  labels:
+    app: oom
+spec:
+  replicas: 1
+  # PASST ZU: template.metadata.labels und "kubectl get pods -l app=oom".
+  selector:
+    matchLabels:
+      app: oom
+  template:
+    metadata:
+      labels:
+        app: oom
+    spec:
+      containers:
+        # FREI.
+        - name: oom
+          # PASST ZU: geladenem Image aus Lab 2 (minikube image load).
+          image: hallo-app:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            # FEST: Die JVM liest JAVA_TOOL_OPTIONS beim Start von selbst.
+            # Hier belegt sie sofort 200 MiB Heap. Diese Variable ersetzt die
+            # aus dem Dockerfile (-XX:MaxRAMPercentage=65.0).
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Xms200m -XX:+AlwaysPreTouch"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 128Mi
+            # PASST ZU (absichtlich nicht): 128Mi ist kleiner als die 200 MiB
+            # aus -Xms200m. Wer das Limit ueberschreitet, wird vom Kernel
+            # beendet: OOMKilled.
+            limits:
+              memory: 128Mi

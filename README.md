@@ -51,6 +51,7 @@ Die Anwendung ist textbasiert. So bleiben Kubernetes und die Fehlersuche im Mitt
 
 - Auf diesem vorbereiteten Rechner: `source scripts/workshop-env.sh`. Das lädt die Werkzeuge aus `.cache/bin`, die eigene Workshop-kubeconfig und die gcloud-Konfiguration `gke-workshop`. Mit `workshop_local` und `workshop_gke` zwischen den Umgebungen wechseln. Details stehen im [Runbook](trainer/RUNBOOK.md).
 - [Lab-Zuordnung, Lösungen und Kürzungen](docs/06-labs-und-trainer.md)
+- [Demonstrationen für die Folien „Lokal ausprobieren“](demos/README.md)
 - [Teststatus und noch nötige Prüfungen](docs/07-teststatus.md)
 - [Sitzungsübergabe und Wiedereinstieg](docs/09-uebergabe.md)
 - [Cloud-Vorbereitung, Zugriffe und Aufräumen](trainer/README.md)

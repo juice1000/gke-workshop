@@ -1,0 +1,115 @@
+# Demonstrationen
+
+Kurze Skripte für den Trainer, die das zeigen, was auf den Folien im Streifen **„Lokal ausprobieren“** steht. Eine Demonstration gehört zu genau einer Folie. Auf der Folie steht unter dem Streifen-Etikett ihre Kennung, zum Beispiel `Demo 2.1d`.
+
+Demonstrationen sind keine Labs:
+
+| | Lab | Demonstration |
+| --- | --- | --- |
+| Wer tippt? | Alle Teilnehmenden | Der Trainer am Beamer, wer will, macht mit |
+| Dauer | 20 bis 90 Minuten | 1 bis 4 Minuten |
+| Ziel | Selbst üben, Checkpoint | Einen Satz von der Folie im echten Cluster zeigen |
+| Wo | `labNN-.../` | `demos/tag2/` |
+
+## So läuft eine Demonstration
+
+```text
+Folie mit Streifen "Lokal ausprobieren"   Demo 2.3b
+            |
+            v
+bash demos/tag2/2.3b-readiness-faellt-aus.sh
+            |
+            v
+  > kurzer Satz, was gleich passiert       <- ihr erklärt
+  $ kubectl ...                            <- Befehl wie auf der Folie
+    [Enter] ausführen, [s] überspringen    <- ihr bestimmt das Tempo
+            |
+            v
+  Fehler einbauen -> Status beobachten -> Beleg zeigen
+            |
+            v
+  Aufräumen: Ausgangszustand wiederherstellen (auch bei Strg+C)
+```
+
+Jedes Skript:
+
+- zeigt die Befehle so, wie sie auf der Folie stehen,
+- führt sie intern immer mit `--context minikube --namespace workshop` aus und bricht bei einem GKE-Kontext ab,
+- baut Fehler nur in den eigenen Namespace ein und räumt am Ende auf, auch bei Strg+C.
+
+## Vorbereitung
+
+Einmal vor 2.1 und nach jeder abgebrochenen Demonstration:
+
+```bash
+bash demos/tag2/00-vorbereiten.sh
+```
+
+Das stellt den Stand nach der Challenge in 2.2 her: `hallo-app:1.0` und `2.0` im Cluster, Secret, und `lab02-hallo-app/betrieb/` angewendet. Die Demonstrationen 2.1a bis 2.1f laufen auch schon mit dem Stand nach Lab 2.
+
+## Aufruf
+
+```bash
+bash demos/tag2/2.1d-service-ohne-endpunkte.sh            # Schritt für Schritt (Standard)
+bash demos/tag2/2.1d-service-ohne-endpunkte.sh --auto     # ohne Pausen, zum Testen
+bash demos/tag2/2.1d-service-ohne-endpunkte.sh --trocken  # nur Befehle zeigen, nichts ausführen
+```
+
+Anderer Kontext oder Namespace: `DEMO_KONTEXT=... DEMO_NAMESPACE=...`. Eigene kubeconfig: `DEMO_KUBECONFIG=...`. Anderer Port in 2.3c: `DEMO_PORT=18080`.
+
+## Übersicht Tag 2
+
+„Ändert“ heißt: Die Demonstration baut etwas um oder einen Fehler ein und stellt danach den Ausgangszustand wieder her.
+
+| Demo | Folie | Was ihr seht | Ändert |
+| --- | --- | --- | --- |
+| [00](tag2/00-vorbereiten.sh) | vor 2.1 | Ausgangslage herstellen | ja |
+| [2.1a](tag2/2.1a-kubectl-alltag.sh) | 2.1 „1.5 kompakt: kubectl im Alltag“ | get, describe, logs | nein |
+| [2.1b](tag2/2.1b-cluster-node-namespace.sh) | 2.1 „Eure Fragen: Cluster, Node, Namespace“ | Spalten NAMESPACE und NODE | nein |
+| [2.1c](tag2/2.1c-objekte-und-labels.sh) | 2.1 „Eure Fragen: Image, Pod, Deployment, Service“ | ganze Kette, Labels, Selektor | nein |
+| [2.1d](tag2/2.1d-service-ohne-endpunkte.sh) | Check-in 2.1, 1/3 „Service ohne Endpunkte“ | falscher Selektor, leere EndpointSlice | ja |
+| [2.1e](tag2/2.1e-connection-refused.sh) | Check-in 2.1, 2/3 „Connection refused am Morgen“ | Meldung ohne API-Server, minikube status | nein |
+| [2.1f](tag2/2.1f-replicasets.sh) | Check-in 2.1, 3/3 „Zwei ReplicaSets“ | neues ReplicaSet durch rollout restart | ja |
+| [2.2a](tag2/2.2a-configmap-neustart.sh) | Check-in 2.2, 1/2 „ConfigMap geändert, alte Begrüßung“ | alter Wert bis zum Neustart | ja |
+| [2.2b](tag2/2.2b-falscher-namespace.sh) | Check-in 2.2, 2/2 „CreateContainerConfigError“ | ConfigMap im falschen Namespace | ja |
+| [2.2c](tag2/2.2c-secret-base64.sh) | Anhang „ConfigMap oder Secret?“ (Extra) | base64 dekodieren, auth can-i | nein |
+| [2.3a](tag2/2.3a-probes-ansehen.sh) | 2.3 „Zwei Probes, zwei Fragen“ | READY, RESTARTS, Probe-Zeiten | nein |
+| [2.3b](tag2/2.3b-readiness-faellt-aus.sh) | Check-in 2.3 P, 1/3 „Die Anwendung hängt“ | READY 0/1 ohne Neustart, Ready false | ja |
+| [2.3c](tag2/2.3c-health-endpunkte.sh) | Check-in 2.3 P, 2/3 „Liveness hängt an der Datenbank“ | was die Probes abfragen | nein |
+| [2.3d](tag2/2.3d-langsamer-start.sh) | Check-in 2.3 P, 3/3 „Langsamer Start“ | ohne Startup-Probe: Neustarts, CrashLoopBackOff | ja |
+| [2.3e](tag2/2.3e-requests-limits.sh) | 2.3 „Requests und Limits“ | Requests im Pod und auf dem Node | nein |
+| [2.3f](tag2/2.3f-pending.sh) | Check-in 2.3 R, 1/2 „Pending trotz freier CPU“ | hoher CPU-Request, FailedScheduling | ja |
+| [2.3g](tag2/2.3g-oomkilled.sh) | Check-in 2.3 R, 2/2 „OOMKilled“ | Last State OOMKilled, Exit 137 | ja |
+| [2.3h](tag2/2.3h-metriken.sh) | Anhang „Autoscaler bei Lastspitze“ (Extra) | kubectl top, ein HPA | ja |
+| [2.4a](tag2/2.4a-rolling-update.sh) | 2.4 „Rolling Update: Austausch im Betrieb“ | Pods werden einzeln getauscht | ja |
+| [2.4b](tag2/2.4b-falscher-tag.sh) | Check-in 2.4, 1/2 „Rollout mit falschem Tag“ | ImagePullBackOff, alte Pods bedienen weiter | ja |
+| [2.4c](tag2/2.4c-update-strategie.sh) | Anhang „maxSurge und maxUnavailable“ (Extra) | Update mit 4 Kopien | ja |
+| [2.4d](tag2/2.4d-undo-und-git.sh) | Check-in 2.4, 2/2 „Undo und Git“ | Cluster und Repository laufen auseinander | ja |
+| [2.6a](tag2/2.6a-control-plane.sh) | Check-in 2.6, 1/2 „Wer verantwortet was auf GKE?“ | Control Plane als Pods in minikube | nein |
+| [2.6b](tag2/2.6b-requests-ansehen.sh) | Check-in 2.6, 2/2 „Autopilot ohne Requests“ | Requests eines Pods | nein |
+| [2.6c](tag2/2.6c-api-versionen.sh) | Anhang „Nach dem Upgrade“ (Extra) | Version und API-Version | nein |
+
+Die Streifen „Auf GKE ausprobieren“ in 2.9 haben keine Demonstration. Sie laufen nach Lab 4 direkt im GKE-Kontext.
+
+## Was die Demonstrationen nachbauen
+
+```text
+Fehlerbild                    Demo   wie
+----------------------------  -----  ------------------------------------------
+Service ohne Endpunkte        2.1d   Selektor per patch auf app=hallo-app
+CreateContainerConfigError    2.2b   Lab 3 Fall 2, ConfigMap im falschen Namespace
+READY 0/1                     2.3b   Readiness-Pfad per patch auf /gibtsnicht
+Neustarts, CrashLoopBackOff   2.3d   Startup-Probe entfernt, Liveness alle 2 s
+Pending                       2.3f   CPU-Request auf 60 Prozent des Nodes
+OOMKilled                     2.3g   lab03-defekt/extra/oom.yaml
+ImagePullBackOff              2.4b   set image auf einen Tag, den es nicht gibt
+```
+
+Lab 3 zeigt dieselben Fehlerbilder noch einmal, dann suchen die Teilnehmenden die Ursache selbst.
+
+## Grenzen
+
+- Eine Anwendung, die hängt, aber weiterläuft, lässt sich nicht sauber nachbauen. 2.3b zeigt stattdessen eine scheiternde Readiness.
+- 2.3f rechnet den CPU-Request aus der Node-Kapazität. Docker Desktop meldet minikube oft alle CPUs des Rechners, trotz `--cpus=2`. Die Demonstration funktioniert mit beiden.
+- 2.3h schaltet das minikube-Addon `metrics-server` ein und lässt es an. Die ersten Werte kommen nach ein bis zwei Minuten.
+- Bricht eine Demonstration hart ab (Terminal geschlossen), stellt `00-vorbereiten.sh` den Ausgangszustand wieder her.
