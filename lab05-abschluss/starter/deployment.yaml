@@ -1,17 +1,13 @@
-# Lab 5, Starter: die TODO-Zeilen ergaenzt ihr selbst. Muster:
-# lab02-hallo-app/betrieb/deployment.yaml (dort ist jedes Feld erklaert).
-# Legende FEST, FREI, PASST ZU: siehe Kopf von lab02-hallo-app/k8s/deployment.yaml.
+# Lab 5, Starter: TODO-Zeilen ergaenzen. Muster: lab02-hallo-app/betrieb/deployment.yaml.
 #
-# Bezuege, auf die ihr beim Ergaenzen achten muesst:
-#   configmap.yaml  name hallo-config, Schluessel GREETING -> env GREETING
-#   kubectl create secret generic hallo-secret
-#     --from-literal=DB_PASSWORT=... -----------------------> env DB_PASSWORT
-#   service.yaml  selector app=hallo ----------------------> template-Labels
-#   $IMAGE aus "docker push" -------------------------------> image
+#   configmap.yaml hallo-config, Schluessel GREETING --> env GREETING
+#   Secret hallo-secret, Schluessel DB_PASSWORT -------> env DB_PASSWORT
+#   service.yaml selector app=hallo ------------------> template-Labels
+#   $IMAGE aus docker push ----------------------------> image
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  # PASST ZU: deployment/hallo in Befehlen, pruefen.py, Name der Releases.
+  # PASST ZU: deployment/hallo und den Releases.
   name: hallo
   labels:
     app: hallo
@@ -25,7 +21,7 @@ spec:
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
-  # PASST ZU: template.metadata.labels darunter.
+  # PASST ZU: template.metadata.labels.
   selector:
     matchLabels:
       app: hallo
@@ -38,7 +34,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: hallo
-          # PASST ZU: dem Wert von $IMAGE (Pfad aus docker push, Version 2.0).
+          # PASST ZU: $IMAGE.
           image: TODO_IMAGE  # TODO: Registry-Pfad mit Version 2.0
           imagePullPolicy: IfNotPresent
           env:
@@ -47,7 +43,6 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
           ports:
-            # PASST ZU: server.port=8080 der Anwendung.
             - containerPort: 8080
           # TODO: GREETING aus hallo-config, Schluessel GREETING.
           # TODO: DB_PASSWORT aus hallo-secret, Schluessel DB_PASSWORT.

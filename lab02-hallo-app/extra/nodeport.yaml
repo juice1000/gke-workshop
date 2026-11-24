@@ -1,34 +1,22 @@
-# Zusaetzlicher Service vom Typ NodePort: die Anwendung von aussen aufrufen,
-# wie ein Nutzer eine API aufruft, ohne kubectl und ohne Tunnel.
-# Laeuft neben dem Service hallo, der bleibt ClusterIP.
-# Mit dem Docker-Treiber unter macOS und Windows nur erreichbar, wenn der
-# Cluster mit --ports=127.0.0.1:30080:30080 angelegt wurde (README, 2.4).
-# Legende FEST, FREI, PASST ZU: siehe Kopf von ../k8s/deployment.yaml.
-#
-#   selector app=hallo ----> template.metadata.labels in deployment.yaml
-#   targetPort 8080 -------> containerPort, server.port der Anwendung
-#   nodePort 30080 --------> --ports=127.0.0.1:30080:30080 bei minikube start
+# Extra: Service vom Typ NodePort. Von aussen erreichbar, ohne Tunnel.
+# Mit Docker-Treiber nur, wenn minikube mit --ports=127.0.0.1:30080:30080
+# gestartet wurde (README, 2.4). Der Service hallo bleibt ClusterIP.
 
-# FEST: Kerngruppe v1, Objektart Service.
+# FEST
 apiVersion: v1
 kind: Service
 metadata:
-  # FREI, aber anders als hallo, damit der Service hallo unveraendert bleibt.
+  # FREI, aber nicht hallo.
   name: hallo-nodeport
 spec:
-  # FEST (Wertauswahl: ClusterIP, NodePort, LoadBalancer). NodePort oeffnet
-  # denselben Port auf jedem Node des Clusters.
+  # FEST: oeffnet denselben Port auf jedem Node.
   type: NodePort
-  # PASST ZU: template.metadata.labels in deployment.yaml. Damit verteilt
-  # dieser Service auf dieselben Pods wie hallo.
+  # PASST ZU: template.metadata.labels in deployment.yaml.
   selector:
     app: hallo
   ports:
-    # port: FREI. Port im Cluster (http://hallo-nodeport:80).
-    # targetPort: PASST ZU containerPort und server.port 8080.
-    # nodePort: FREI im Bereich 30000 bis 32767. PASST ZU dem Port, der bei
-    #   "minikube start --ports" freigegeben wurde. Ohne Angabe waehlt
-    #   Kubernetes einen zufaelligen Port.
+    # port: FREI. targetPort: PASST ZU containerPort.
+    # nodePort: 30000 bis 32767, PASST ZU minikube start --ports.
     - port: 80
       targetPort: 8080
       nodePort: 30080

@@ -1,25 +1,15 @@
-# ConfigMap: Konfiguration ausserhalb des Images. Fuer eine andere Begruessung
-# muss niemand neu bauen. Das Deployment liest den Schluessel GREETING als
-# Umgebungsvariable. Die wird nur beim Containerstart gesetzt: Nach einer
-# Aenderung hier braucht es "kubectl rollout restart deployment/hallo".
-# Legende FEST, FREI, PASST ZU: siehe Kopf von ../k8s/deployment.yaml.
+# ConfigMap: Konfiguration ausserhalb des Images.
+# Wird beim Containerstart gelesen. Nach Aenderung: rollout restart.
 #
-#   configmap.yaml                 deployment.yaml
-#   metadata.name: hallo-config -> env GREETING, configMapKeyRef.name
-#   data.GREETING               -> env GREETING, configMapKeyRef.key
-#
-# Die ConfigMap muss im selben Namespace liegen wie die Pods.
+#   metadata.name hallo-config --> configMapKeyRef.name in deployment.yaml
+#   data.GREETING ---------------> configMapKeyRef.key in deployment.yaml
 
-# FEST: Kerngruppe v1, Objektart ConfigMap.
+# FEST
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  # PASST ZU: configMapKeyRef.name in deployment.yaml, configMapRef und
-  # configMap.name in ../extra/config-pod.yaml, scripts/pruefen.py.
+  # PASST ZU: configMapKeyRef.name in deployment.yaml.
   name: hallo-config
 data:
-  # Schluessel: PASST ZU configMapKeyRef.key in deployment.yaml.
-  #   Der Name der Umgebungsvariable im Container steht dort unter env.name
-  #   und koennte anders lauten. Hier sind beide zufaellig gleich.
-  # Wert: FREI. Das ist der Text, den die Anwendung ausgibt.
+  # Schluessel: PASST ZU configMapKeyRef.key. Wert: FREI.
   GREETING: Hallo aus der ConfigMap

@@ -1,24 +1,16 @@
-# Derselbe Service wie in k8s/service.yaml. Er liegt hier noch einmal, damit
-# "kubectl apply -f lab02-hallo-app/betrieb/" alles fuer Tag 2 enthaelt.
-# Legende FEST, FREI, PASST ZU: siehe Kopf von ../k8s/deployment.yaml.
+# Derselbe Service wie in k8s/service.yaml, damit betrieb/ vollstaendig ist.
 
-# FEST: Kerngruppe v1, Objektart Service.
+# FEST
 apiVersion: v1
 kind: Service
 metadata:
-  # PASST ZU: metadata.name in ../k8s/service.yaml. Gleicher Name heisst:
-  # apply aktualisiert den bestehenden Service, statt einen zweiten anzulegen.
-  # Ausserdem: port-forward service/hallo, pruefen.py, DNS-Name http://hallo.
+  # PASST ZU: ../k8s/service.yaml. Gleicher Name: apply aktualisiert ihn.
   name: hallo
 spec:
-  # PASST ZU: template.metadata.labels in deployment.yaml (Labels der Pods),
-  # ausserdem selector in ../../lab06-betrieb/pdb.yaml.
-  # Ab Tag 2 entscheidet die readinessProbe, welcher dieser Pods als bereit
-  # gilt und Anfragen bekommt.
+  # PASST ZU: template.metadata.labels in deployment.yaml.
   selector:
     app: hallo
   ports:
-    # port 80: FREI, PASST ZU port-forward ...:80.
-    # targetPort 8080: PASST ZU containerPort in deployment.yaml und server.port.
+    # port: FREI. targetPort: PASST ZU containerPort.
     - port: 80
       targetPort: 8080

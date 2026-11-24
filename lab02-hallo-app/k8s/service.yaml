@@ -1,31 +1,17 @@
-# Service: feste Adresse und fester Name "hallo" fuer alle Pods mit app=hallo.
-# Pods kommen und gehen, der Service bleibt. Ohne Angabe von type ist er
-# vom Typ ClusterIP, also nur innerhalb des Clusters erreichbar.
-# Von eurem Rechner aus kommt ihr per "kubectl port-forward" heran.
-# Legende FEST, FREI, PASST ZU: siehe Kopf von deployment.yaml.
+# Service: fester Name "hallo" fuer alle Pods mit app=hallo.
+# Typ ClusterIP: nur im Cluster erreichbar, von aussen per port-forward.
 
-# FEST: Services liegen in der Kerngruppe, deshalb nur "v1".
+# FEST
 apiVersion: v1
 kind: Service
 metadata:
-  # PASST ZU: "kubectl port-forward service/hallo ...", scripts/pruefen.py
-  # und dem DNS-Namen im Cluster (http://hallo). Sonst frei waehlbar.
-  # Kubernetes leitet daraus das Label kubernetes.io/service-name=hallo an
-  # der EndpointSlice ab.
+  # PASST ZU: port-forward service/hallo und DNS-Name http://hallo.
   name: hallo
 spec:
-  # PASST ZU: template.metadata.labels in deployment.yaml, also den Labels
-  # der Pods. Nicht zu metadata.labels des Deployments.
-  # Jedes Paar hier muss am Pod stehen, der Pod darf mehr Labels haben.
-  # Der Service kennt keine Pod-Namen und auch kein Deployment, nur Labels.
-  # Passt der selector zu keinem Pod, bleibt der Service ohne Endpunkte
-  # (Demo 2.1d).
+  # PASST ZU: template.metadata.labels in deployment.yaml (Pod-Labels).
   selector:
     app: hallo
   ports:
-    # port: FREI. Der Port des Service (http://hallo:80 im Cluster).
-    #   PASST ZU: der rechten Zahl in "kubectl port-forward service/hallo 8080:80".
-    # targetPort: PASST ZU dem Port, auf dem die Anwendung hoert
-    #   (containerPort 8080 in deployment.yaml, server.port in der Anwendung).
+    # port: FREI, Port des Service. targetPort: PASST ZU containerPort.
     - port: 80
       targetPort: 8080

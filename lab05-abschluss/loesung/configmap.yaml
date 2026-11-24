@@ -1,5 +1,4 @@
 # ConfigMap fuer Lab 5. Fertig, keine Aufgabe.
-# Legende FEST, FREI, PASST ZU: siehe Kopf von lab02-hallo-app/k8s/deployment.yaml.
 apiVersion: v1
 kind: ConfigMap
 metadata:

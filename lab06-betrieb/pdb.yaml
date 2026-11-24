@@ -1,23 +1,16 @@
-# PodDisruptionBudget: Bei geplanten Unterbrechungen (z. B. Node leeren mit
-# "kubectl drain") muss mindestens ein Pod von hallo laufen bleiben.
-# Schuetzt nicht vor Abstuerzen.
-# Legende FEST, FREI, PASST ZU: siehe Kopf von lab02-hallo-app/k8s/deployment.yaml.
-#
-#   pdb.yaml selector app=hallo --> template.metadata.labels im Deployment hallo
-#                                   (lab02-hallo-app/betrieb/deployment.yaml)
+# PodDisruptionBudget: Bei geplanten Unterbrechungen (kubectl drain) bleibt
+# mindestens ein Pod von hallo laufen. Schuetzt nicht vor Abstuerzen.
 
-# FEST: Gruppe policy, Version v1.
+# FEST
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  # FREI. Nur fuer "kubectl get pdb" und delete.
+  # FREI.
   name: hallo-pdb
 spec:
-  # FREI (Wert). PASST ZU replicas: Bei 2 Pods darf hoechstens einer
-  # gleichzeitig weg. Bei replicas 1 blockiert es jedes Leeren des Nodes.
+  # FREI, aber kleiner als replicas. Sonst blockiert es jedes drain.
   minAvailable: 1
-  # PASST ZU: template.metadata.labels des Deployments, also den Pod-Labels.
-  # Das PDB kennt kein Deployment, nur Labels. Passt nichts, schuetzt es nichts.
+  # PASST ZU: Pod-Labels im Deployment hallo.
   selector:
     matchLabels:
       app: hallo
