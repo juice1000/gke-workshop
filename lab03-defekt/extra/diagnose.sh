@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Uebung: Diagnose-Skript fuer ein Deployment. Ihr ergaenzt die TODOs.
-# Aufruf: bash lab03-defekt/diagnose.sh fall1
+# Aufruf: bash lab03-defekt/extra/diagnose.sh fall1
 # Kontext und Namespace sind ausdruecklich gesetzt, nie stillschweigend der aktuelle.
 set -uo pipefail
 
-APP="${1:?Aufruf: bash lab03-defekt/diagnose.sh APP-LABEL, z. B. fall1}"
+APP="${1:?Aufruf: bash lab03-defekt/extra/diagnose.sh APP-LABEL, z. B. fall1}"
 CONTEXT="${WORKSHOP_CONTEXT:-minikube}"
 NAMESPACE="${WORKSHOP_NAMESPACE:-workshop}"
 K=(kubectl --context "$CONTEXT" -n "$NAMESPACE")

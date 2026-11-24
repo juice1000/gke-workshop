@@ -2,7 +2,7 @@
 
 Ergaenzt [README.md](README.md) (Zugriffsmodell, Probelauf, Aufraeumen) um eine Befehlsfolge zum Abarbeiten. Alles wird vom Trainer von Hand ausgefuehrt. Das Repository legt nichts automatisch an. Jeder Abschnitt endet mit einer Pruefung.
 
-Die Trainerumgebung wird im Projekt `lookbeyond-gke-workshop` in Frankfurt aufgebaut. Der tatsaechliche Laufzeitnachweis steht im [Teststatus](../docs/07-teststatus.md). Die Erstellungsbefehle sind fuer den initialen Aufbau gedacht. Vor einem erneuten Lauf vorhandene Ressourcen pruefen und wiederverwenden.
+Die Trainerumgebung wird im Projekt `lookbeyond-gke-workshop` in Frankfurt aufgebaut. Die Erstellungsbefehle sind fuer den initialen Aufbau gedacht. Vor einem erneuten Lauf vorhandene Ressourcen pruefen und wiederverwenden.
 
 ## Lokale Trainerumgebung
 

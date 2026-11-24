@@ -1,6 +1,6 @@
 # Lab 2: hallo-app lokal deployen
 
-**Ziel:** Ihr baut ein Image, deployt zwei Kopien und beobachtet Selbstheilung. Dauer: 60 Minuten an Tag 1. Die Abschnitte 4 und 5 sind für Tag 2 und ergänzen Konfiguration, Probes und Updates.
+**Ziel:** Ihr baut ein Image, deployt zwei Kopien und beobachtet Selbstheilung. Dauer: 60 Minuten an Tag 1. Der Teil für Tag 2 steht in [betrieb/README.md](betrieb/README.md).
 
 Alle Befehle aus dem Repository-Hauptordner. Voraussetzung: [Lab 0](../lab00-check/README.md). Kontext `minikube`, Namespace `workshop`.
 
@@ -214,122 +214,10 @@ Unter Workloads steht außerdem ein **ReplicaSet**, das in keiner eurer Dateien 
 
 **Abgabe Tag 1:** Zwei laufende Pods, HTTP-Antwort und ein Satz zum Sollzustand.
 
-## 4. Tag 2: ConfigMap und Secret
+## 4. und 5. Tag 2: Konfiguration, Probes und Updates
 
-Bisher steckt die gesamte Konfiguration im Image. Für eine andere Begrüßung müsstet ihr neu bauen. Eine **ConfigMap** hält Konfiguration außerhalb des Images. Ein **Secret** tut dasselbe für vertrauliche Werte. Das Deployment holt die Werte als Umgebungsvariablen in den Container.
-
-### 4.1 Version 2.0 bauen und ausrollen
-
-```bash
-docker build --build-arg APP_VERSION=2.0 -t hallo-app:2.0 lab02-hallo-app
-minikube image load hallo-app:2.0
-```
-
-Gleicher Quellcode, neue Versionsbezeichnung. Neuer Tag heißt für Kubernetes: neues Image.
-
-**Aufgabe: Secret anlegen.** Legt ein Secret `hallo-secret` mit dem Schlüssel `DB_PASSWORT` und dem Wert `uebung123` an, direkt per Befehl, ohne Datei. So landet das Passwort nicht im Repository. Startet bei `kubectl create --help` und folgt den Unterbefehlen. Prüft das Ergebnis mit `kubectl get secrets`.
-
-Bei einem wiederholten Durchlauf meldet der Befehl `AlreadyExists`. Das vorhandene Übungs-Secret reicht dann. `DB_PASSWORT` zeigt nur, wie ein Secret eingebunden wird. Es gibt keine Datenbank, und die Anwendung gibt den Wert nicht aus.
-
-**Aufgabe: Werte einbinden.** In [betrieb/deployment.yaml](betrieb/deployment.yaml) fehlen zwei Umgebungsvariablen. Ergänzt sie an den `TODO`-Stellen:
-
-- `GREETING` aus der ConfigMap `hallo-config`, Schlüssel `GREETING`
-- `DB_PASSWORT` aus dem Secret `hallo-secret`, Schlüssel `DB_PASSWORT`
-
-Als Muster dient der Eintrag `HOSTNAME` direkt darüber. Er holt seinen Wert ebenfalls über `valueFrom`, nur aus einer anderen Quelle. Welche Felder es unter `valueFrom` gibt, zeigt `kubectl explain`. Der Befehl steht als Kommentar in der Datei.
-
-```bash
-kubectl apply -f lab02-hallo-app/betrieb/
-kubectl rollout status deployment/hallo --timeout=180s
-python3 scripts/pruefen.py betrieb
-```
-
-Der Ordner `betrieb/` enthält eine ConfigMap, einen Service und ein erweitertes Deployment mit Version 2.0, Probes und Ressourcen. `apply` ersetzt das bisherige Deployment `hallo` durch diese Fassung. Kubernetes tauscht die Pods schrittweise aus, das ist ein **Rolling Update**. Beobachtet es im Terminal mit `kubectl get pods -w`. Der Checkpoint prüft Konfiguration, Secret, Probes und die HTTP-Antwort mit Version 2.0. Meldet er `FEHLT` bei `GREETING` oder `DB_PASSWORT`, prüft Einrückung, Namen und Schlüssel in eurer Datei.
-
-### 4.2 Begrüßung ändern
-
-Ändert `GREETING` in [betrieb/configmap.yaml](betrieb/configmap.yaml) und wendet nur diese Datei an:
-
-```bash
-kubectl apply -f lab02-hallo-app/betrieb/configmap.yaml
-```
-
-Startet den Port-Forward neu und ruft die Seite auf. Die alte Begrüßung bleibt. Warum? Umgebungsvariablen werden nur beim Start eines Containers gesetzt. Die laufenden Pods kennen den neuen Wert nicht.
-
-```bash
-kubectl rollout restart deployment/hallo
-kubectl rollout status deployment/hallo --timeout=180s
-```
-
-`rollout restart` ersetzt alle Pods nacheinander durch neue, ohne das Manifest zu ändern. Die neuen Pods lesen die ConfigMap beim Start. Jetzt erscheint die neue Begrüßung.
-
-Ein Secret ist nicht sicher, nur weil sein Wert in Base64 dargestellt wird. Base64 ist keine Verschlüsselung. Wer Secrets lesen darf und wie echte Geheimnisse verwaltet werden, ist ein eigenes Betriebsthema.
-
-## 5. Tag 2: Probes, Ressourcen und Rollback
-
-### 5.1 Probes und Ressourcen lesen
-
-Öffnet [betrieb/deployment.yaml](betrieb/deployment.yaml). Eine **Probe** ist eine regelmäßige Prüfung durch Kubernetes, hier ein HTTP-Aufruf eines Health-Pfads.
-
-| Probe | Frage | Folge bei Fehlschlag |
-| --- | --- | --- |
-| `startupProbe` | Ist der Start abgeschlossen? | Nach zu vielen Fehlschlägen Neustart. Hier bekommt die JVM bis zu etwa 150 Sekunden. Bis zum Erfolg laufen die anderen beiden Probes nicht |
-| `readinessProbe` | Kann der Pod jetzt Anfragen annehmen? | Der Service schickt keinen Verkehr mehr an diesen Pod. Kein Neustart |
-| `livenessProbe` | Lebt die Anwendung noch? | Kubernetes startet den Container neu |
-
-**Requests** sagen dem Scheduler, wie viel CPU und Speicher ein Pod mindestens braucht. Danach wählt er einen Node mit genug freier Kapazität. Das **Speicherlimit** begrenzt den gesamten Container, inklusive Java-Heap und JVM-Nebenspeicher. Wer es überschreitet, wird beendet (`OOMKilled`). Ein CPU-Limit ist bewusst nicht gesetzt.
-
-`maxUnavailable: 0` und `maxSurge: 1` steuern das Rolling Update: Es fällt nie ein bereiter Pod weg, bevor ein neuer bereit ist, und es entsteht höchstens ein zusätzlicher Pod.
-
-### 5.2 Ein kaputtes Update ausrollen und zurücknehmen
-
-```bash
-kubectl set image deployment/hallo hallo=hallo-app:nicht-vorhanden
-```
-
-Ändert das Image auf einen Tag, den es nicht gibt. `hallo=` ist der Name des Containers im Deployment.
-
-```bash
-kubectl rollout status deployment/hallo --timeout=30s
-```
-
-Soll nach 30 Sekunden fehlschlagen. Der neue Pod kann das Image nicht laden.
-
-```bash
-kubectl get pods
-kubectl get events --sort-by=.metadata.creationTimestamp
-```
-
-Erwartet: zwei alte Pods weiter `Running` und `1/1`, ein neuer Pod in `ErrImagePull` oder `ImagePullBackOff`. Die Events nennen das fehlende Image. Die Anwendung bleibt erreichbar, weil `maxUnavailable: 0` die alten Pods schützt, solange kein neuer bereit ist.
-
-**Aufgabe: Zurückrollen.** Alle Befehle rund um Rollouts liegen unter `kubectl rollout --help`. Findet dort heraus,
-
-1. wie ihr die gespeicherten Stände (Revisionen) des Deployments `hallo` anzeigt,
-2. wie ihr zur vorherigen Revision zurückkehrt.
-
-Führt beides aus und prüft danach:
-
-```bash
-kubectl rollout status deployment/hallo --timeout=180s
-python3 scripts/pruefen.py betrieb
-```
-
-Der kaputte Pod verschwindet, der Checkpoint ist wieder grün.
-
-Kubernetes rollt ein fehlgeschlagenes Update nicht von selbst zurück. Es wartet. Der Rollback ändert nur das Objekt im Cluster, eure Dateien bleiben unverändert. Der letzte gesunde Stand steht weiter in `betrieb/deployment.yaml`.
-
-**Bonus: Ist ein Secret geheim?** Lest den Wert von `DB_PASSWORT` aus dem Secret `hallo-secret` im Klartext aus, nur mit `kubectl` und einem Standardwerkzeug der Shell. Tipp: `kubectl get secret --help`, Stichwort `jsonpath`, und `base64 --help`. Was folgt daraus für die Frage, wer Secrets lesen darf?
-
-**Abgabe Tag 2:** Begrüßung aus ConfigMap, Version 2.0, drei Probe-Pfade und der Befehl zum Rollback.
+Die Anleitung für Tag 2 steht jetzt in [betrieb/README.md](betrieb/README.md): ConfigMap und Secret, Readiness, Rolling Update und Rollback, dazu Extras zum Ausprobieren.
 
 ## Aufräumen
 
-Nach Tag 1 könnt ihr die Anwendung stehen lassen oder `kubectl delete -f lab02-hallo-app/k8s/` ausführen. Vor Lab 3 nach Tag 2:
-
-```bash
-kubectl config current-context
-kubectl delete -f lab02-hallo-app/betrieb/
-kubectl delete secret hallo-secret
-```
-
-`delete -f` entfernt alle Objekte, die in den Dateien beschrieben sind. Das Secret steht in keiner Datei und wird deshalb einzeln gelöscht. Der lokale Cluster bleibt für Lab 3 und Lab 6 bestehen.
+Nach Tag 1 könnt ihr die Anwendung stehen lassen. Tag 2 baut darauf auf. Wollt ihr sie entfernen: `kubectl delete -f lab02-hallo-app/k8s/`. Das Aufräumen nach Tag 2 steht in [betrieb/README.md](betrieb/README.md#aufräumen).

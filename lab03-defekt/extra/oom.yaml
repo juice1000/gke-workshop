@@ -1,0 +1,35 @@
+# Extra: Ein Container, dem das Speicherlimit nicht reicht.
+# Eigene Namen und Labels, damit nichts mit den fuenf Faellen kollidiert.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oom
+  labels:
+    app: oom
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oom
+  template:
+    metadata:
+      labels:
+        app: oom
+    spec:
+      containers:
+        - name: oom
+          image: hallo-app:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            # Die JVM belegt beim Start sofort 200 MiB Heap.
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Xms200m -XX:+AlwaysPreTouch"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 128Mi
+            # Wer das Limit ueberschreitet, wird vom Kernel beendet: OOMKilled.
+            limits:
+              memory: 128Mi

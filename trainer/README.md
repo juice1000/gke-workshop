@@ -6,7 +6,7 @@ Diese Schritte gehören zur Vorbereitung durch den Trainer. Teilnehmende erstell
 
 Projekt `lookbeyond-gke-workshop`, Standard-Cluster `workshop` in `europe-west3-b`, Artifact-Registry-Repository `workshop` in `europe-west3`. Einstieg auf dem vorbereiteten Rechner: `source scripts/workshop-env.sh`, danach `workshop_gke` oder `workshop_local`.
 
-Der Cluster nutzt den Node-Pool `kurs` mit `e2-standard-4`, 50 GB Balanced-Persistent-Disk. Bis zum Cloud-Teil läuft ein Node, während des Kurses drei. Die Rechnung dazu steht im [Runbook](RUNBOOK.md#kurs-node-pool-umgesetzt-am-21112026). Die Anwendung liegt im Namespace `workshop-trainer`. Die Namespaces `workshop-person01` und `workshop-person02` enthalten Entwicklerrollen mit isolierten Kubernetes-Testidentitäten. Teilnehmerkonten werden am Abend von Tag 1 mit [teilnehmer-anlegen.sh](teilnehmer-anlegen.sh) aus der Kontoliste gebunden. Der Laufzeitnachweis und seine Grenzen stehen im [Teststatus](../docs/07-teststatus.md).
+Der Cluster nutzt den Node-Pool `kurs` mit `e2-standard-4`, 50 GB Balanced-Persistent-Disk. Bis zum Cloud-Teil läuft ein Node, während des Kurses drei. Die Rechnung dazu steht im [Runbook](RUNBOOK.md#kurs-node-pool-umgesetzt-am-21112026). Die Anwendung liegt im Namespace `workshop-trainer`. Die Namespaces `workshop-person01` und `workshop-person02` enthalten Entwicklerrollen mit isolierten Kubernetes-Testidentitäten. Teilnehmerkonten werden am Abend von Tag 1 mit [teilnehmer-anlegen.sh](teilnehmer-anlegen.sh) aus der Kontoliste gebunden.
 
 Der Node verwendet ein eigenes IAM-Servicekonto mit der GKE-Node-Rolle und Leserecht am Workshop-Repository. Workload Identity Federation ist aktiviert. API-Zugriffe erfolgen über den DNS-Endpunkt; IP-basierter API-Zugriff ist deaktiviert. Die Anwendung bleibt als `ClusterIP` erreichbar und wird zum Testen per Port-Forward geöffnet.
 
@@ -67,7 +67,6 @@ Erwartet: `yes`, `yes`, `no`, `no`, `no`. Prüft zusätzlich mit `kubectl auth c
 - Die gerenderten Lösungen aus Lab 5 (Branch `main`) anwenden und alle drei Fehlerbilder auslösen. Bei B muss `OOMKilled` aus dem Containerzustand belegbar sein. Die Autopilot-Admission darf die beabsichtigte Knappheit nicht aufheben; falls Regeln das Manifest ablehnen oder anpassen, die Übung vorab passend ändern.
 - Nach jedem fehlgeschlagenen Rollout zwei alte bereite Pods und eine funktionierende HTTP-Antwort nachweisen. Danach Rollback und Reparatur prüfen.
 - `/fehler` aufrufen. Die Logzeile über Cluster und Namespace filtern. Im Monitoring CPU, Speicher und `kubernetes.io/container/restart_count` mit passenden Filtern finden. Logs und Metriken brauchen eventuell Zeit bis zur Anzeige.
-- Konsolennavigation, Rechte, tatsächliche Cluster-Version, Node-Architektur und Laufzeiten in [Teststatus](../docs/07-teststatus.md) eintragen.
 
 Es gibt in den Labs keinen öffentlichen LoadBalancer. Das vereinfacht Netzwerk und Kosten. Einen zusätzlichen öffentlichen Zugriff nur als separat abgestimmte Erweiterung vorbereiten.
 

@@ -1,0 +1,36 @@
+# Extra: Konfiguration auf zwei weitere Arten in einen Container bringen.
+# Ein einzelner Pod zum Ausprobieren, kein Deployment. Das Label app: hallo-extra
+# sorgt dafuer, dass der Service hallo ihn nicht auswaehlt.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hallo-config-extra
+  labels:
+    app: hallo-extra
+spec:
+  containers:
+    - name: hallo
+      image: hallo-app:2.0
+      imagePullPolicy: IfNotPresent
+      # envFrom: jeder Schluessel der ConfigMap wird zu einer Umgebungsvariable.
+      # Wie bei env gilt: gesetzt beim Containerstart, danach nicht mehr.
+      envFrom:
+        - configMapRef:
+            name: hallo-config
+      # Volume: jeder Schluessel wird zu einer Datei unter /config.
+      # Aendert sich die ConfigMap, aktualisiert Kubernetes die Datei
+      # nach einiger Zeit, ohne Neustart.
+      volumeMounts:
+        - name: config
+          mountPath: /config
+          readOnly: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 512Mi
+  volumes:
+    - name: config
+      configMap:
+        name: hallo-config
