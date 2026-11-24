@@ -160,6 +160,21 @@ Baut einen Tunnel von Port 8080 eures Rechners zu Port 80 des Service. Der Befeh
 
 `port-forward service/...` wählt beim Start **einen** Pod aus und bleibt bei ihm. Wiederholte Anfragen zeigen deshalb immer denselben Pod-Namen, obwohl der Service im Cluster auf beide verteilt. Stirbt dieser Pod, bricht der Tunnel ab. Startet ihn dann neu. Ist Port 8080 belegt, nehmt einen anderen, zum Beispiel `18080:80`.
 
+**Gut zu wissen: von außen ohne Tunnel.** `port-forward` ist ein Werkzeug für euch als Entwickler. Wer die Anwendung wie eine API aufruft, kennt kein kubectl. Dafür braucht es einen Service vom Typ `NodePort` oder `LoadBalancer`. Unter Linux erreicht ihr einen NodePort direkt über die Adresse aus `minikube ip`. Mit dem Docker-Treiber unter macOS und Windows liegt der minikube-Node in der VM von Docker Desktop, seine Adresse ist von eurem Rechner aus nicht erreichbar. Ohne Tunnel geht es dann nur, wenn ihr den Port beim Anlegen des Clusters freigebt (nur Docker-Treiber):
+
+```bash
+# Nur beim Anlegen des Clusters moeglich. 127.0.0.1: nur von eurem Rechner
+# erreichbar, nicht aus dem Netzwerk.
+minikube start --driver=docker --cpus=2 --memory=4096 --kubernetes-version=v1.35.0 --ports=127.0.0.1:30080:30080
+# Zusaetzlicher Service vom Typ NodePort auf Port 30080, hallo bleibt ClusterIP.
+# Vorher die TODOs in extra/nodeport.yaml ergaenzen (wie in k8s/service.yaml).
+kubectl apply -f lab02-hallo-app/extra/nodeport.yaml
+# Wie ein Nutzer: ohne kubectl, ohne Tunnel. Mehrmals aufrufen.
+curl http://127.0.0.1:30080/
+```
+
+Erwartet: Nach einigen Sekunden antworten abwechselnd beide Pods, anders als bei `port-forward`. Für einen bestehenden Cluster heißt das `minikube delete` und neu anlegen. Danach Namespace (Lab 0, Abschnitt 3), Image (Schritt 1.3) und Deployment (Schritt 2.3) erneut einrichten. Der NodePort-Service findet die Pods nur über das Label `app: hallo`. Ohne laufendes Deployment hat er keine Endpunkte und `curl` bekommt keine Antwort. Ohne `127.0.0.1:` ist der Port aus dem ganzen Netzwerk erreichbar. Aufräumen: `kubectl delete -f lab02-hallo-app/extra/nodeport.yaml`.
+
 ## 3. Selbstheilung und Skalierung
 
 Öffnet ein weiteres Terminal und lasst dort laufen:
