@@ -189,6 +189,32 @@ Landen die drei Pods auf drei verschiedenen Nodes? Vergleicht mit der Spalte `NO
 
 Aufräumen: `kubectl delete -f out/lab04-extra/`. Bitte gleich danach, die Nodes teilen sich alle.
 
+### Extra 4: Von außen per Gateway erreichbar
+
+Bisher erreicht ihr die Anwendung nur über `port-forward`. Der Trainer hat einen gemeinsamen Eingang angelegt: ein Gateway mit einer öffentlichen Adresse. Ihr hängt mit einer `HTTPRoute` euren Service daran. Jede Person bekommt einen eigenen Pfad, alle teilen sich die Adresse.
+
+```text
+curl -> GATEWAY_IP/workshop-person01/ -> Gateway (Load Balancer von Google)
+     -> HTTPRoute in eurem Namespace -> Service hallo:80 -> Pods :8080
+```
+
+[gateway/httproute.yaml](gateway/httproute.yaml) ist unvollständig. Ergänzt die `TODO`-Stellen: Der Pfad ist euer Namespace, das Ziel ist euer Service `hallo` mit seinem Port. Aufbau und Felder: die [Dokumentation zu HTTPRoute](https://gateway-api.sigs.k8s.io/api-types/httproute/). Dann setzt ihr euren Namespace ein und rollt die Route aus:
+
+```bash
+export GATEWAY_IP=ADRESSE_VOM_TRAINER
+sed "s/workshop-person01/$WORKSHOP_NAMESPACE/g" lab04-gke/gateway/httproute.yaml > out/lab04-route.yaml
+kubectl apply -f out/lab04-route.yaml
+kubectl describe httproute hallo                  # Conditions: Accepted und ResolvedRefs
+curl "http://$GATEWAY_IP/$WORKSHOP_NAMESPACE/"
+curl -i "http://$GATEWAY_IP/$WORKSHOP_NAMESPACE/fehler"
+```
+
+Erwartet: `Hallo von GKE von Pod ...`. Mehrmals aufrufen: Der Pod-Name wechselt. Bis der Load Balancer eure Route kennt, dauert es einige Minuten (im Test etwa vier). Bis dahin kommt `404`. Wartet und wiederholt den Aufruf.
+
+Fragt eure Nachbarn nach ihrem Pfad und ruft deren Anwendung auf. Was passiert mit eurer Route, wenn ihr den Service `hallo` löscht?
+
+Aufräumen: `kubectl delete -f out/lab04-route.yaml`. Die Adresse ist öffentlich, die Route bleibt nicht über Nacht stehen.
+
 ## Aufräumen und Fallback
 
 ```bash
