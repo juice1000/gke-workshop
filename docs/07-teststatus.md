@@ -187,6 +187,31 @@ Lab 2, Abschnitt 2.4 „Gut zu wissen“ und `lab02-hallo-app/extra/nodeport.yam
 
 Nicht geprüft: Linux ohne `--ports` über `minikube ip`, Windows mit WSL.
 
+## Pipeline für Lab 5 (`scripts/pipeline.sh`), 25.11.2026
+
+Lokal: minikube-Profil `minikube`, Namespace `pipeline-test`, `IMAGE=hallo-app:2.0`, kubectl 1.37. GKE: Namespace `workshop-trainer` mit Trainerrechten, Image `hallo-app-workshop-trainer:2.0`. Ablauf wie Etappe B: je Release Starter (hier die gerenderte `loesung/`), kaputtes Release, repariertes Release.
+
+| Lauf | Lokal | GKE |
+| --- | --- | --- |
+| Starter | grün, Exit 0 | grün, Exit 0, 57 bis 59 s |
+| Release A | rot, Exit 1, 121 s; `describe.txt`: `couldn't find key GRUSS in ConfigMap` | rot, Exit 1, 155 s, gleicher Beleg |
+| Release B | rot, Exit 1, 121 s; `describe.txt`: `Last State: Terminated`, `OOMKilled`, Exit Code 137 | rot, Exit 1, 157 s; OOMKilled nach etwa 1 s Laufzeit, 4 Neustarts in 2 Minuten |
+| Release C | rot, Exit 1, 121 s; `describe.txt`: `Readiness probe failed ... 404` | rot, Exit 1, 155 s, gleicher Beleg |
+| Reparierte Releases | grün, Exit 0; Spezifikation danach wie die Datei | grün, Exit 0 |
+| Rollback | stellt den Starter wieder her | stellt den Starter wieder her |
+| `--build` | Bau für die Rechnerarchitektur, `minikube image load`, grün, Antwort `Version 2.0-a329ca9` | Bau für amd64, Push `hallo-app-workshop-trainer:2.0-a329ca9`, grün, gleiche Antwort |
+| Abbruch vor Deploy, Exit 2 | ohne Argument, fehlendes Manifest, leerer Namespace, Manifest ohne Deployment `hallo`, Platzhalter `TODO_IMAGE` | nicht geprüft |
+
+`PIPELINE_TIMEOUT` bleibt bei 120 s. Release B erreicht OOMKilled auf GKE innerhalb weniger Sekunden.
+
+Gefunden und behoben: kubectl 1.37 zeigt bei `describe pod -l ...` mit mehreren Pods keine Events. Die Pipeline ruft deshalb `--show-events=true` auf. Ein unbearbeiteter Starter (`TODO_IMAGE`) bestand den Dry Run; die Pipeline prüft Platzhalter jetzt selbst. `--build` mit `--platform linux/amd64` lief auf minikube mit Apple-Chip nicht (`exec format error`); lokal wird jetzt ohne `--platform` gebaut.
+
+Beobachtet: Ohne Starter zwischen zwei Releases kann `apply` nach `rollout undo` Felder des zurückgerollten Stands behalten (reparierte B mit `JAVA_TOOL_OPTIONS`, danach C repariert: rot mit OOMKilled). Mit Starter vor jedem Release nicht. Nebenbei gesehen: Fehlt `hallo-secret`, wird schon der Starter rot und zurückgerollt.
+
+Zeitmessung: Zwei GKE-Läufe dauerten 22 und 25 Minuten, weil der Mac in dieser Zeit schlief (`pmset -g log`). Die Zeitgrenze von `rollout status` zählt Ruhezeit nicht. Release B wurde danach mit wachem Rechner wiederholt (Werte oben).
+
+Demo 3.4c lokal mit `--auto` in etwa 65 s durchgelaufen, Aufräumen stellt `betrieb/` wieder her. Nach dem GKE-Test steht in `workshop-trainer` wieder Lab 4, `pruefen.py gke` grün. Nicht geprüft: Lauf mit einem Teilnehmerkonto, gleichzeitige Läufe mehrerer Personen.
+
 ## Vor Durchführung noch nötig
 
 - [x] GKE-Standard bereitstellen, Anwendung und fehlerhafte Releases mit Trainerrechten durchspielen.
