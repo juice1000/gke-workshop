@@ -112,11 +112,11 @@ Nicht geprüft: Lab 4 Extras auf GKE (Logs Explorer, `auth can-i`, Verteilung ü
 
 ## Demonstrationen Tag 2 und Kommentare in den Manifesten, 24.11.2026
 
-Alle 26 Skripte in `demos/tag2/` mit `--auto` nacheinander in einem eigenen minikube-Profil (`--cpus=2 --memory=4096`, Kubernetes 1.35.0) ausgeführt, danach gelöscht. Kein GKE-Lauf.
+Alle 25 Skripte in `demos/tag2/` mit `--auto` nacheinander in einem eigenen minikube-Profil (`--cpus=2 --memory=4096`, Kubernetes 1.35.0) ausgeführt, danach gelöscht. Kein GKE-Lauf.
 
 | Ergebnis | Demos |
 | --- | --- |
-| Exit 0, Ausgangszustand danach wiederhergestellt (`hallo` mit `hallo-app:2.0`, 2 Pods) | alle 26 |
+| Exit 0, Ausgangszustand danach wiederhergestellt (`hallo` mit `hallo-app:2.0`, 2 Pods) | alle 25 |
 | Fehlerbild sichtbar wie beschrieben | 2.1d leere EndpointSlice, 2.2a alter Wert bis zum Neustart, 2.2b `CreateContainerConfigError` und Start nach Reparatur, 2.3b `0/1` mit `Readiness probe failed ... 404`, 2.3d `CrashLoopBackOff`, 2.3g `OOMKilled`, 2.4b `ErrImagePull` mit alten Pods bereit, 2.4d `1.0` im Cluster und `2.0` in der Datei |
 | Korrigiert | 2.3f: Docker Desktop meldet dem minikube-Node alle 8 CPUs des Rechners, trotz `--cpus=2`. Mit 10 Kopien blieb kein Pod `Pending`. Neu: CPU-Request neuer Pods auf 60 Prozent des Nodes, Ergebnis `FailedScheduling ... Insufficient cpu`, danach wieder 250m |
 | Angepasst | 2.3h: `kubectl top` lieferte in 60 s noch keine Werte, der HPA kurz danach `cpu: 3%/50%`. Wartezeit auf 90 s. 2.3d: Die Anwendung startet in etwa 2 s; der Neustart kommt, weil die erste Liveness-Prüfung sofort läuft. Text angepasst |
@@ -139,6 +139,18 @@ Alle 7 Skripte in `demos/tag3/` mit `--auto` gegen das lokale Profil `minikube` 
 Nicht geprüft: interaktiver Modus, Lauf in einem frischen minikube-Profil, Mehr-Node-Cluster.
 
 Alle Manifeste auf `main` tragen Kommentare `FEST`, `FREI` und `PASST ZU` (Legende im Kopf von `lab02-hallo-app/k8s/deployment.yaml`). Geprüft: Ohne Kommentar- und Leerzeilen sind alle 37 Dateien unverändert, `validate.sh` bestanden. Fehlerdateien aus Lab 3 und Lab 5 haben nur einen Kopfkommentar, damit sie den Fehler nicht verraten. Auf `practice` bleiben die Manifeste ohne diese Kommentare.
+
+## NodePort ohne Tunnel, 24.11.2026
+
+Lab 2, Abschnitt 2.4 „Gut zu wissen“ und `lab02-hallo-app/extra/nodeport.yaml`, geprüft auf macOS mit Docker Desktop in einem eigenen minikube-Profil, danach gelöscht.
+
+| Fall | Ergebnis |
+| --- | --- |
+| `--ports=30080:30080` | Docker bindet `0.0.0.0:30080`, also aus dem ganzen Netzwerk erreichbar. `curl localhost:30080` antwortet, Anfragen verteilt auf beide Pods (3 und 5 von 8) |
+| `--ports=127.0.0.1:30080:30080` | Docker bindet nur `127.0.0.1`. Über die LAN-Adresse des Rechners keine Antwort. Über `127.0.0.1:30080` nach etwa 8 s stabil: 15 von 15 Anfragen mit HTTP 200, abwechselnd beide Pods |
+| Direkt nach dem Anlegen des Service | die ersten Sekunden `Connection reset by peer`, danach stabil |
+
+Nicht geprüft: Linux ohne `--ports` über `minikube ip`, Windows mit WSL.
 
 ## Vor Durchführung noch nötig
 

@@ -5,7 +5,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  # FREI. PASST ZU Befehlen mit deployment/oom und demos/tag2/00-vorbereiten.sh.
+  # FREI. PASST ZU Befehlen mit deployment/oom und demos/tag2/00-vorbereiten/demo.sh.
   name: oom
   # FREI: nur zum Filtern.
   labels:
