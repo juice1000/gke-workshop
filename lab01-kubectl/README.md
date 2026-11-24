@@ -139,6 +139,24 @@ Alle Aufgaben lesen nur.
 
 Aufgaben 3 und 4 sind für Schnelle. Notiert zu jeder Aufgabe den Befehl, den ihr gefunden habt. Ihr braucht sie in Lab 3 wieder.
 
+<details>
+<summary>Lösungen</summary>
+
+```bash
+# 1. Nur Warnungen
+kubectl get events -n kube-system --field-selector type=Warning
+# 2. Pod-Name und Image
+kubectl get pods -n kube-system -o 'custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[*].image'
+# 3. Nach Neustarts sortiert
+kubectl get pods -n kube-system --sort-by='.status.containerStatuses[0].restartCount'
+# 4. Kurzformen und Spalte NAMESPACED
+kubectl api-resources
+```
+
+Zu 4: `deploy` und `svc`. `namespaces` hat `NAMESPACED false`, ein Namespace liegt also in keinem anderen Namespace.
+
+</details>
+
 ## Checkpoint
 
 ```bash
@@ -157,3 +175,10 @@ kubectl get pods -n kube-system -w
 ```
 
 `-o wide` zeigt zusätzliche Spalten, beim Node etwa die Kubernetes-Version, die IP und das Betriebssystem. `-w` (watch) beobachtet die Liste und zeigt jede Änderung als neue Zeile. Beendet die Beobachtung mit Strg+C. Das beendet nur den Befehl, die Pods laufen weiter.
+
+<details>
+<summary>Auflösung</summary>
+
+Der DNS-Pod heißt in minikube üblicherweise `coredns-...`. `spec.containers[].image` enthält das Image, `spec.nodeName` den Node, in minikube `minikube`. Anwendungslogs stammen vom Prozess im Container. Events beschreiben Clusteraktionen wie Scheduling, Image-Pulls oder fehlgeschlagene Probes. Bei einem Image-Pull-Fehler beginnt ihr mit `describe pod` und den Events, denn der Container ist nie gestartet und hat deshalb keine Logs.
+
+</details>

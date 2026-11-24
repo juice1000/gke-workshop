@@ -40,7 +40,7 @@ kubectl --context minikube -n workshop apply -f lab02-hallo-app/k8s/
 kubectl --context minikube -n workshop rollout status deployment/hallo --timeout=180s
 ```
 
-Voraussetzung: genau ein Node namens `minikube`, lokal geladenes Image `hallo-app:1.0` und keine andere laufende `hallo`-Übung. Der Ordner `lab02-hallo-app/k8s/` enthält euer Deployment und euren Service aus Lab 2. Bei einem anderen lokalen Profil die Namen gemeinsam mit dem Trainer anpassen.
+Voraussetzung: genau ein Node namens `minikube`, lokal geladenes Image `hallo-app:1.0` und keine andere laufende `hallo`-Übung. Der Ordner `lab02-hallo-app/k8s/` enthält Deployment und Service aus Lab 2. Bei einem anderen lokalen Profil die Namen gemeinsam mit dem Trainer anpassen.
 
 **Aufgabe: Node sperren.** Sperrt den Node `minikube` für neue Pods. Laufende Pods sollen dabei weiterlaufen. Den Befehl findet ihr in `kubectl --help` unter den Befehlen zur Clusterverwaltung. Vergesst nicht `--context minikube`. Prüft danach:
 

@@ -1,23 +1,49 @@
-# Uebung: Schreibt hier das Deployment fuer die hallo-app selbst.
+# Deployment Tag 1: haelt zwei Pods der hallo-app am Laufen.
 #
-# Was das Deployment leisten soll:
-#   - Objektart Deployment aus der API-Gruppe apps/v1, Name: hallo
-#   - Label app: hallo am Deployment selbst
-#   - Zwei Pods sollen laufen
-#   - Das Deployment erkennt seine Pods am Label app: hallo
-#   - Jeder Pod bekommt das Label app: hallo. Es muss zum Selektor passen
-#   - Ein Container namens hallo mit dem Image hallo-app:1.0
-#   - Das Image liegt nur lokal in minikube. Kubernetes soll es nicht aus
-#     dem Internet laden, sondern das vorhandene verwenden
-#   - Umgebungsvariable HOSTNAME mit dem Namen des Pods als Wert. Den Wert
-#     setzt Kubernetes selbst ein (Stichwort: fieldRef, metadata.name)
-#   - Die Anwendung hoert im Container auf Port 8080
+# Legende fuer alle Manifeste:
+#   FEST      von Kubernetes oder der Anwendung vorgegeben
+#   FREI      frei waehlbar, nichts verweist darauf
+#   PASST ZU  frei waehlbar, muss aber an der genannten Stelle gleich lauten
 #
-# Hilfe:
-#   kubectl explain deployment.spec
-#   kubectl explain deployment.spec.template.spec.containers
-#   kubectl explain deployment.spec.template.spec.containers.env.valueFrom
-#   Beispiel in der Doku: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
-#
-# Pruefen ohne Cluster-Aenderung:
-#   kubectl apply --dry-run=server -f lab02-hallo-app/k8s/deployment.yaml
+#   service.yaml selector app=hallo --> template.metadata.labels app=hallo
+#   service.yaml targetPort 8080 -----> containerPort 8080
+
+# FEST
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # PASST ZU: deployment/hallo in Befehlen und betrieb/deployment.yaml.
+  name: hallo
+  # FREI: nur zum Filtern, niemand selektiert darauf.
+  labels:
+    app: hallo
+spec:
+  # FREI: Anzahl Pods.
+  replicas: 2
+  # PASST ZU: template.metadata.labels. Nach dem Anlegen nicht aenderbar.
+  selector:
+    matchLabels:
+      app: hallo
+  # Vorlage fuer jeden Pod.
+  template:
+    metadata:
+      # PASST ZU: selector oben und selector in service.yaml.
+      labels:
+        app: hallo
+    spec:
+      containers:
+        # PASST ZU: "kubectl set image deployment/hallo hallo=...".
+        - name: hallo
+          # PASST ZU: docker build -t und minikube image load. Sonst ErrImagePull.
+          image: hallo-app:1.0
+          # FEST: lokales Image nehmen, nicht aus dem Internet laden.
+          imagePullPolicy: IfNotPresent
+          env:
+            # FEST: Die Anwendung zeigt HOSTNAME an. Wert = Pod-Name.
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          # PASST ZU: server.port der Anwendung. Nur Information.
+          ports:
+            - containerPort: 8080

@@ -81,11 +81,9 @@ Auf GKE übernimmt diese Rolle später eine Registry: Ihr ladet das Image hoch, 
 
 ## 2. Deployment und Service
 
-### 2.1 Aufgabe: Das Deployment schreiben
+### 2.1 Das Deployment lesen
 
-[k8s/deployment.yaml](k8s/deployment.yaml) ist leer. Die Kommentare darin beschreiben, was das Deployment leisten soll. Schreibt das Manifest selbst. Ein **Manifest** beschreibt den gewünschten Zustand. Ihr sagt Kubernetes, was laufen soll, nicht wie es zu starten ist.
-
-Diese Felder braucht ihr:
+Öffnet [k8s/deployment.yaml](k8s/deployment.yaml). Ein **Manifest** beschreibt den gewünschten Zustand. Ihr sagt Kubernetes, was laufen soll, nicht wie es zu starten ist. Die Kommentare zeigen, welche Werte fest sind, welche frei und welche zueinander passen müssen.
 
 | Feld | Bedeutung |
 | --- | --- |
@@ -98,19 +96,17 @@ Diese Felder braucht ihr:
 | `env HOSTNAME` mit `fieldRef: metadata.name` | Kubernetes trägt den Pod-Namen in die Variable ein. So nennt die Antwort den Pod |
 | `containerPort: 8080` | Die Anwendung hört auf Port 8080 |
 
-### 2.2 Aufgabe: Den Service schreiben
+### 2.2 Den Service lesen
 
-[k8s/service.yaml](k8s/service.yaml) ist ebenfalls leer. Die Kommentare beschreiben, was der Service leisten soll. Neben `apiVersion`, `kind` und `metadata` braucht ihr:
+Öffnet [k8s/service.yaml](k8s/service.yaml).
 
-| Feld | Was hineingehört |
+| Feld | Bedeutung |
 | --- | --- |
-| `selector` | Das Label, das die Pods tragen. Der Service leitet an alle Pods mit diesem Label weiter |
-| `port` | Der Port, den der Service anbietet: 80 |
-| `targetPort` | Der Port im Pod, an den weitergeleitet wird. Steht im Deployment |
+| `selector: app: hallo` | Der Service leitet an alle Pods mit diesem Label weiter |
+| `port: 80` | Der Port des Service |
+| `targetPort: 8080` | Der Port im Pod, an den weitergeleitet wird |
 
 Merkt euch: **Labels verbinden alles.** Der Service kennt keine Pod-Namen, er sucht nach dem Label.
-
-Hilfe: `kubectl explain service.spec.selector` und `kubectl explain service.spec.ports`. Ob eine Datei gültig ist, prüft ihr ohne Änderung am Cluster mit `kubectl apply --dry-run=server -f DATEI`. Lest bei einem Fehler die Meldung, sie nennt das Feld.
 
 ### 2.3 Ausrollen
 

@@ -11,12 +11,12 @@ metadata:
 spec:
   # NodePort oeffnet denselben Port auf jedem Node des Clusters.
   type: NodePort
-  # TODO: Selektor wie in eurer k8s/service.yaml, damit dieser Service
+  # TODO: Selektor wie in k8s/service.yaml, damit dieser Service
   # dieselben Pods findet.
   selector:
     TODO: TODO
   ports:
-    # TODO: port und targetPort wie in eurer k8s/service.yaml.
+    # TODO: port und targetPort wie in k8s/service.yaml.
     # nodePort: fester Port im Bereich 30000 bis 32767, passend zu
     # "minikube start --ports". Ohne Angabe waehlt Kubernetes einen zufaelligen.
     - port: 0
