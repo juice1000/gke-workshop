@@ -31,18 +31,17 @@ Dockerfile --docker build--> Image hallo-app:2.0
 
 Was passiert: `gcloud` meldet euch an und schreibt einen neuen Kontext für den GKE-Cluster in eure kubeconfig. Dann setzt ihr euren Namespace als Standard.
 
-Übernehmt die Werte vom Trainer. `REGION` ist der Standort der Registry, `LOCATION` der des Clusters.
+Die Werte sind für alle gleich. Nur den Namespace ändert ihr: Eure Nummer bekommt ihr vom Trainer. `REGION` ist der Standort der Registry, `LOCATION` der des Clusters.
 
 ```bash
-export PROJECT_ID=PROJEKT_VOM_TRAINER
-export REGION=REGISTRY_REGION_VOM_TRAINER
-export REPOSITORY=REPOSITORY_VOM_TRAINER
-export CLUSTER_NAME=CLUSTER_VOM_TRAINER
-export LOCATION=CLUSTER_STANDORT_VOM_TRAINER
-export WORKSHOP_NAMESPACE=workshop-person01        # euer Namespace
+export PROJECT_ID=lookbeyond-gke-workshop
+export REGION=europe-west3
+export REPOSITORY=workshop
+export CLUSTER_NAME=workshop
+export LOCATION=europe-west3-b
+export WORKSHOP_NAMESPACE=workshop-person01        # eure Nummer vom Trainer
 
-gcloud auth login                                  # Anmeldung im Browser
-gke-gcloud-auth-plugin --version                   # Plugin fuer die Anmeldung von kubectl
+gcloud auth login                                  # Anmeldung im Browser, mit dem Konto, das ihr am Tag 1 genannt habt
 gcloud container clusters get-credentials "$CLUSTER_NAME" \
   --location "$LOCATION" --project "$PROJECT_ID" --dns-endpoint   # legt den Kontext an
 export WORKSHOP_CONTEXT="$(kubectl config current-context)"
@@ -159,13 +158,13 @@ curl -i http://127.0.0.1:8080/fehler              # HTTP 500 ist hier gewollt
 kubectl logs -l app=hallo --prefix --tail=50      # Zeile mit FEHLER
 ```
 
-Sucht dieselbe Zeile in der Konsole unter Logging, Logs Explorer, mit euren Werten:
+Sucht dieselbe Zeile in der Konsole unter Logging, Logs Explorer. Setzt euren Namespace ein:
 
 ```text
 resource.type="k8s_container"
-resource.labels.project_id="EURE_PROJECT_ID"
-resource.labels.cluster_name="EUER_CLUSTER_NAME"
-resource.labels.namespace_name="EUER_NAMESPACE"
+resource.labels.project_id="lookbeyond-gke-workshop"
+resource.labels.cluster_name="workshop"
+resource.labels.namespace_name="workshop-person01"
 resource.labels.container_name="hallo"
 textPayload:"FEHLER"
 ```

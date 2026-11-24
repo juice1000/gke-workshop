@@ -19,7 +19,7 @@ Findet `Conditions`, `Capacity`, `Allocatable` und `Allocated resources`. Welche
 
 ```text
 resource.type="k8s_container"
-resource.labels.cluster_name="EUER_CLUSTER_NAME"
+resource.labels.cluster_name="workshop"
 resource.labels.namespace_name="kube-system"
 ```
 
