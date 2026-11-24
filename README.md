@@ -13,6 +13,7 @@
 | [4: Auf GKE](lab04-gke/README.md) | Tag 2 | Artifact Registry, Kontextwechsel, Konsole | 60 Min. |
 | [5: Abschluss](lab05-abschluss/README.md) | Tag 3 | Manifest vervollständigen, drei Releases reparieren, Rollback | 90 Min. |
 | [6: Betrieb](lab06-betrieb/README.md) | Tag 3, parallel zu Lab 5 | Cluster lesen, lokal cordon/uncordon und PDB untersuchen | 90 Min. |
+| [7: Störungssuche](lab07-stoerungen/README.md) | Tag 3 | Störungen über Logs, Events und Logs Explorer finden | 60 Min. |
 
 ## Voraussetzungen
 

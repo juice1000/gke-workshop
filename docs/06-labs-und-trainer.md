@@ -29,6 +29,7 @@ Stand des Umbaus:
 | 4 | ja | Logs Explorer (vorher Abschnitt 6), `kubectl auth can-i`, Verteilung mit `extra/spread.yaml`, Zugriff von außen mit `gateway/httproute.yaml` |
 | 5 | ja, Etappe B läuft über `scripts/pipeline.sh` (seit 25.11.2026) | Pipeline mit `--build`, Image-Tag mit Git-Commit |
 | 6 | offen (Tag 3) | |
+| 7 | neu (seit 25.11.2026) | eigene Abfrage pro Störung, selbst gebaute Störung |
 | 0, 1, 2 Tag 1 | offen (nächster Durchlauf) | |
 
 Unterschiede zu Notion und zum bisherigen Stand:
@@ -39,6 +40,7 @@ Unterschiede zu Notion und zum bisherigen Stand:
 - Lab 4 Extra 4 (seit 24.11.2026): ein gemeinsames Gateway mit einer öffentlichen Adresse, angelegt vom Trainer mit `trainer/gateway.yaml`. Teilnehmende schreiben nur ihre `HTTPRoute` (in `practice` mit TODOs). Das ändert die Festlegung "kein öffentlicher LoadBalancer" für diesen einen Eingang. Das Gateway wird abends gelöscht. In Notion noch nicht übernommen.
 - Lab 5 mit Pipeline (seit 25.11.2026): CI/CD wird an Tag 3 geübt, nicht nur in 3.4 erklärt. Der Kunde baut mit TeamCity, das können wir nicht bereitstellen. Deshalb gibt es `scripts/pipeline.sh` mit den Stufen einer TeamCity-Build-Konfiguration: Pruefen, Build, Deploy, Gate (`rollout status` mit Zeitgrenze), Rollback mit Belegen. Etappe A bleibt von Hand und endet mit einem grünen Pipeline-Lauf. Etappe B liefert die drei kaputten Releases über die Pipeline aus; das manuelle `rollout undo` entfällt. Keine zusätzliche Zeit an Tag 3. Demo 3.4c zeigt die Pipeline vorab. Vorlage: [CI/CD-Brief](11-cicd-brief.md). In Notion noch nicht übernommen.
 - Lab 5, Reihenfolge in Etappe B: Vor jedem Release läuft der Starter. `rollout undo` setzt die `last-applied-configuration` von `kubectl apply` nicht zurück. Ohne Starter dazwischen kann ein Feld aus dem zurückgerollten Stand stehen bleiben (lokal nachgestellt: reparierte B mit `JAVA_TOOL_OPTIONS`, danach C repariert, wird mit OOMKilled rot).
+- Lab 7 Störungssuche (neu, 25.11.2026): Störungen, die `kubectl get pods` nicht oder nur halb zeigt. Ein Verkehrsgenerator `verkehr` im eigenen Namespace liefert die Sicht des Nutzers als Logzeilen, `lab07-stoerungen/stoerung.sh` baut fünf Störungen ein (Liveness-Pfad, Service-Port, Secret, Fehlerflut, gemischte Konfiguration) und prüft den gesunden Stand. Keine neuen Rechte nötig. Optional leert der Trainer einen Node für alle. Der Zeitplatz an Tag 3 ist noch offen: Lab 5 und Lab 6 belegen schon je 90 Minuten. In Notion noch nicht übernommen.
 - Extras laufen nur im eigenen Namespace und räumen selbst auf. HPA braucht lokal `minikube addons enable metrics-server`. `spread.yaml` fordert wenig an (`10m`, `384Mi`), damit 15 Personen auf drei Nodes passen.
 
 ## Zuordnung zur vorhandenen Notion-Fassung

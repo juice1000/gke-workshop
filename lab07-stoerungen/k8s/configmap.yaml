@@ -1,0 +1,9 @@
+# Lab 7: Konfiguration der hallo-app.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # PASST ZU: configMapKeyRef.name in deployment.yaml.
+  name: hallo-config
+data:
+  # Schluessel: PASST ZU configMapKeyRef.key. Wert: FREI.
+  GREETING: Hallo aus dem Betrieb

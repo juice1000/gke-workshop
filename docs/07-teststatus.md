@@ -212,6 +212,22 @@ Zeitmessung: Zwei GKE-Läufe dauerten 22 und 25 Minuten, weil der Mac in dieser 
 
 Demo 3.4c lokal mit `--auto` in etwa 65 s durchgelaufen, Aufräumen stellt `betrieb/` wieder her. Nach dem GKE-Test steht in `workshop-trainer` wieder Lab 4, `pruefen.py gke` grün. Nicht geprüft: Lauf mit einem Teilnehmerkonto, gleichzeitige Läufe mehrerer Personen.
 
+## Lab 7 Störungssuche, 25.11.2026
+
+Lokal (minikube, Namespace `lab7-test`, `hallo-app:2.0`) und auf GKE (`workshop-trainer`, Trainerrechte, `hallo-app-workshop-trainer:2.0`). Je Störung: `start`, einbauen, 75 s (lokal) bzw. 90 s (GKE) warten, Befund ansehen, `pruefen`, reparieren, `pruefen`.
+
+| Störung | Befund lokal und GKE | `pruefen` vorher | nach Reparatur |
+| --- | --- | --- | --- |
+| 1 Liveness-Pfad | Verkehr weiter `200`; RESTARTS 1 bis 2 nach 90 s; Events `Liveness probe failed: ... 404` | rot (Neustarts, lokal zusätzlich ein Pod nicht bereit) | grün nach `apply -f out/lab07/deployment.yaml` |
+| 2 Service-Port | Verkehr nur `curl-Fehler 7`, Anwendung ohne neue Zeilen | rot | grün nach `apply -f out/lab07/service.yaml` |
+| 3 Secret | ein Pod `CreateContainerConfigError`, Event `secret "hallo-secret" not found`, Verkehr weiter `200` von einem Pod | rot | grün nach `create secret` |
+| 4 Fehlerflut | Verkehr zwei von drei Anfragen `500`, Anwendung `ERROR ... FEHLER` | rot | grün nach `set env PFADE=/` |
+| 5 Gemischte Antworten | zwei Begrüßungen im Wechsel, sonst nichts | rot | grün nach `apply` ConfigMap und `rollout restart` |
+
+Logs Explorer (per `gcloud logging read` geprüft, nicht in der Konsole): Die Abfrage auf `container_name=("hallo" OR "verkehr")` findet die Zeilen beider Container, `log_id("events")` die Kubernetes-Events (Liveness 404, Secret fehlt). Die Zeilen `ERROR ... FEHLER` haben in Cloud Logging den Schweregrad `INFO`. Auf GKE mit Gateway-Route zusätzlich NEG-Warnungen nach `start`.
+
+Nicht geprüft: Abfragen in der Konsole und im Monitoring mit Teilnehmerrechten, `zufall` mit Teilnehmenden, 16 Personen gleichzeitig, die optionale Trainer-Störung (Node leeren). Nach dem Test steht in `workshop-trainer` wieder Lab 4, `pruefen.py gke` grün.
+
 ## Vor Durchführung noch nötig
 
 - [x] GKE-Standard bereitstellen, Anwendung und fehlerhafte Releases mit Trainerrechten durchspielen.
