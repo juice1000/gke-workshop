@@ -9,5 +9,5 @@ Three-day German introduction for developers. Read `README.md` and `docs/06-labs
 - Scripts must work with Bash 3.2 and Python 3.9+. Runtime scripts use explicit context and namespace. Never silently use a current cloud context.
 - `bash scripts/validate.sh` runs static checks. `bash scripts/dry-run.sh` creates its own local minikube profile, checks healthy and broken cases, and deletes only its own profile.
 - Do not claim GKE validation from a local run. Track the actual test coverage in `docs/07-teststatus.md`.
-- Cloud resources and participant access are prepared separately by the trainer. No automatic cluster creation or public load balancers.
+- Cloud resources and participant access are prepared separately by the trainer. No automatic cluster creation. The only public entry point is the shared Gateway in `trainer/gateway.yaml`, applied by hand and deleted after each course day.
 - Notion chapters are source material, linked in `docs/06-labs-und-trainer.md`. Record any implementation differences there.

@@ -55,6 +55,7 @@ Die Anwendung ist textbasiert. So bleiben Kubernetes und die Fehlersuche im Mitt
 - [Teststatus und noch nötige Prüfungen](docs/07-teststatus.md)
 - [Sitzungsübergabe und Wiedereinstieg](docs/09-uebergabe.md)
 - [Cloud-Vorbereitung, Zugriffe und Aufräumen](trainer/README.md)
+- [Nach dem Kurs: Cloud-Ressourcen entfernen](docs/11-nach-dem-kurs-aufraeumen.md)
 - [Pipeline-Einordnung und Cheat-Sheet](docs/08-pipeline-und-cheatsheet.md)
 - [Kundenkontext](docs/01-kontext.md), [Lernziele](docs/02-bedarf-und-lernziele.md), [Curriculum](docs/03-curriculum-entscheidungen.md), [offene Umgebungspunkte](docs/04-lernumgebung-und-offene-punkte.md)
 

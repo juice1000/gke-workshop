@@ -26,7 +26,7 @@ Stand des Umbaus:
 | --- | --- | --- |
 | 2 Tag 2 | ja, eigenes README [betrieb/README.md](../lab02-hallo-app/betrieb/README.md). Lab 2 Abschnitt "4. und 5." verweist dorthin | Config als Volume und `envFrom`, `diff` und `dry-run`, Rolling-Update-Rechnung, change-cause, JVM-Heap, HPA |
 | 3 | ja | `extra/diagnose.sh` (vorher Teil 1 des Kerns), OOMKilled mit `extra/oom.yaml`, Fall 5 mit EndpointSlices |
-| 4 | ja | Logs Explorer (vorher Abschnitt 6), `kubectl auth can-i`, Verteilung mit `extra/spread.yaml` |
+| 4 | ja | Logs Explorer (vorher Abschnitt 6), `kubectl auth can-i`, Verteilung mit `extra/spread.yaml`, Zugriff von außen mit `gateway/httproute.yaml` |
 | 5, 6 | offen (Tag 3) | |
 | 0, 1, 2 Tag 1 | offen (nächster Durchlauf) | |
 
@@ -35,6 +35,7 @@ Unterschiede zu Notion und zum bisherigen Stand:
 - Lab 2 Tag 2 hat zwei neue Kern-Schritte: Secret per `base64 -d` lesen (bisher Bonus) und Readiness absichtlich brechen und beobachten. Die Readiness wird in der Datei gebrochen und in der Datei repariert, damit "der Fix gehört in Git" sichtbar wird.
 - Lab 3 Kern sind die fünf Fälle von Hand. `diagnose.sh` liegt jetzt in `lab03-defekt/extra/`. Wer am 23.11. `practice` geklont und `diagnose.sh` lokal geändert hat, muss die Änderung vor `git pull` sichern (`git stash`).
 - Lab 4 Abschnitt 6 (Logs Explorer) ist jetzt Extra 1. Tag 3 behandelt Logs Explorer als Kern.
+- Lab 4 Extra 4 (seit 24.11.2026): ein gemeinsames Gateway mit einer öffentlichen Adresse, angelegt vom Trainer mit `trainer/gateway.yaml`. Teilnehmende schreiben nur ihre `HTTPRoute` (in `practice` mit TODOs). Das ändert die Festlegung "kein öffentlicher LoadBalancer" für diesen einen Eingang. Das Gateway wird abends gelöscht. In Notion noch nicht übernommen.
 - Extras laufen nur im eigenen Namespace und räumen selbst auf. HPA braucht lokal `minikube addons enable metrics-server`. `spread.yaml` fordert wenig an (`10m`, `384Mi`), damit 15 Personen auf drei Nodes passen.
 
 ## Zuordnung zur vorhandenen Notion-Fassung

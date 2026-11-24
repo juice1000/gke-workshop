@@ -1,0 +1,35 @@
+# Route vom gemeinsamen Gateway zu eurem Service hallo (Lab 4, Extra 4).
+# Kein Image-Platzhalter, also kein render.py. Vor dem Anwenden euren
+# Namespace einsetzen:
+#   sed "s/workshop-person01/$WORKSHOP_NAMESPACE/g" lab04-gke/gateway/httproute.yaml > out/lab04-route.yaml
+#
+#   Internet -> Gateway workshop -> Pfad /workshop-person01/... -> Service hallo:80 -> Pods :8080
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  # FREI.
+  name: hallo
+spec:
+  # PASST ZU: name und namespace des Gateways in trainer/gateway.yaml.
+  parentRefs:
+    - name: workshop
+      namespace: workshop-gateway
+  rules:
+    - matches:
+        # FREI, aber eindeutig: alle teilen sich eine Adresse. Der Pfad
+        # unterscheidet die Personen. PASST ZU: curl http://GATEWAY_IP/workshop-person01/
+        - path:
+            type: PathPrefix
+            value: /workshop-person01
+      filters:
+        # Die Anwendung kennt nur "/". Das Gateway schneidet den Praefix ab:
+        # /workshop-person01/fehler kommt als /fehler beim Pod an.
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        # PASST ZU: metadata.name und ports[].port in lab04-gke/k8s/service.yaml.
+        - name: hallo
+          port: 80

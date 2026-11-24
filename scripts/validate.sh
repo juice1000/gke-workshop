@@ -10,4 +10,6 @@ while IFS= read -r file; do
   manifeste+=("$file")
 done < <(find lab02-hallo-app lab03-defekt lab04-gke lab05-abschluss lab06-betrieb trainer -name '*.yaml' -type f | sort)
 docker run --rm -v "$ROOT:/work:ro" -w /work ghcr.io/yannh/kubeconform:v0.7.0 \
-  -strict -summary "${manifeste[@]}"
+  -strict -summary -schema-location default \
+  -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+  "${manifeste[@]}"

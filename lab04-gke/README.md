@@ -199,6 +199,32 @@ Landen die drei Pods auf drei verschiedenen Nodes? Vergleicht mit der Spalte `NO
 
 Aufräumen: `kubectl delete -f out/lab04-extra/`. Bitte gleich danach, die Nodes teilen sich alle.
 
+### Extra 4: Von außen per Gateway erreichbar
+
+Bisher erreicht ihr die Anwendung nur über `port-forward`. Der Trainer hat einen gemeinsamen Eingang angelegt: ein Gateway mit einer öffentlichen Adresse. Ihr hängt mit einer `HTTPRoute` euren Service daran. Jede Person bekommt einen eigenen Pfad, alle teilen sich die Adresse.
+
+```text
+curl -> GATEWAY_IP/workshop-person01/ -> Gateway (Load Balancer von Google)
+     -> HTTPRoute in eurem Namespace -> Service hallo:80 -> Pods :8080
+```
+
+[gateway/httproute.yaml](gateway/httproute.yaml) verbindet Pfad und Service. Setzt euren Namespace ein und rollt die Route aus:
+
+```bash
+export GATEWAY_IP=ADRESSE_VOM_TRAINER
+sed "s/workshop-person01/$WORKSHOP_NAMESPACE/g" lab04-gke/gateway/httproute.yaml > out/lab04-route.yaml
+kubectl apply -f out/lab04-route.yaml
+kubectl describe httproute hallo                  # Conditions: Accepted und ResolvedRefs
+curl "http://$GATEWAY_IP/$WORKSHOP_NAMESPACE/"
+curl -i "http://$GATEWAY_IP/$WORKSHOP_NAMESPACE/fehler"
+```
+
+Erwartet: `Hallo von GKE von Pod ...`. Mehrmals aufrufen: Der Pod-Name wechselt. Bis der Load Balancer eure Route kennt, dauert es einige Minuten (im Test etwa vier). Bis dahin kommt `404`. Wartet und wiederholt den Aufruf.
+
+Fragt eure Nachbarn nach ihrem Pfad und ruft deren Anwendung auf. Was passiert mit eurer Route, wenn ihr den Service `hallo` löscht?
+
+Aufräumen: `kubectl delete -f out/lab04-route.yaml`. Die Adresse ist öffentlich, die Route bleibt nicht über Nacht stehen.
+
 ## Aufräumen und Fallback
 
 ```bash
@@ -236,5 +262,9 @@ Ohne Cloud: Der Trainer zeigt Konsole und Registry. Ihr setzt Kontext und Namesp
 - `render.py` meldet, dass Dateien existieren: neuen Ausgabeordner wählen, etwa `out/lab04-2`.
 
 **Kapazität für Extra 3:** Das Deployment `hallo-spread` fordert je Pod nur `10m` CPU und `384Mi` Speicher an. 15 Personen mit je drei Pods passen rechnerisch neben Lab 4 auf drei `e2-standard-4`, aber ohne viel Reserve. Lasst es trotzdem nicht stehen.
+
+**Vorbereitung Extra 4:** Gateway API im Cluster aktiv, [trainer/gateway.yaml](../trainer/gateway.yaml) angewendet, RBAC mit `httproutes`. Die Adresse steht in `kubectl -n workshop-gateway get gateway workshop`. Nur Namespaces mit dem Label `workshop=gke-einfuehrung` dürfen Routen anhängen. Das Gateway braucht beim Anlegen 5 bis 10 Minuten bis zur ersten Antwort, also vor dem Lab anlegen. Eine neue Route braucht etwa vier Minuten. Das Gateway am Abend löschen.
+
+**Lösung Extra 4:** Die Route bleibt nach dem Löschen des Service bestehen, meldet aber `ResolvedRefs: False` mit Grund `BackendNotFound`, und `curl` liefert nach einigen Minuten `500`. Gateway, Route und Service sind getrennte Objekte, verbunden nur über Namen.
 
 **Lösung Extra 2:** `yes` für Deployments und Secrets im eigenen Namespace, `no` für `kube-system` und für Nodes. Die Role `workshop-entwickler` gilt nur im eigenen Namespace und enthält keine clusterweiten Objekte.

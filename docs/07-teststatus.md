@@ -51,6 +51,41 @@ Der RBAC-Nachweis verwendet Kubernetes-Testidentitäten. Er ersetzt nicht den no
 
 Der Cluster ist für Vorbereitung und Probelauf dimensioniert. Vor dem Kurs sind Teilnehmerkonten und Kapazität an die tatsächlich gleichzeitig arbeitenden Gruppen anzupassen. Der Node bleibt laufend; Anhalten bzw. Löschen ist im [Runbook](../trainer/RUNBOOK.md) beschrieben.
 
+## GKE vor Tag 2, 24.11.2026
+
+| Bestandteil | Beobachteter Zustand |
+| --- | --- |
+| gcloud | Konfiguration `gke-workshop`, Konto Look-Beyond-Gmail, Projekt `lookbeyond-gke-workshop` |
+| Cluster | `workshop` vorhanden, `RUNNING`, Standard, `europe-west3-b`, Regular Channel, Control Plane und Nodes `1.36.4-gke.2377000`; kein zweiter Cluster angelegt |
+| API-Zugriff | nur DNS-Endpunkt, IP-Endpunkte deaktiviert |
+| Node-Pool `kurs` | vorher 1 Node `e2-standard-4`; nach Freigabe mit `gcloud container clusters resize workshop --node-pool=kurs --num-nodes=3` auf drei Nodes skaliert, alle drei `Ready`, amd64 |
+| Namespaces | `workshop-trainer`, `workshop-person01`, `workshop-person02` sowie System-Namespaces |
+| Anwendung | `hallo` in `workshop-trainer`: 2/2 bereit, beide Pods auf dem ursprünglichen Node, Image per Digest `hallo-app@sha256:71e9...`; nicht neu ausgerollt |
+| Service | `hallo`, `ClusterIP`, kein Load Balancer |
+| HTTP | per `port-forward` auf 18080: `Hallo von GKE von Pod hallo-84cd85c8f5-cc58n, Version 2.0`; `/fehler` liefert 500 |
+| Registry | `hallo-app:2.0` (Digest wie oben) und `hallo-app-workshop-person01:2.0` im Repository `workshop` |
+| Lokaler Cluster | minikube-Profil `minikube` fehlt; `.cache/workshop.kubeconfig` enthält nur den GKE-Kontext. `workshop_local` schlägt deshalb fehl |
+| Konsole | nicht per UI geprüft: Claude in Chrome war nicht verbunden |
+
+Nach dem Kurstag den Pool wieder auf einen Node setzen: `gcloud container clusters resize workshop --node-pool=kurs --num-nodes=1 --zone=europe-west3-b --project=lookbeyond-gke-workshop`. Die zwei bestehenden Pods wurden nicht umverteilt; neue Pods der Teilnehmenden verteilt der Scheduler auf alle drei Nodes.
+
+## Gemeinsames Gateway für Lab 4 Extra 4, 24.11.2026
+
+| Schritt | Beobachtet |
+| --- | --- |
+| Gateway API | `gcloud container clusters update workshop --gateway-api=standard`; vier GatewayClasses von GKE `Accepted`, laufende Pods unverändert |
+| RBAC | Role `workshop-entwickler` in `workshop-person01` und `workshop-person02` um `httproutes` ergänzt; Testidentität darf im eigenen Namespace Routen anlegen, im fremden nicht |
+| Gateway | `trainer/gateway.yaml`, Klasse `gke-l7-global-external-managed`, nach etwa 3 Minuten `Programmed`, öffentliche Adresse vergeben |
+| Trainer-Route | `/workshop-trainer` zu `hallo:80` in `workshop-trainer`; Namespace dafür mit `workshop=gke-einfuehrung` gelabelt. Erste HTTP-200-Antwort etwa 7 Minuten nach dem Anlegen, vorher Timeout und `502` |
+| Von außen | `curl` von außerhalb des Clusters: Antwort beider Pods abwechselnd, `/fehler` liefert `500`, Pfad `/` ohne Route liefert `404` |
+| Zweite Route | auf vorhandenem Gateway etwa 4 Minuten bis zur Wirkung, vorher `404` |
+| Fehlerfall | Route auf nicht vorhandenen Service: `ResolvedRefs=False`, Grund `BackendNotFound`, `curl` liefert `500`. Testroute danach gelöscht |
+| Browser-Ansicht `/ui/` | App mit `/api/info` und `/ui/` als `hallo-app:2.1` gebaut (fünf App-Tests bestanden), amd64 gepusht, Digest `sha256:f5d606d7...`. Trainer-Deployment per Rolling Update umgestellt, Dienst blieb erreichbar. Über das Gateway: `/workshop-trainer/ui/` und `/ui` liefern 200, die Seite zeigt beide Pods abwechselnd. `/` bleibt Text. Am 24.11.2026 aus dem Repository entfernt (beide Branches); auf GKE läuft im Trainer-Namespace weiter `hallo-app:2.1` mit `/ui/`, nicht neu ausgerollt |
+| Browser und HTTP | Headless Chrome mit Standardprofil blockierte `http://` zur IP (`ERR_BLOCKED_BY_CLIENT`), erst ohne HTTPS-Upgrade geladen. Normale Browser der Teilnehmenden nicht geprüft |
+| Nicht geprüft | Route mit echtem Teilnehmerkonto; die `practice`-Fassung mit TODOs auf dem Cluster |
+
+Das Gateway läuft bis zum Abend und kostet bis dahin Geld. Abbau steht in [Nach dem Kurs](11-nach-dem-kurs-aufraeumen.md).
+
 ## Lokale Prüfungen
 
 `bash scripts/validate.sh` und `bash scripts/dry-run.sh` sind am 17.11.2026 lokal erfolgreich durchgelaufen.
