@@ -9,7 +9,7 @@ Demonstrationen sind keine Labs:
 | Wer tippt? | Alle Teilnehmenden | Der Trainer am Beamer, wer will, macht mit |
 | Dauer | 20 bis 90 Minuten | 1 bis 4 Minuten |
 | Ziel | Selbst üben, Checkpoint | Einen Satz von der Folie im echten Cluster zeigen |
-| Wo | `labNN-.../` | `demos/tag2/` |
+| Wo | `labNN-.../` | `demos/tag2/`, `demos/tag3/` |
 
 ## So läuft eine Demonstration
 
@@ -39,13 +39,13 @@ Jedes Skript:
 
 ## Vorbereitung
 
-Einmal vor 2.1 und nach jeder abgebrochenen Demonstration:
+Einmal vor 2.1, vor den Demonstrationen an Tag 3 und nach jeder abgebrochenen Demonstration:
 
 ```bash
 bash demos/tag2/00-vorbereiten.sh
 ```
 
-Das stellt den Stand nach der Challenge in 2.2 her: `hallo-app:1.0` und `2.0` im Cluster, Secret, und `lab02-hallo-app/betrieb/` angewendet. Die Demonstrationen 2.1a bis 2.1f laufen auch schon mit dem Stand nach Lab 2.
+Das stellt den Stand nach der Challenge in 2.2 her: `hallo-app:1.0` und `2.0` im Cluster, Secret, und `lab02-hallo-app/betrieb/` angewendet. Die Demonstrationen 2.1a bis 2.1f laufen auch schon mit dem Stand nach Lab 2. Das Skript entfernt auch Reste aus Tag 3 (PDB, Role, RoleBinding) und hebt eine Node-Sperre auf.
 
 ## Aufruf
 
@@ -89,6 +89,22 @@ Anderer Kontext oder Namespace: `DEMO_KONTEXT=... DEMO_NAMESPACE=...`. Eigene ku
 | [2.6b](tag2/2.6b-requests-ansehen.sh) | Check-in 2.6, 2/2 „Autopilot ohne Requests“ | Requests eines Pods | nein |
 | [2.6c](tag2/2.6c-api-versionen.sh) | Anhang „Nach dem Upgrade“ (Extra) | Version und API-Version | nein |
 
+## Übersicht Tag 3
+
+Tag 3 läuft auf GKE. Die Demonstrationen zeigen dieselben Mechanismen lokal, bevor jemand im Cloud-Namespace etwas ändert. Vorbereitung wie an Tag 2 mit `demos/tag2/00-vorbereiten.sh`. 3.1a und 3.3a brauchen nur den laufenden Cluster.
+
+| Demo | Folie | Was ihr seht | Ändert |
+| --- | --- | --- | --- |
+| [3.1a](tag3/3.1a-kontexte.sh) | 3.1 Rückblick, Zugänge prüfen | Kontexte, aktueller Kontext und Namespace | nein |
+| [3.2a](tag3/3.2a-logs-weg.sh) | 3.2 Logging und Monitoring | `kubectl logs` nach dem Löschen: NotFound | ja |
+| [3.3a](tag3/3.3a-role-rolebinding.sh) | 3.3 Zugriffsrechte | Role, RoleBinding, `auth can-i --as` | ja |
+| [3.4a](tag3/3.4a-rollout-exitcode.sh) | 3.4 Anbindung an den Build-Prozess | Exit-Code 1 bei falschem Tag, 0 nach undo | ja |
+| [3.4b](tag3/3.4b-imageid-pullpolicy.sh) | 3.4 Anbindung an den Build-Prozess | Tag gegen imageID, imagePullPolicy | nein |
+| [3.6a](tag3/3.6a-cordon-pending.sh) | 3.6 Lab 6: Vertiefung Betrieb | cordon, Ersatz-Pod Pending, uncordon | ja |
+| [3.6b](tag3/3.6b-pdb-drain.sh) | 3.6 Lab 6: Vertiefung Betrieb | PDB `minAvailable: 2` blockiert drain | ja |
+
+3.2a ersetzt einen Pod von hallo. 3.3a legt Role und RoleBinding `demo-leser` für die Testperson `demo-person@example.com` an und löscht beide wieder. 3.6a und 3.6b sperren den einzigen Node und heben die Sperre am Ende auf, auch bei Strg+C.
+
 Die Streifen „Auf GKE ausprobieren“ in 2.9 haben keine Demonstration. Sie laufen nach Lab 4 direkt im GKE-Kontext.
 
 ## Was die Demonstrationen nachbauen
@@ -103,6 +119,9 @@ Neustarts, CrashLoopBackOff   2.3d   Startup-Probe entfernt, Liveness alle 2 s
 Pending                       2.3f   CPU-Request auf 60 Prozent des Nodes
 OOMKilled                     2.3g   lab03-defekt/extra/oom.yaml
 ImagePullBackOff              2.4b   set image auf einen Tag, den es nicht gibt
+rollout status Exit-Code 1    3.4a   set image auf einen Tag, den es nicht gibt
+Pending nach cordon           3.6a   Node gesperrt, ein Pod geloescht
+drain blockiert               3.6b   PDB minAvailable 2 bei 2 Kopien
 ```
 
 Lab 3 zeigt dieselben Fehlerbilder noch einmal, dann suchen die Teilnehmenden die Ursache selbst.
@@ -112,4 +131,6 @@ Lab 3 zeigt dieselben Fehlerbilder noch einmal, dann suchen die Teilnehmenden di
 - Eine Anwendung, die hängt, aber weiterläuft, lässt sich nicht sauber nachbauen. 2.3b zeigt stattdessen eine scheiternde Readiness.
 - 2.3f rechnet den CPU-Request aus der Node-Kapazität. Docker Desktop meldet minikube oft alle CPUs des Rechners, trotz `--cpus=2`. Die Demonstration funktioniert mit beiden.
 - 2.3h schaltet das minikube-Addon `metrics-server` ein und lässt es an. Die ersten Werte kommen nach ein bis zwei Minuten.
+- 3.6a und 3.6b setzen einen Ein-Node-Cluster voraus. Bei mehreren Nodes weicht der Ersatz-Pod auf einen anderen Node aus.
+- 3.6b leert mit `--pod-selector=app=hallo` nur die Pods von hallo. Ohne Selektor beträfe drain auch die Systempods in `kube-system`.
 - Bricht eine Demonstration hart ab (Terminal geschlossen), stellt `00-vorbereiten.sh` den Ausgangszustand wieder her.

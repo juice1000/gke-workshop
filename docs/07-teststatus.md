@@ -125,6 +125,19 @@ Alle 26 Skripte in `demos/tag2/` mit `--auto` nacheinander in einem eigenen mini
 
 Nicht geprüft: interaktiver Modus mit Strg+C mitten in einer Demonstration.
 
+## Demonstrationen Tag 3, 24.11.2026
+
+Alle 7 Skripte in `demos/tag3/` mit `--auto` gegen das lokale Profil `minikube` (ein Node, Kubernetes 1.37.0) ausgeführt, vorher `demos/tag2/00-vorbereiten.sh --auto`. Kein GKE-Lauf.
+
+| Ergebnis | Demos |
+| --- | --- |
+| Wie beschrieben, Exit 0, Ausgangszustand danach wiederhergestellt | 3.1a, 3.2a, 3.3a, 3.4a, 3.4b, 3.6a, 3.6b |
+| Beobachtet | 3.4a: `rollout status --timeout=30s` Exit 1, nach `undo` Exit 0. 3.6a: Ersatz-Pod `Pending`, Event `1 node(s) were unschedulable`. 3.6b: `ALLOWED DISRUPTIONS 0`, drain wiederholt `Cannot evict pod as it would violate the pod's disruption budget`, Exit 1 nach 30 s, beide Pods laufen weiter |
+| Korrigiert | 3.4b zeigt nur Pods in Phase `Running`. Direkt nach 3.4a war sonst noch der Pod mit `hallo-app:gibtsnicht` ohne imageID zu sehen |
+| Strg+C | 3.6b mit SIGINT an die Prozessgruppe mitten im drain abgebrochen: Exit 130, Node danach entsperrt, PDB gelöscht |
+
+Nicht geprüft: interaktiver Modus, Lauf in einem frischen minikube-Profil, Mehr-Node-Cluster.
+
 Alle Manifeste auf `main` tragen Kommentare `FEST`, `FREI` und `PASST ZU` (Legende im Kopf von `lab02-hallo-app/k8s/deployment.yaml`). Geprüft: Ohne Kommentar- und Leerzeilen sind alle 37 Dateien unverändert, `validate.sh` bestanden. Fehlerdateien aus Lab 3 und Lab 5 haben nur einen Kopfkommentar, damit sie den Fehler nicht verraten. Auf `practice` bleiben die Manifeste ohne diese Kommentare.
 
 ## Vor Durchführung noch nötig

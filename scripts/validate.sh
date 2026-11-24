@@ -3,7 +3,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-shellcheck lab00-check/check.sh lab03-defekt/extra/*.sh scripts/*.sh trainer/*.sh demos/lib.sh demos/tag2/*.sh
+shellcheck lab00-check/check.sh lab03-defekt/extra/*.sh scripts/*.sh trainer/*.sh demos/lib.sh demos/tag2/*.sh demos/tag3/*.sh
 python3 scripts/check-files.py
 manifeste=()
 while IFS= read -r file; do
