@@ -26,42 +26,54 @@ kubectl port-forward service/hallo 8080:80
 
 Im zweiten Terminal `curl http://127.0.0.1:8080/`. Erwartet: `Hallo zum Abschluss von Pod ..., Version 2.0`.
 
-**Abgabe A:** Zwei bereite Pods, Antwort und grüner Checkpoint. `DB_PASSWORT` wird nur als Umgebungsvariable eingebunden. Verwendet keine echten Zugangsdaten.
+5. Rollt denselben Stand einmal über die Pipeline aus. Sie verwendet `WORKSHOP_CONTEXT` und `WORKSHOP_NAMESPACE` aus Lab 4:
 
-## Etappe B: Drei kaputte Releases (45 Minuten)
+```bash
+bash scripts/pipeline.sh out/lab05/starter/
+echo "Exit-Code: $?"
+```
 
-Die Dateien enthalten komplette Deployments. Sie verwenden denselben Anwendungscode der Version 2.0, ändern aber die Betriebsbeschreibung. Wendet immer nur ein Release an. Nicht den gesamten Ordner `out/lab05` anwenden.
+Erwartet: fünf Stufen, am Ende `Pipeline GRUEN: ... laeuft in ...` und `Exit-Code: 0`. Die Pipeline führt dieselben Befehle aus wie ihr eben von Hand. Neu ist das Gate: `rollout status` mit Zeitgrenze entscheidet über grün oder rot. Lest den Kopf von [scripts/pipeline.sh](../scripts/pipeline.sh): Jede Stufe entspricht einem Build-Schritt in TeamCity.
 
-Beginnt jedes Release mit eurem gesunden Starter. Damit bezeichnet ein anschließendes `rollout undo` wieder einen bekannten Stand. Beendet alte HTTP-Tunnel bei Bedarf und startet sie neu.
+**Abgabe A:** Zwei bereite Pods, Antwort, grüner Checkpoint und grüner Pipeline-Lauf. `DB_PASSWORT` wird nur als Umgebungsvariable eingebunden. Verwendet keine echten Zugangsdaten.
+
+## Etappe B: Drei kaputte Releases über die Pipeline (45 Minuten)
+
+Die Dateien enthalten komplette Deployments. Sie verwenden denselben Anwendungscode der Version 2.0, ändern aber die Betriebsbeschreibung. Ihr liefert sie über die Pipeline aus, immer nur ein Release. Nicht den gesamten Ordner `out/lab05` übergeben.
 
 Für Release A:
 
-```bash
-kubectl apply -f out/lab05/starter/
-kubectl rollout status deployment/hallo --timeout=600s
-kubectl apply -f out/lab05/releases/release-a.yaml
-kubectl rollout status deployment/hallo --timeout=60s
-kubectl get pods -o wide
-kubectl describe pod -l app=hallo
-kubectl logs -l app=hallo --prefix --tail=50
-kubectl get events --sort-by=.metadata.creationTimestamp
-```
-
-Der Rollout soll scheitern. Wählt für `logs --previous` gezielt einen neuen Pod mit Neustarts. Ein Log-Aufruf über `deployment/hallo` kann einen alten gesunden Pod auswählen.
-
-Notiert das Symptom und einen Beleg. Prüft die bisherige HTTP-Antwort über einen neu geöffneten Tunnel. Schaut auf GKE zusätzlich in Workloads und Logs Explorer. Rollt dann zurück:
+1. Bekannten guten Stand herstellen. Erwartet: grün.
 
 ```bash
-kubectl rollout undo deployment/hallo
-kubectl rollout status deployment/hallo --timeout=600s
-python3 scripts/pruefen.py abschluss
+bash scripts/pipeline.sh out/lab05/starter/
 ```
 
-Korrigiert eure Arbeitskopie von `release-a.yaml`, wendet sie erneut an und prüft Rollout und Checkpoint. Wiederholt denselben Ablauf für `release-b.yaml` und `release-c.yaml`. Setzt vor jedem neuen Fall mit dem Starter auf den gesunden Ausgangsstand zurück.
+2. Release ausliefern. Erwartet: rot, Exit-Code 1, Release zurückgerollt.
 
-Warum antworten die alten Pods weiter? Sucht die beiden Einstellungen unter `strategy.rollingUpdate`. Das funktioniert, solange die alten Pods selbst gesund bleiben und genug Kapazität für den zusätzlichen Pod vorhanden ist.
+```bash
+bash scripts/pipeline.sh out/lab05/releases/release-a.yaml
+echo "Exit-Code: $?"
+```
 
-**Abgabe B:** Pro Release Symptom, Ursache, Beleg, Reparatur und Rollback-Befehl.
+3. Ursache finden. Die Pipeline hat vor dem Rollback Belege gesichert, der Pfad steht in der letzten Zeile:
+
+```bash
+ls out/pipeline/                       # ein Ordner pro rotem Lauf, nach Zeit benannt
+less out/pipeline/ZEIT/describe.txt    # ZEIT durch den neuesten Ordner ersetzen
+```
+
+`pods.txt`, `describe.txt`, `events.txt` und `logs.txt` zeigen den Zustand im Moment des Fehlers. Auf GKE sucht ihr zusätzlich im Logs Explorer. Notiert Symptom, Ursache und die Belegdatei, die die Ursache zeigt.
+
+4. Korrigiert eure Arbeitskopie `out/lab05/releases/release-a.yaml` und startet die Pipeline erneut. Erwartet: grün.
+
+Wiederholt die Schritte 1 bis 4 für `release-b.yaml` und `release-c.yaml`. Schritt 1 ist dabei wichtig: Er setzt Cluster und `apply` auf einen bekannten Stand zurück.
+
+Die Stufe Rollback macht genau das, was ihr in 2.4 von Hand gemacht habt: `kubectl rollout undo`. Die Warnung dabei bedeutet: Der Cluster läuft jetzt wieder mit dem alten Stand, eure Datei nennt aber noch den neuen.
+
+Warum antworten die alten Pods weiter, während das Release scheitert? Sucht die beiden Einstellungen unter `strategy.rollingUpdate`. Das funktioniert, solange die alten Pods selbst gesund bleiben und genug Kapazität für den zusätzlichen Pod vorhanden ist.
+
+**Abgabe B:** Pro Release Symptom, Ursache, Belegdatei, Reparatur und die Exit-Codes des roten und des grünen Laufs.
 
 <details>
 <summary>Hinweise</summary>
@@ -73,6 +85,18 @@ Warum antworten die alten Pods weiter? Sucht die beiden Einstellungen unter `str
 </details>
 
 Kommt ihr nicht weiter, fragt den Trainer. Die Auflösung besprechen wir gemeinsam nach dem Lab.
+
+## Extra zum Ausprobieren: Die Pipeline baut selbst
+
+Mit `--build` baut die Pipeline zuerst ein neues Image. Der Tag enthält den Git-Commit, so wie ein Build-Server jede Version eindeutig benennt.
+
+```bash
+bash scripts/pipeline.sh out/lab05/starter/ --build
+kubectl get deploy hallo -o wide        # Spalte IMAGES
+git log -1 --oneline                    # derselbe Commit im Tag
+```
+
+Die Pipeline ändert eure Datei nicht. Sie schreibt eine Kopie mit dem neuen Image nach `out/pipeline/build-ZEIT/`. Die Antwort der Anwendung zeigt jetzt `Version 2.0-COMMIT`. Uncommittete Änderungen stecken zwar im Image, aber nicht im Tag. Ein echter Build-Server baut deshalb nur aus Commits.
 
 ## Etappe C: Rechte prüfen (10 Minuten)
 
@@ -109,4 +133,4 @@ kubectl config set-context "$WORKSHOP_CONTEXT" --namespace="$WORKSHOP_NAMESPACE"
 minikube image load hallo-app:2.0
 ```
 
-Dann Etappen A und B unverändert mit einer neuen Arbeitskopie ausführen. In minikube habt ihr normalerweise Admin-Rechte. Daher zeigt Etappe C dort andere Ergebnisse; die Cloud-Abgrenzung wird gemeinsam besprochen.
+Dann Etappen A und B unverändert mit einer neuen Arbeitskopie ausführen. Die Pipeline läuft genauso gegen minikube. Mit `--build` lädt sie das Image per `minikube image load` statt per `docker push` und baut für die Architektur eures Rechners. In minikube habt ihr normalerweise Admin-Rechte. Daher zeigt Etappe C dort andere Ergebnisse; die Cloud-Abgrenzung wird gemeinsam besprochen.
