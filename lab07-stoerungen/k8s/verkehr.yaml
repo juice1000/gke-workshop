@@ -1,0 +1,57 @@
+# Lab 7: Verkehrsgenerator. Ruft jede Sekunde http://hallo auf und schreibt
+# eine Logzeile pro Anfrage. So sehen die Logs aus, was Nutzer erleben.
+# Gleiches Image wie hallo, darin ist curl enthalten.
+#
+#   12:00:01 GET / -> 200 Hallo aus dem Betrieb von Pod hallo-..., Version 2.0
+#   12:00:02 GET / -> curl-Fehler 7
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # FREI.
+  name: verkehr
+  labels:
+    app: verkehr
+spec:
+  replicas: 1
+  # PASST ZU: template.metadata.labels. Nicht app: hallo, sonst waere
+  # der Generator selbst ein Ziel des Service hallo.
+  selector:
+    matchLabels:
+      app: verkehr
+  template:
+    metadata:
+      labels:
+        app: verkehr
+    spec:
+      terminationGracePeriodSeconds: 1
+      containers:
+        - name: verkehr
+          # PASST ZU: render.py ersetzt dies durch $IMAGE.
+          image: WORKSHOP_IMAGE
+          imagePullPolicy: IfNotPresent
+          env:
+            # FREI: Pfade, die nacheinander aufgerufen werden.
+            - name: PFADE
+              value: "/"
+          command: ["sh", "-c"]
+          args:
+            - |
+              while true; do
+                for pfad in $PFADE; do
+                  ausgabe=$(curl -s -m 2 -w '\n%{http_code}' "http://hallo$pfad")
+                  rc=$?
+                  if [ "$rc" -ne 0 ]; then
+                    echo "$(date +%T) GET $pfad -> curl-Fehler $rc"
+                  else
+                    echo "$(date +%T) GET $pfad -> $(echo "$ausgabe" | tail -n 1) $(echo "$ausgabe" | head -n 1)"
+                  fi
+                  sleep 1
+                done
+              done
+          # Klein, weil sich alle Teilnehmenden die Nodes teilen.
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
