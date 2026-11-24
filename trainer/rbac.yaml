@@ -1,9 +1,21 @@
 # Vor dem Anwenden Namespace und Konto ersetzen. Nur fuer den Trainer.
+# Legende FEST, FREI, PASST ZU: siehe Kopf von lab02-hallo-app/k8s/deployment.yaml.
+#
+#   namespace.yaml  name workshop-personNN --> metadata.namespace (Role und Binding)
+#   Role            name workshop-entwickler -> roleRef.name im RoleBinding
+#   Google-Konto der Person ----------------> subjects[].name
+#
+# Rechte entstehen erst durch beides: Die Role sagt WAS, das RoleBinding WER.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  # PASST ZU: roleRef.name im RoleBinding unten.
   name: workshop-entwickler
+  # PASST ZU: metadata.name in namespace.yaml. Die Rechte gelten nur hier.
   namespace: workshop-person01
+# FEST: apiGroups, resources und verbs sind Namen aus der Kubernetes-API.
+# "" ist die Kerngruppe (pods, services, ...), "apps" die der Deployments.
+# Was hier fehlt, ist verboten (z. B. nodes, namespaces).
 rules:
   - apiGroups: [""]
     resources: ["pods", "services", "configmaps", "secrets"]
@@ -30,12 +42,18 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  # FREI. Gleich wie die Role, damit es lesbar bleibt.
   name: workshop-entwickler
+  # PASST ZU: namespace der Role. Ein RoleBinding verweist nur auf eine Role
+  # im selben Namespace.
   namespace: workshop-person01
+# PASST ZU: dem Google-Konto, mit dem die Person gcloud nutzt (E-Mail-Adresse).
 subjects:
   - kind: User
     name: TEILNEHMER_KONTO_ERSETZEN
     apiGroup: rbac.authorization.k8s.io
+# PASST ZU: kind und metadata.name der Role oben. roleRef ist nach dem
+# Anlegen unveraenderlich.
 roleRef:
   kind: Role
   name: workshop-entwickler

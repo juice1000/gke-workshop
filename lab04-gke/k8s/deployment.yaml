@@ -1,50 +1,90 @@
+# Deployment fuer GKE (Lab 4). Aufbau wie lab02-hallo-app/betrieb/deployment.yaml,
+# dort sind alle Felder einzeln erklaert. Hier nur die Bezuege.
+# Legende FEST, FREI, PASST ZU: siehe Kopf von lab02-hallo-app/k8s/deployment.yaml.
+#
+#   service.yaml    selector app=hallo -----> template.metadata.labels
+#   configmap.yaml  name hallo-config ------> configMapKeyRef.name
+#                   data GREETING ----------> configMapKeyRef.key
+#   docker push $IMAGE (Lab 4, Schritt 2) --> Registry-Pfad in $IMAGE
+#   render.py --image "$IMAGE" ------------> ersetzt WORKSHOP_IMAGE
+#
+# Kein Namespace in der Datei: Auf GKE kommt er aus eurem Kontext
+# (workshop-personNN). Alle drei Objekte landen dort.
+# Anwenden immer die Arbeitskopie aus out/lab04/ (render.py), nie diese Datei.
+
+# FEST
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  # PASST ZU: deployment/hallo in Befehlen und scripts/pruefen.py (Stufe gke).
+  # Gleicher Name wie lokal, aber anderer Cluster: Die beiden stoeren sich nicht.
   name: hallo
+  # FREI: nur zum Filtern.
   labels:
     app: hallo
 spec:
+  # FREI (Wert)
   replicas: 2
+  # FREI (Werte)
   revisionHistoryLimit: 5
   minReadySeconds: 3
+  # FREI (Wert). Hoeher als lokal: Der erste Image-Download aus der Registry
+  # kann auf GKE laenger dauern.
   progressDeadlineSeconds: 600
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
+  # PASST ZU: template.metadata.labels. Unveraenderlich nach dem Anlegen.
   selector:
     matchLabels:
       app: hallo
   template:
     metadata:
+      # PASST ZU: selector oben, selector in service.yaml, -l app=hallo.
       labels:
         app: hallo
     spec:
       terminationGracePeriodSeconds: 30
       containers:
+        # PASST ZU: kubectl set image deployment/hallo hallo=..., pruefen.py.
         - name: hallo
+          # PASST ZU: Platzhalter fuer scripts/render.py. Wird ersetzt durch den
+          # Inhalt von $IMAGE aus Lab 4, Schritt 2 (der Pfad aus "docker push"):
+          # REGION-docker.pkg.dev/PROJEKT/REPO/hallo-app-NAMESPACE:2.0
+          # Unersetzt: InvalidImageName oder ErrImagePull.
           image: WORKSHOP_IMAGE
+          # FEST (Wertauswahl). Auf GKE fehlt das Image beim ersten Start,
+          # dann laedt der Node es aus der Registry.
           imagePullPolicy: IfNotPresent
           ports:
+            # PASST ZU: server.port=8080 der Anwendung.
             - containerPort: 8080
           env:
+            # FEST: Die Anwendung liest HOSTNAME.
             - name: HOSTNAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            # FEST: Die Anwendung liest GREETING.
             - name: GREETING
               valueFrom:
                 configMapKeyRef:
+                  # PASST ZU: metadata.name in configmap.yaml.
                   name: hallo-config
+                  # PASST ZU: Schluessel unter data in configmap.yaml.
                   key: GREETING
+          # FREI (Werte). Auf GKE wichtig: Der Scheduler plant alle
+          # Teilnehmenden nach diesen Requests auf die gemeinsamen Nodes.
           resources:
             requests:
               cpu: 250m
               memory: 512Mi
             limits:
               memory: 512Mi
+          # Probes: path FEST (Spring Boot Actuator), port PASST ZU server.port,
+          # Zeiten FREI.
           startupProbe:
             httpGet:
               path: /actuator/health/liveness

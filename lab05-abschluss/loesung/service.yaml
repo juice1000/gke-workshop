@@ -1,10 +1,16 @@
+# Service fuer Lab 5. Fertig, keine Aufgabe. ClusterIP, Zugriff per port-forward.
+# Legende FEST, FREI, PASST ZU: siehe Kopf von lab02-hallo-app/k8s/deployment.yaml.
 apiVersion: v1
 kind: Service
 metadata:
+  # PASST ZU: port-forward service/hallo, scripts/pruefen.py, DNS-Name http://hallo.
   name: hallo
 spec:
+  # PASST ZU: template.metadata.labels im Deployment und in allen Releases.
   selector:
     app: hallo
   ports:
+    # port: FREI, PASST ZU port-forward ...:80.
+    # targetPort: PASST ZU containerPort und server.port 8080.
     - port: 80
       targetPort: 8080

@@ -1,3 +1,6 @@
+# Lab 5, Release A repariert. Bezuege wie in ../loesung/deployment.yaml.
+# Der entscheidende Bezug: configMapKeyRef.key PASST ZU dem Schluessel unter data in
+# ../loesung/configmap.yaml: GREETING.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

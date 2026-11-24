@@ -1,6 +1,11 @@
+# ConfigMap fuer GKE. Eigener Text, damit ihr seht, welcher Cluster antwortet.
+# Legende FEST, FREI, PASST ZU: siehe Kopf von lab02-hallo-app/k8s/deployment.yaml.
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  # PASST ZU: configMapKeyRef.name in deployment.yaml.
   name: hallo-config
 data:
+  # Schluessel: PASST ZU configMapKeyRef.key in deployment.yaml.
+  # Wert: FREI.
   GREETING: Hallo von GKE

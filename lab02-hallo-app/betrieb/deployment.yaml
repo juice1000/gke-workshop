@@ -1,88 +1,139 @@
 # Deployment fuer Tag 2: wie k8s/deployment.yaml, ergaenzt um Konfiguration
 # aus ConfigMap und Secret, Ressourcen, Probes und eine Update-Strategie.
-# Gleicher Name "hallo": apply ersetzt das Deployment von Tag 1 per Rolling Update.
+# Legende FEST, FREI, PASST ZU: siehe Kopf von ../k8s/deployment.yaml.
+#
+# Wie die Teile zusammenhaengen:
+#
+#   service.yaml  selector app=hallo ------> template.metadata.labels
+#   configmap.yaml  name hallo-config -----> env GREETING  configMapKeyRef.name
+#                   data GREETING ---------> env GREETING  configMapKeyRef.key
+#   kubectl create secret generic hallo-secret --from-literal=DB_PASSWORT=...
+#                   hallo-secret ----------> env DB_PASSWORT secretKeyRef.name
+#                   DB_PASSWORT -----------> env DB_PASSWORT secretKeyRef.key
+#   Anwendung  server.port 8080 -----------> containerPort, Probe-Ports,
+#                                            targetPort in service.yaml
+#   Anwendung  /actuator/health/... -------> Pfade der drei Probes
+#
+# Alles im selben Namespace: ConfigMap, Secret und Service werden nur dort
+# gesucht, wo auch die Pods laufen (Demo 2.2b).
+
+# FEST: API-Gruppe und Objektart.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  # PASST ZU: metadata.name in ../k8s/deployment.yaml. Gleicher Name heisst:
+  # apply ersetzt das Deployment von Tag 1 per Rolling Update.
+  # Ausserdem: deployment/hallo in allen Befehlen, scaleTargetRef.name in
+  # ../extra/hpa.yaml, scripts/pruefen.py und die Demos.
   name: hallo
+  # FREI: nur zum Filtern, siehe ../k8s/deployment.yaml.
   labels:
     app: hallo
 spec:
+  # FREI (Wert). ../extra/hpa.yaml darf ihn im Cluster ueberschreiben.
   replicas: 2
 
-  # So viele alte ReplicaSets bleiben stehen. Sie sind die Ziele fuer
-  # "kubectl rollout undo" und erscheinen in "kubectl rollout history".
+  # FREI (Wert): So viele alte ReplicaSets bleiben stehen. Sie sind die Ziele
+  # fuer "kubectl rollout undo" und erscheinen in "kubectl rollout history".
   revisionHistoryLimit: 5
 
-  # Ein neuer Pod muss 3 Sekunden bereit sein, bevor er als verfuegbar zaehlt.
-  # Schuetzt vor Pods, die kurz bereit sind und gleich wieder ausfallen.
+  # FREI (Wert): Ein neuer Pod muss 3 Sekunden bereit sein, bevor er als
+  # verfuegbar zaehlt. Schuetzt vor Pods, die kurz bereit sind und gleich
+  # wieder ausfallen.
   minReadySeconds: 3
 
-  # Kommt ein Rollout 180 Sekunden lang nicht voran, meldet das Deployment
-  # "ProgressDeadlineExceeded". Es rollt aber nicht selbst zurueck.
+  # FREI (Wert): Kommt ein Rollout 180 Sekunden lang nicht voran, meldet das
+  # Deployment "ProgressDeadlineExceeded". Es rollt aber nicht selbst zurueck.
   progressDeadlineSeconds: 180
 
-  # Rolling Update: Pods werden einzeln ausgetauscht.
+  # FEST (Wertauswahl: RollingUpdate oder Recreate). Pods werden einzeln
+  # ausgetauscht.
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      # Hoechstens ein Pod zusaetzlich zur Sollzahl waehrend des Updates.
+      # FREI (Wert): Hoechstens ein Pod zusaetzlich zur Sollzahl.
       maxSurge: 1
-      # Kein bereiter Pod faellt weg, bevor ein neuer bereit ist. Deshalb
-      # bleibt die Anwendung erreichbar, auch wenn das neue Release kaputt ist.
+      # FREI (Wert): Kein bereiter Pod faellt weg, bevor ein neuer bereit ist.
+      # Deshalb bleibt die Anwendung erreichbar, auch wenn das neue Release
+      # kaputt ist.
       maxUnavailable: 0
 
+  # PASST ZU: template.metadata.labels direkt darunter. Jedes Paar hier muss
+  # dort stehen. Darf sich gegenueber Tag 1 nicht aendern: Der selector eines
+  # bestehenden Deployments ist unveraenderlich.
   selector:
     matchLabels:
       app: hallo
   template:
     metadata:
+      # PASST ZU: selector.matchLabels oben, selector in service.yaml,
+      # selector in ../../lab06-betrieb/pdb.yaml, "-l app=hallo" in Befehlen
+      # und pruefen.py. Weitere Labels hier sind erlaubt.
       labels:
         app: hallo
     spec:
-      # Zeit zwischen dem Signal zum Beenden (SIGTERM) und dem harten Abbruch.
-      # Spring Boot beendet laufende Anfragen in dieser Zeit sauber.
+      # FREI (Wert): Zeit zwischen SIGTERM und dem harten Abbruch.
+      # Sollte laenger sein als spring.lifecycle.timeout-per-shutdown-phase
+      # (20s in application.properties), damit Spring Boot sauber endet.
       terminationGracePeriodSeconds: 30
       containers:
+        # PASST ZU: "kubectl set image deployment/hallo hallo=..." und
+        # pruefen.py. Sonst frei, nur innerhalb des Pods eindeutig.
         - name: hallo
-          # Neue Version. Neuer Tag heisst fuer Kubernetes: neues Image,
-          # also ein Rolling Update.
+          # PASST ZU: "docker build -t hallo-app:2.0" und
+          # "minikube image load hallo-app:2.0" (README, Schritt 1).
+          # Neuer Tag heisst fuer Kubernetes: neues Image, also Rolling Update.
           image: hallo-app:2.0
+          # FEST (Wertauswahl). Lokales Image, keine Registry.
           imagePullPolicy: IfNotPresent
           ports:
+            # PASST ZU: server.port=8080 der Anwendung. Nur Information,
+            # entscheidend sind targetPort und die Probe-Ports.
             - containerPort: 8080
 
           env:
-            # Pod-Name, wie an Tag 1.
+            # FEST: Die Anwendung liest HOSTNAME. Wert = Pod-Name.
             - name: HOSTNAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            # Begruessung aus der ConfigMap hallo-config, Schluessel GREETING.
-            # Fehlen ConfigMap oder Schluessel, startet der Container nicht:
-            # Status CreateContainerConfigError.
+            # name: FEST. Die Anwendung liest genau GREETING
+            #   (@Value("${GREETING:Hallo}") in HalloController.java).
+            #   Fehlt die Variable, antwortet sie mit "Hallo".
             - name: GREETING
               valueFrom:
                 configMapKeyRef:
+                  # PASST ZU: metadata.name in configmap.yaml.
                   name: hallo-config
+                  # PASST ZU: dem Schluessel unter data in configmap.yaml.
+                  # Fehlen ConfigMap oder Schluessel, startet der Container
+                  # nicht: Status CreateContainerConfigError (Lab 3, Fall 2).
                   key: GREETING
-            # Wert aus dem Secret hallo-secret. Das Secret legt ihr per Befehl
-            # an, damit kein Passwort im Repository steht. Die Anwendung gibt
-            # den Wert nicht aus.
+            # name: FREI. Die Anwendung liest DB_PASSWORT nicht, sie gibt den
+            #   Wert auch nicht aus. Die Variable zeigt nur, wie ein Secret in
+            #   den Container kommt. pruefen.py erwartet den Namen trotzdem.
             - name: DB_PASSWORT
               valueFrom:
                 secretKeyRef:
+                  # PASST ZU: dem Namen im Befehl
+                  # "kubectl create secret generic hallo-secret ..."
+                  # (betrieb/README.md, Schritt 2). Keine Datei im Repository,
+                  # damit kein Passwort in Git steht.
                   name: hallo-secret
+                  # PASST ZU: dem Schluessel in --from-literal=DB_PASSWORT=...
                   key: DB_PASSWORT
 
           resources:
-            # Requests: Reservierung fuer die Planung. Der Scheduler setzt den
-            # Pod nur auf einen Node, der so viel freie Kapazitaet hat.
+            # FREI (Werte): Reservierung fuer die Planung. Der Scheduler setzt
+            # den Pod nur auf einen Node, der so viel freie Kapazitaet hat.
+            # cpu 250m ist auch die Basis fuer ../extra/hpa.yaml (50 Prozent).
             requests:
               cpu: 250m
               memory: 512Mi
-            # Speicherlimit fuer den ganzen Container, inklusive Java-Heap und
-            # JVM-Nebenspeicher. Wer es ueberschreitet, wird beendet (OOMKilled).
+            # FREI (Wert), aber PASST ZU der JVM: Speicherlimit fuer den ganzen
+            # Container, inklusive Java-Heap und JVM-Nebenspeicher. Der Heap
+            # betraegt 65 Prozent davon (MaxRAMPercentage im Dockerfile).
+            # Wer das Limit ueberschreitet, wird beendet (OOMKilled).
             # Ein CPU-Limit fehlt bewusst: Es wuerde die JVM nur bremsen.
             limits:
               memory: 512Mi
@@ -90,6 +141,11 @@ spec:
           # Startup-Probe: Ist der Start abgeschlossen? Bis zu 30 Versuche im
           # Abstand von 5 Sekunden, also etwa 150 Sekunden fuer den JVM-Start.
           # Bis sie erfolgreich ist, laufen Readiness und Liveness noch nicht.
+          # Fuer alle drei Probes gilt:
+          #   path: FEST, von Spring Boot Actuator vorgegeben
+          #     (management.endpoint.health.probes.enabled=true).
+          #   port: PASST ZU server.port=8080 der Anwendung.
+          #   Zeiten und Schwellen: FREI (Werte).
           startupProbe:
             httpGet:
               path: /actuator/health/liveness

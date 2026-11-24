@@ -1,3 +1,8 @@
+# Lab 3, Fall 3: absichtlich mit genau einem Fehler.
+# Bewusst ohne Feldkommentare, damit die Datei den Fehler nicht verraet.
+# Bezuege wie in lab02-hallo-app/betrieb/deployment.yaml. Name und Label
+# fall3 sind frei, aber eigene, damit sich die Faelle nicht stoeren.
+# Loesung fuer den Trainer: loesungen/fall3.yaml.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

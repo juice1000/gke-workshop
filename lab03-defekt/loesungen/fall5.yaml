@@ -1,3 +1,6 @@
+# Lab 3, Loesung Fall 5. Bezuege wie in lab02-hallo-app/betrieb/deployment.yaml.
+# Der entscheidende Bezug: readinessProbe.path ist FEST, von Spring Boot Actuator vorgegeben:
+# /actuator/health/readiness.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

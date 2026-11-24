@@ -1,24 +1,55 @@
 # Deployment fuer Tag 1: haelt zwei Kopien der hallo-app am Laufen.
 # Kubernetes vergleicht staendig diesen Sollzustand mit dem Ist-Zustand
 # und ersetzt fehlende Pods selbststaendig.
+#
+# Legende fuer die Kommentare in allen Manifesten des Kurses:
+#   FEST      von Kubernetes oder von der Anwendung vorgegeben. Nicht aendern.
+#   FREI      frei waehlbar. Nichts anderes verweist auf diesen Wert.
+#   PASST ZU  frei waehlbar, muss aber an der genannten Stelle genauso lauten.
+#             Aendert ihr den Wert, aendert ihr ihn dort mit.
+#
+# Wie die Teile zusammenhaengen:
+#
+#   service.yaml                deployment.yaml (diese Datei)
+#   selector: app=hallo  -----> template.metadata.labels: app=hallo
+#                               selector.matchLabels: app=hallo ---^
+#   targetPort: 8080     -----> containerPort: 8080 --> Anwendung: server.port
+#
+#   docker build -t hallo-app:1.0 / minikube image load --> image: hallo-app:1.0
+#
+# Kein Namespace in der Datei: Er kommt aus dem Kontext oder aus -n.
+# Deployment und Service muessen im selben Namespace liegen.
 
-# API-Gruppe und Objektart. Deployments liegen in der Gruppe apps.
+# FEST: API-Gruppe und Objektart. Deployments liegen in der Gruppe apps.
 apiVersion: apps/v1
 kind: Deployment
 
-# Name und Labels des Deployments selbst.
 metadata:
+  # PASST ZU: allen Befehlen mit deployment/hallo, zu scripts/pruefen.py
+  # und den Demos. Fuer Kubernetes frei waehlbar, im Kurs deshalb "hallo".
+  # Muss im Namespace eindeutig sein. Gleicher Name in betrieb/deployment.yaml
+  # heisst: apply aendert dieses Deployment, statt ein zweites anzulegen.
   name: hallo
+  # FREI: Labels am Deployment selbst. Nur zum Filtern, z. B.
+  # "kubectl get deployments -l app=hallo". Weder der selector unten noch der
+  # Service lesen sie. Gleich gewaehlt, damit alles mit app=hallo zusammen
+  # auftaucht.
   labels:
     app: hallo
 
 spec:
-  # Sollzustand: zwei Pods. "kubectl scale" aendert diesen Wert nur im Cluster,
-  # das naechste "kubectl apply" setzt wieder den Wert aus dieser Datei.
+  # FREI (Wert): Sollzustand zwei Pods. "kubectl scale" aendert den Wert nur
+  # im Cluster, das naechste "kubectl apply" setzt wieder den Wert aus der Datei.
   replicas: 2
 
-  # Woran das Deployment "seine" Pods erkennt. Muss zu den Labels
-  # unter template.metadata.labels passen, sonst lehnt der Cluster ab.
+  # PASST ZU: template.metadata.labels weiter unten. Jedes Paar hier muss
+  # dort vorkommen, sonst lehnt der Cluster die Datei ab. Die Vorlage darf
+  # mehr Labels haben als der selector, nicht weniger.
+  # Schluessel "app" und Wert "hallo" sind frei gewaehlt (Konvention).
+  # Achtung: Nach dem Anlegen laesst sich der selector nicht mehr aendern.
+  # Dann hilft nur loeschen und neu anlegen.
+  # Andere Deployments im selben Namespace brauchen andere Werte (Lab 3 nutzt
+  # fall1 bis fall5), sonst halten sie die Pods des anderen fuer ihre eigenen.
   selector:
     matchLabels:
       app: hallo
@@ -26,29 +57,41 @@ spec:
   # Vorlage fuer jeden Pod, den das Deployment anlegt.
   template:
     metadata:
-      # Jeder Pod bekommt dieses Label. Ueber dasselbe Label findet
-      # auch der Service die Pods.
+      # PASST ZU: drei Stellen lesen diese Pod-Labels:
+      #   1. selector.matchLabels oben (dieses Deployment)
+      #   2. spec.selector in service.yaml (welche Pods Anfragen bekommen)
+      #   3. "kubectl ... -l app=hallo" und scripts/pruefen.py
+      # Weitere Labels hier sind erlaubt und stoeren nichts.
+      # Kubernetes haengt selbst noch pod-template-hash an.
       labels:
         app: hallo
     spec:
       containers:
+        # PASST ZU: "kubectl set image deployment/hallo hallo=..." (der Teil
+        # vor dem =) und "kubectl logs -c hallo". Sonst frei, muss nur innerhalb
+        # des Pods eindeutig sein. scripts/pruefen.py erwartet "hallo".
         - name: hallo
-          # Lokal gebautes Image, per "minikube image load" in den Cluster kopiert.
+          # PASST ZU: Name und Tag aus "docker build -t hallo-app:1.0" und
+          # "minikube image load hallo-app:1.0" (README, Schritt 1).
+          # Zeichen fuer Zeichen, sonst ErrImagePull (Lab 3, Fall 1).
           image: hallo-app:1.0
-          # IfNotPresent: vorhandenes Image im Cluster verwenden, nicht aus dem
-          # Internet laden. Ein lokales Image gibt es in keiner Registry.
+          # FEST (Wertauswahl: Always, IfNotPresent, Never). IfNotPresent:
+          # vorhandenes Image im Cluster verwenden, nicht aus dem Internet laden.
+          # Ein lokales Image gibt es in keiner Registry.
           imagePullPolicy: IfNotPresent
 
-          # Umgebungsvariablen fuer den Container.
           env:
-            # Kubernetes setzt den Pod-Namen ein (Downward API). Die Anwendung
-            # nennt ihn in jeder Antwort, so seht ihr, welcher Pod geantwortet hat.
+            # FEST: Die Anwendung liest genau die Variable HOSTNAME
+            # (HalloController.java) und nennt den Wert in jeder Antwort.
+            # Kubernetes setzt den Pod-Namen ein (Downward API).
             - name: HOSTNAME
               valueFrom:
                 fieldRef:
+                  # FEST: Feldpfad im Pod-Objekt.
                   fieldPath: metadata.name
 
-          # Port, auf dem die Anwendung im Container hoert. Rein informativ,
-          # der Service leitet ueber targetPort hierher weiter.
+          # PASST ZU: server.port=8080 in src/main/resources/application.properties
+          # (und EXPOSE 8080 im Dockerfile). Der Eintrag selbst ist nur
+          # Information. Entscheidend ist targetPort in service.yaml.
           ports:
             - containerPort: 8080

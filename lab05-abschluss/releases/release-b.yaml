@@ -1,3 +1,8 @@
+# Lab 5, Release B: absichtlich mit einem Fehler.
+# Bewusst ohne Feldkommentare, damit die Datei den Fehler nicht verraet.
+# Gleicher Name hallo und gleiche Labels wie ../loesung/deployment.yaml:
+# "apply" aendert das laufende Deployment per Rolling Update.
+# Korrigierte Fassung fuer den Trainer: ../repariert/release-b.yaml.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

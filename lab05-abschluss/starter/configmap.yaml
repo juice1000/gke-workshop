@@ -1,6 +1,10 @@
+# ConfigMap fuer Lab 5. Fertig, keine Aufgabe.
+# Legende FEST, FREI, PASST ZU: siehe Kopf von lab02-hallo-app/k8s/deployment.yaml.
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  # PASST ZU: configMapKeyRef.name im Deployment (GREETING).
   name: hallo-config
 data:
+  # Schluessel: PASST ZU configMapKeyRef.key im Deployment. Wert: FREI.
   GREETING: Hallo zum Abschluss

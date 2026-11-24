@@ -1,3 +1,7 @@
+# Lab 3, Loesung Fall 2. Bezuege wie in lab02-hallo-app/betrieb/deployment.yaml.
+# Der entscheidende Bezug: Die ConfigMap oben gehoert zur Loesung. metadata.name PASST ZU
+# configMapKeyRef.name (fall2-config), der Schluessel unter data PASST ZU
+# configMapKeyRef.key (GREETING). Beide im selben Namespace wie der Pod.
 apiVersion: v1
 kind: ConfigMap
 metadata:

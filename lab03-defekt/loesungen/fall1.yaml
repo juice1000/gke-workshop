@@ -1,3 +1,6 @@
+# Lab 3, Loesung Fall 1. Bezuege wie in lab02-hallo-app/betrieb/deployment.yaml.
+# Der entscheidende Bezug: image PASST ZU dem geladenen Image: hallo-app:1.0, Zeichen fuer Zeichen
+# wie in "minikube image ls".
 apiVersion: apps/v1
 kind: Deployment
 metadata:

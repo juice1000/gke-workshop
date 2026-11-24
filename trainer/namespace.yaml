@@ -1,6 +1,15 @@
+# Namespace pro Person. Nur fuer den Trainer. Vor dem Anwenden NN ersetzen.
+# Legende FEST, FREI, PASST ZU: siehe Kopf von lab02-hallo-app/k8s/deployment.yaml.
+#
+#   metadata.name workshop-personNN --> metadata.namespace in rbac.yaml (beide
+#                                       Objekte) und im Kontext der Person
 apiVersion: v1
 kind: Namespace
 metadata:
+  # PASST ZU: metadata.namespace in rbac.yaml und dem Namespace, den die
+  # Person in ihrem Kontext setzt (Lab 4). Muster frei, im Kurs workshop-personNN.
   name: workshop-person01
+  # FREI: zum Filtern aller Kurs-Namespaces, z. B. beim Aufraeumen mit
+  # "kubectl get namespaces -l workshop=gke-einfuehrung".
   labels:
     workshop: gke-einfuehrung
