@@ -14,7 +14,7 @@ import urllib.request
 
 # Wo die Manifeste je Etappe liegen. Fuer Hinweise bei fehlenden Objekten.
 FOLDERS = {"lab02": "lab02-hallo-app/k8s/", "betrieb": "lab02-hallo-app/betrieb/",
-           "gke": "lab04-gke/k8s/", "abschluss": "lab06-abschluss/starter/"}
+           "abschluss": "lab06-abschluss/starter/"}
 
 
 class Checkpoint:
@@ -167,7 +167,7 @@ class Checkpoint:
                 hint = ("Pods melden " + ", ".join(problems)
                         + ". kubectl describe pod -l app=hallo, Abschnitt Events")
                 if stage in ("lab02", "betrieb") and any("Image" in reason for reason in problems):
-                    hint += ". Image-Name, Tag und minikube image load pruefen"
+                    hint += ". Image-Name und Tag pruefen, lokal minikube image load, auf GKE docker push"
             self.check(ready, "Alle Replikas aktuell und verfuegbar", hint)
 
         service = self.get("service", "hallo", missing=(
@@ -228,7 +228,7 @@ class Checkpoint:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("stage", choices=["dns", "lab02", "betrieb", "gke", "abschluss"])
+    parser.add_argument("stage", choices=["dns", "lab02", "betrieb", "abschluss"])
     args = parser.parse_args()
     context = os.environ.get("WORKSHOP_CONTEXT")
     namespace = os.environ.get("WORKSHOP_NAMESPACE")

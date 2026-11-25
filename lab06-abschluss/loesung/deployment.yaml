@@ -11,7 +11,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  # PASST ZU: ../stoerungen/, ../repariert/ und deployment/hallo.
+  # PASST ZU: ../stoerungen/ und deployment/hallo.
   name: hallo
   # FREI: nur zum Filtern.
   labels:

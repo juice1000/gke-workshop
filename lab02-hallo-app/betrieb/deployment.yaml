@@ -1,3 +1,4 @@
+---
 # Deployment Tag 2: wie k8s/deployment.yaml, plus Konfiguration,
 # Ressourcen, Probes und Update-Strategie.
 #

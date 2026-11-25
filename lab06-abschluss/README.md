@@ -15,9 +15,8 @@ bash scripts/pipeline.sh lab06-abschluss/loesung/
 | Ordner | Inhalt |
 | --- | --- |
 | [starter/](starter/) | Etappe A: Deployment mit TODOs, ConfigMap und Service fertig |
-| [loesung/](loesung/) | fertiger Starter, der bekannte gute Stand |
+| [loesung/](loesung/) | fertiger Starter, der bekannte gute Stand, auch für Lab 5 |
 | [stoerungen/](stoerungen/) | Etappen B und D: je ein Release mit genau einem Fehler |
-| [repariert/](repariert/) | korrigierte Fassungen von 6.1 bis 6.3 |
 | [tresor/](tresor/) | Etappe D: guter Stand mit Passwort aus Secret Manager |
 | [rechte.yaml](rechte.yaml) | Etappe C: eine enge Rolle |
 
@@ -105,7 +104,7 @@ Die Stufe Rollback macht, was ihr in Lab 2 von Hand gemacht habt: `kubectl rollo
 | 6.2 | Container wird mit `OOMKilled` beendet | 512 MiB fest vorbelegter Heap plus JVM-Nebenspeicher passen nicht ins 512-MiB-Limit | `describe.txt`, `Last State: Terminated`, `Reason: OOMKilled`, Exit Code 137 | Limit auf `1Gi` erhöhen oder Heap verkleinern |
 | 6.3 | Neuer Pod läuft, bleibt aber `0/1` | Readiness prüft einen nicht vorhandenen Pfad | `describe.txt`, Events: `Readiness probe failed: HTTP probe failed with statuscode: 404` | `/actuator/health/readiness` eintragen |
 
-Korrigierte Fassungen: [6.1](repariert/6.1-konfiguration.yaml), [6.2](repariert/6.2-speicher.yaml), [6.3](repariert/6.3-bereitschaft.yaml).
+Jede Reparatur ändert eine Zeile. `git diff lab06-abschluss/stoerungen/` zeigt eure, [loesung/deployment.yaml](loesung/deployment.yaml) den Vergleich.
 
 Warum vor jeder Störung der Starter? `rollout undo` ändert den Cluster, aber nicht die Notiz von `kubectl apply` über die zuletzt angewendete Datei. Ein Feld, das nur im zurückgerollten Stand steht, entfernt das nächste `apply` dann nicht. Der Starter dazwischen setzt diese Notiz zurück.
 

@@ -15,7 +15,7 @@
 | [4: Auf GKE](lab04-gke/README.md) | Tag 2 | Artifact Registry, Kontextwechsel, Konsole | 60 Min. |
 | [5: Störungssuche](lab05-stoerungen/README.md) | Tag 3, 3.2 | Störungen über Logs, Events, Logs Explorer und einen Alarm finden | 60 bis 80 Min. |
 | [6: Abschluss](lab06-abschluss/README.md) | Tag 3, 3.5 | Manifest vervollständigen, Störungen über die Pipeline reparieren, Secret Manager | 120 Min. |
-| [7: Betrieb](lab07-betrieb/README.md) | Tag 3, 3.6, parallel zu Lab 6 | Cluster lesen, lokal cordon/uncordon und PDB untersuchen | 90 Min. |
+| [7: Betrieb](lab07-betrieb/README.md) | Tag 3, 3.6 | Cluster lesen, Nodes sperren, PDB bei einer Wartung | 60 Min. |
 
 ## Voraussetzungen
 
@@ -53,9 +53,7 @@ Die Anwendung ist textbasiert. So bleiben Kubernetes und die Fehlersuche im Mitt
 ## Für Trainer und Mitwirkende
 
 - [Demonstrationen für die Folien „Lokal ausprobieren“](demos/README.md), lokal mit minikube. `source scripts/workshop-env.sh` lädt deren Umgebung.
-- [Lab-Zuordnung und Kürzungen](docs/06-labs-und-trainer.md), [Teststatus](docs/07-teststatus.md), [Pipeline-Einordnung und Cheat-Sheet](docs/08-pipeline-und-cheatsheet.md)
-- [Kundenkontext](docs/01-kontext.md), [Lernziele](docs/02-bedarf-und-lernziele.md), [Curriculum](docs/03-curriculum-entscheidungen.md)
-- Gemeinsamer Kurscluster, Teilnehmerzugänge, Gateway, Runbook und GitHub-Actions-Demo: Branch `workshop-master`, Ordner `trainer/`.
+- Gemeinsamer Kurscluster, Teilnehmerzugänge, Gateway, Runbook, GitHub-Actions-Demo, Planung und Teststatus: Branch `workshop-master`, Ordner `trainer/` und `docs/`.
 
 ```bash
 bash scripts/validate.sh   # ShellCheck, Dateiverweise, Kubernetes-Schemas

@@ -1,3 +1,4 @@
+---
 # ConfigMap: Konfiguration ausserhalb des Images.
 # Wird beim Containerstart gelesen. Nach Aenderung: rollout restart.
 #

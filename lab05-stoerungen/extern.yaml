@@ -12,7 +12,7 @@ metadata:
     workshop-lab: "05"
 spec:
   type: LoadBalancer
-  # PASST ZU: template.metadata.labels in deployment.yaml.
+  # PASST ZU: template.metadata.labels in lab06-abschluss/loesung/deployment.yaml.
   selector:
     app: hallo
   ports:

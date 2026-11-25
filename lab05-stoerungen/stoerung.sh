@@ -41,7 +41,9 @@ case "${1:-}" in
     kubectl delete deployment hallo verkehr --ignore-not-found --wait=true
     kubectl delete secret hallo-secret --ignore-not-found
     kubectl create secret generic hallo-secret --from-literal=DB_PASSWORT=uebung123
-    sed "s#WORKSHOP_IMAGE#$IMAGE#" lab05-stoerungen/basis/*.yaml | kubectl apply -f - || exit 1
+    # Guter Stand: die Loesung aus Lab 6, dazu der Client und der oeffentliche Zugang.
+    sed "s#WORKSHOP_IMAGE#$IMAGE#" lab06-abschluss/loesung/*.yaml lab05-stoerungen/verkehr.yaml lab05-stoerungen/extern.yaml \
+      | kubectl apply -f - || exit 1
     kubectl rollout status deployment/hallo --timeout=300s || exit 1
     kubectl rollout status deployment/verkehr --timeout=300s || exit 1
     printf '\nAusgangslage steht. Verkehr mitlesen: kubectl logs deployment/verkehr -f\n'

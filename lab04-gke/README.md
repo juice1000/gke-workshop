@@ -61,11 +61,12 @@ Erwartet: Der Push endet mit `digest: sha256:...`, die Liste zeigt das Image mit
 
 ### 3. Ausrollen
 
-In [k8s/deployment.yaml](k8s/deployment.yaml) steht statt eines Images der Platzhalter `WORKSHOP_IMAGE`. `sed` setzt euer Image ein und gibt das Ergebnis direkt an `kubectl`. Die Dateien im Repository bleiben unverändert.
+Ihr rollt genau die Manifeste aus Lab 2 aus: [lab02-hallo-app/betrieb/](../lab02-hallo-app/betrieb/). Nur das Image ist ein anderes. Lokal hieß es `hallo-app:2.0`, hier ist es der volle Registry-Pfad. `sed` tauscht diese eine Zeile und gibt das Ergebnis direkt an `kubectl`. Die Dateien im Repository bleiben unverändert.
 
 ```bash
-sed "s#WORKSHOP_IMAGE#$IMAGE#" lab04-gke/k8s/*.yaml        # nur ansehen
-sed "s#WORKSHOP_IMAGE#$IMAGE#" lab04-gke/k8s/*.yaml | kubectl apply -f -
+kubectl create secret generic hallo-secret --from-literal=DB_PASSWORT=uebung123
+sed "s#image: hallo-app:2.0#image: $IMAGE#" lab02-hallo-app/betrieb/*.yaml | grep image:   # nur ansehen
+sed "s#image: hallo-app:2.0#image: $IMAGE#" lab02-hallo-app/betrieb/*.yaml | kubectl apply -f -
 kubectl rollout status deployment/hallo --timeout=600s
 kubectl get pods -o wide                                     # NODE zeigt, wo die Pods laufen
 ```
@@ -83,7 +84,7 @@ kubectl get events --sort-by=.lastTimestamp
 kubectl port-forward service/hallo 8080:80              # im zweiten Terminal: curl http://127.0.0.1:8080/
 ```
 
-Erwartet: `Hallo von GKE von Pod ..., Version 2.0`.
+Erwartet: `Hallo aus der ConfigMap von Pod ..., Version 2.0`. Dieselbe Antwort wie lokal in Lab 2, jetzt aus GKE.
 
 Öffnet in der Konsole Kubernetes Engine, dann Workloads. Vergleicht Pod-Namen, Image, Ereignisse und Logs mit der CLI. Ändert dann etwas und aktualisiert die Seite nach jedem Befehl:
 
@@ -107,7 +108,7 @@ Erwartet: zwei verschiedene Pod-Listen. Ein Kontext ist ein Verbindungsprofil. W
 ## Checkpoint
 
 ```bash
-python3 scripts/pruefen.py gke
+python3 scripts/pruefen.py betrieb
 ```
 
 Erwartet: `Ergebnis: 0 Pruefung(en) fehlgeschlagen`.
@@ -161,10 +162,10 @@ Mehrmals aufrufen: Der Pod-Name wechselt. Findet den Load Balancer in der Konsol
 
 ```bash
 kubectl config current-context    # erwartet: gke_...
-sed "s#WORKSHOP_IMAGE#$IMAGE#" lab04-gke/k8s/*.yaml | kubectl delete -f -
+kubectl delete -f lab02-hallo-app/betrieb/
 ```
 
-Für Lab 5 könnt ihr das Deployment stehen lassen. `stoerung.sh start` ersetzt es.
+Für Lab 5 könnt ihr alles stehen lassen. `stoerung.sh start` ersetzt es. Lab 7 braucht genau diesen Stand wieder.
 
 ## Fragen und Antworten
 

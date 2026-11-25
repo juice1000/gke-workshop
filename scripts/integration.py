@@ -161,12 +161,6 @@ def main():
         command("delete", "-f", str(ROOT / f"lab03-defekt/loesungen/fall{number}.yaml"))
         wait_for(f"Fall {number}: aufgeraeumt", lambda a=app: not pods(a))
 
-    print("===== Lab 4: GKE-Manifeste lokal mit gleichem Image-Vertrag", flush=True)
-    mit_image("lab04-gke/k8s")
-    rollout()
-    checkpoint("gke")
-    mit_image("lab04-gke/k8s", "delete")
-
     print("===== Lab 6: Stoerungen 6.1 bis 6.3, Verfuegbarkeit und Rollback", flush=True)
     command("create", "secret", "generic", "hallo-secret", "--from-literal=DB_PASSWORT=nur-uebung")
     faelle = [("6.1", "6.1-konfiguration"), ("6.2", "6.2-speicher"), ("6.3", "6.3-bereitschaft")]
@@ -191,9 +185,6 @@ def main():
         assert before <= surviving, "Alte bereite Pods gingen waehrend fehlerhaftem Rollout verloren"
         assert "Version 2.0" in Checkpoint(CONTEXT, NAMESPACE).response()
         command("rollout", "undo", "deployment/hallo")
-        rollout()
-        checkpoint("abschluss")
-        mit_image(f"lab06-abschluss/repariert/{datei}.yaml")
         rollout()
         checkpoint("abschluss")
     mit_image("lab06-abschluss/loesung", "delete")

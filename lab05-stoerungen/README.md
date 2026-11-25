@@ -24,7 +24,7 @@ Alle Befehle aus dem Repository-Hauptordner. Lest `stoerung.sh` erst nach dem La
 `verkehr` ist ein kleiner Client im selben Namespace. Er ruft jede Sekunde die Anwendung auf und schreibt das Ergebnis als Logzeile:
 
 ```text
-18:27:35 GET / -> 200 Hallo aus dem Betrieb von Pod hallo-7cff9c99cf-bkrds, Version 2.0
+18:27:35 GET / -> 200 Hallo zum Abschluss von Pod hallo-7cff9c99cf-bkrds, Version 2.0
 18:31:26 GET / -> curl-Fehler 7
 ```
 
@@ -79,7 +79,7 @@ bash lab05-stoerungen/stoerung.sh 1           # oder gezielt 5.1 bis 5.5
 1. Beobachtet zuerst den Verkehr. Was merkt der Nutzer?
 2. Sucht den Fundort mit der Tabelle oben. Welcher Befehl, welche Zeile zeigt es?
 3. Benennt die Ursache.
-4. Repariert mit `kubectl`. Nicht mit `start`: Das wäre Zurücksetzen, keine Reparatur. Die Dateien in [basis/](basis/) sind der gesunde Stand.
+4. Repariert mit `kubectl`. Nicht mit `start`: Das wäre Zurücksetzen, keine Reparatur. Der gesunde Stand ist die Lösung aus [Lab 6](../lab06-abschluss/loesung/), dazu [verkehr.yaml](verkehr.yaml) und [extern.yaml](extern.yaml).
 5. Prüft: `kubectl get pods` ohne neue Neustarts, und die letzten Zeilen von `verkehr` zeigen nur `-> 200` mit derselben Begrüßung.
 6. `bash lab05-stoerungen/stoerung.sh start` für die nächste Runde.
 
@@ -210,10 +210,10 @@ Nicht vor Lab 6: Lab 6 übernimmt Service und Secret. Lab 6 räumt am Ende alles
 | Störung | Nutzer (`verkehr`) | Server (`hallo`) | Kubernetes | Ursache | Reparatur |
 | --- | --- | --- | --- | --- | --- |
 | 5.1 Neustarts im Betrieb | weiter `200`, zeitweise antwortet nur ein Pod | `Started HalloApplication` wiederholt; `--previous` zeigt den Shutdown | `Liveness probe failed: HTTP probe failed with statuscode: 404`, RESTARTS steigt | Liveness prüft `/actuator/health/live` | Pfad per `kubectl edit` auf `/actuator/health/liveness` oder `kubectl rollout undo deployment/hallo` |
-| 5.2 Stiller Service | nur `curl-Fehler 7` | keine neuen Zeilen | keine Warnung; EndpointSlice zeigt Port `8081` | `targetPort: 8081` im Service | `kubectl apply -f lab05-stoerungen/basis/service.yaml` |
+| 5.2 Stiller Service | nur `curl-Fehler 7` | keine neuen Zeilen | keine Warnung; EndpointSlice zeigt Port `8081` | `targetPort: 8081` im Service | `kubectl apply -f lab06-abschluss/loesung/service.yaml` |
 | 5.3 Fehlendes Secret | weiter `200`, aber nur von einem Pod | ein Pod ohne Logs | `Error: secret "hallo-secret" not found`, `CreateContainerConfigError` | Secret gelöscht, ein Pod neu gestartet | Secret neu anlegen, der Pod startet von selbst |
 | 5.4 Fehlerflut | zwei von drei Anfragen `GET /fehler -> 500` | `ERROR ... FEHLER` in Serie | nichts | Client `verkehr` ruft `/fehler` auf (`PFADE`) | `kubectl set env deployment/verkehr PFADE-` |
-| 5.5 Gemischte Antworten | zwei verschiedene Begrüßungen im Wechsel | nichts Auffälliges | nichts | ConfigMap geändert, nur ein Pod neu gestartet | richtigen Wert festlegen, `kubectl apply -f lab05-stoerungen/basis/configmap.yaml`, `kubectl rollout restart deployment/hallo` |
+| 5.5 Gemischte Antworten | zwei verschiedene Begrüßungen im Wechsel | nichts Auffälliges | nichts | ConfigMap geändert, nur ein Pod neu gestartet | richtigen Wert festlegen, `kubectl apply -f lab06-abschluss/loesung/configmap.yaml`, `kubectl rollout restart deployment/hallo` |
 
 Alarm: `restart_count` wird alle 60 Sekunden gemessen und erscheint bis zu 3 Minuten später, dazu kommt das Zeitfenster. Der Alarm meldet nur Störung 5.1 sicher. Störung 5.3 startet einen Pod nicht, statt ihn neu zu starten. 5.2, 5.4 und 5.5 haben keine Neustarts. Für 5.2 bräuchte es einen Alarm auf Nutzersicht, etwa eine logbasierte Metrik auf `curl-Fehler` in `verkehr` oder einen Uptime-Check auf `hallo-extern`. Ein Alarm prüft nur, was ihr ihm gesagt habt.
 
