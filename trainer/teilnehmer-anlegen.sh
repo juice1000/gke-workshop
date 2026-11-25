@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Legt fuer jede Google-Konto-Adresse einen Namespace, die Namespace-Rolle und die
-# Projekt-IAM-Rollen an. Nur fuer den Trainer.
+# Legt fuer jede Google-Konto-Adresse einen Namespace, die Namespace-Rolle, das
+# Kontingent (trainer/kontingent.yaml) und die Projekt-IAM-Rollen an. Nur fuer den Trainer.
 #
 # Aufruf aus dem Repository-Hauptordner nach source scripts/workshop-env.sh:
 #   bash trainer/teilnehmer-anlegen.sh KONTOLISTE            # nur rendern und anzeigen
@@ -45,6 +45,7 @@ while IFS= read -r zeile || [ -n "$zeile" ]; do
   sed "s/workshop-person01/${ns}/g" trainer/namespace.yaml > "$dir/namespace.yaml"
   sed -e "s/workshop-person01/${ns}/g" -e "s/TEILNEHMER_KONTO_ERSETZEN/${konto}/g" \
     trainer/rbac.yaml > "$dir/rbac.yaml"
+  sed "s/workshop-person01/${ns}/g" trainer/kontingent.yaml > "$dir/kontingent.yaml"
   printf '%s\t%s\t%s\n' "$nn" "$ns" "$konto" >> "$TABELLE"
 
   if [ "$APPLY" != "--apply" ]; then
@@ -55,6 +56,7 @@ while IFS= read -r zeile || [ -n "$zeile" ]; do
   printf '\n== %s -> %s\n' "$konto" "$ns"
   kubectl --context "$GKE_CONTEXT" apply -f "$dir/namespace.yaml"
   kubectl --context "$GKE_CONTEXT" apply -f "$dir/rbac.yaml"
+  kubectl --context "$GKE_CONTEXT" apply -f "$dir/kontingent.yaml"
   # Cluster-Metadaten fuer get-credentials. Gibt keine Rechte an Kubernetes-Objekten.
   gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="user:${konto}" \
     --role=roles/container.clusterViewer --condition=None --quiet >/dev/null

@@ -136,6 +136,21 @@ Schreibt für jede gefundene Störung eine Logs-Explorer-Abfrage, die sie früh 
 
 Baut im eigenen Namespace eine eigene Störung mit `kubectl patch`, `kubectl set env` oder `kubectl delete`. Euer Partner sucht sie an eurem Bildschirm. Regeln: nur im eigenen Namespace, keine Änderung an Nodes, danach `start`.
 
+### Extra 3: Wer hat das geändert? (GKE)
+
+Jede Änderung über die Kubernetes-API landet im Audit-Log, mit Zeit, Methode und Konto. Baut eine Störung ein und sucht sie im Logs Explorer:
+
+```text
+log_id("cloudaudit.googleapis.com/activity")
+resource.type="k8s_cluster"
+protoPayload.resourceName:"namespaces/workshop-person01/"
+NOT protoPayload.methodName:"status"
+```
+
+`NOT ... status` blendet die Statusmeldungen der Controller aus.
+
+Ihr seht etwa `io.k8s.apps.v1.deployments.patch` mit eurem eigenen Konto. Im Betrieb ist das oft die schnellste Frage: Was hat sich kurz vor der Störung geändert? Warum findet ihr Störung 4 hier, aber keinen Hinweis darauf, was der Client falsch macht?
+
 ## Aufräumen
 
 ```bash

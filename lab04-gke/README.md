@@ -112,6 +112,16 @@ Erwartet: `Hallo von GKE von Pod ..., Version 2.0`.
 
 Öffnet in der Konsole Kubernetes Engine, dann Workloads. Findet euer Deployment über den Namespace. Vergleicht Pod-Namen, Image, Ereignisse und Logs mit der CLI. Sucht danach den Service.
 
+Ändert jetzt etwas und schaut zu, wie die Konsole folgt. Lasst die Seite des Deployments offen und aktualisiert sie nach jedem Befehl:
+
+```bash
+kubectl delete pod -l app=hallo --wait=false   # Konsole: neue Pod-Namen, Ereignisse zum Ersatz
+kubectl scale deployment/hallo --replicas=3    # Konsole: drei Pods, Ereignis ScalingReplicaSet
+kubectl scale deployment/hallo --replicas=2    # zurück auf den Stand der Datei
+```
+
+Im Reiter Logs seht ihr die Startzeilen der neuen Pods. Bis sie dort stehen, dauert es etwa eine Minute.
+
 ### 5. Kontext wechseln
 
 Was passiert: Ihr springt zwischen minikube und GKE. Derselbe Befehl zeigt je nach Kontext einen anderen Cluster.
@@ -179,9 +189,12 @@ kubectl auth can-i get secrets
 kubectl auth can-i create deployments -n kube-system      # im Systembereich
 kubectl auth can-i list nodes                             # clusterweit
 kubectl auth can-i --list                                 # alles, was ihr hier duerft
+kubectl describe resourcequota kurs                       # wie viel ihr reservieren duerft
 ```
 
 Welche Antworten sind `yes`, welche `no`? Woher kommt der Unterschied?
+
+Alle teilen sich dieselben Nodes. Das Kontingent ist ein Sicherheitsnetz gegen Versehen, keine Übung kommt in seine Nähe. Ein eigener `LoadBalancer` ist gesperrt, der Weg nach außen ist das Gateway (Extra 4).
 
 ### Extra 3: Replikas auf Nodes verteilen
 

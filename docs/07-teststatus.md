@@ -245,3 +245,10 @@ Nicht geprüft: Abfragen in der Konsole und im Monitoring mit Teilnehmerrechten,
 - [ ] Installationsbefehle aus [VORBEREITUNG.md](../VORBEREITUNG.md) auf Windows/WSL2 und Linux: bewusst nicht vorab getestet (Entscheidung 21.11.2026). Die Befehle folgen den Herstelleranleitungen. Probleme fängt Lab 0 am ersten Morgen ab, Ausweg Paararbeit und Cloud Shell.
 
 Die GKE-Ergebnisse beziehen sich auf Standard mit Trainerrechten. Autopilot, Kundennetz, Konsolennavigation und tatsächliche Teilnehmerkonten brauchen getrennte Prüfungen.
+
+## Kontingent pro Namespace (25.11.2026, GKE)
+
+- `trainer/kontingent.yaml` in `workshop-trainer` getestet: `scale --replicas=8` mit dem ersten Entwurf (1500m) endete bei 6 Pods mit `FailedCreate ... exceeded quota`, `create service loadbalancer` abgelehnt, `rollout restart` gruen, Pod ohne `resources` bekam 100m/256Mi als Request.
+- Danach angehoben auf 4 CPU, 8 GiB, 20 Pods, damit keine Uebung daran scheitert. Angewendet auf `workshop-trainer` und `workshop-person01` bis `16`. Laufende Pods unveraendert. `workshop-person12` hatte schon einen eigenen `LoadBalancer`, der bleibt.
+- Audit-Log-Abfrage aus Lab 7 Extra 3 mit dem Trainerkonto geprueft. Mit Teilnehmerrechten (`roles/logging.viewer`) nicht geprueft.
+- Live-Beobachtung in Lab 4 (Konsole), Lab 5 (`get pods -w`) und Lab 6 (`get pods -w`) ergaenzt, nicht im Kurs erprobt.

@@ -42,6 +42,12 @@ kubectl --context minikube -n workshop rollout status deployment/hallo --timeout
 
 Voraussetzung: genau ein Node namens `minikube`, lokal geladenes Image `hallo-app:1.0` und keine andere laufende `hallo`-Übung. Bei einem anderen lokalen Profil die Namen gemeinsam mit dem Trainer anpassen.
 
+Öffnet ein zweites Terminal und beobachtet die Pods live, während ihr den Node sperrt:
+
+```bash
+kubectl --context minikube -n workshop get pods -w
+```
+
 ```bash
 kubectl --context minikube cordon minikube
 kubectl --context minikube get nodes

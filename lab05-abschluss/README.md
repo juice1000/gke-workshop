@@ -41,6 +41,14 @@ Erwartet: fünf Stufen, am Ende `Pipeline GRUEN: ... laeuft in ...` und `Exit-Co
 
 Die Dateien enthalten komplette Deployments. Sie verwenden denselben Anwendungscode der Version 2.0, ändern aber die Betriebsbeschreibung. Ihr liefert sie über die Pipeline aus, immer nur ein Release. Nicht den gesamten Ordner `out/lab05` übergeben.
 
+Öffnet vorher ein zweites Terminal und lasst es die ganze Etappe mitlaufen. Dort seht ihr live, was die Pipeline im Cluster auslöst:
+
+```bash
+kubectl get pods -w                       # neuer Pod kommt, scheitert, verschwindet beim Rollback
+```
+
+Läuft `verkehr` aus Lab 7 noch, öffnet ein drittes Terminal mit `kubectl logs deployment/verkehr -f`. Achtet darauf, ob Nutzer während eines roten Release Fehler sehen.
+
 Für Release A:
 
 1. Bekannten guten Stand herstellen. Erwartet: grün.

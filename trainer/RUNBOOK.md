@@ -138,6 +138,8 @@ Pruefen: Nodes `Ready`. Kubernetes-Version und Node-Architektur notieren (`kubec
 
 Fuer 15 Teilnehmende wurde `default-pool` durch den Pool `kurs` ersetzt. Grundlage: je Person zwei Pods mit 250m CPU und 512 MiB Request, bei einem Rollout ein dritter. Das ergibt 7,5 vCPU im Normalbetrieb und bis zu 11,25 vCPU, wenn alle gleichzeitig ausrollen. Das globale CPU-Kontingent des Projekts betraegt 12 vCPU (`CPUS_ALL_REGIONS`). Drei `e2-standard-4` nutzen es voll aus und lassen nach Abzug der Systempods etwa 10 vCPU fuer Workloads. Ein vierter Node braucht eine Kontingenterhoehung in der Konsole unter IAM, Kontingente.
 
+Seit 25.11.2026 hat jeder Kurs-Namespace ein Kontingent ([kontingent.yaml](kontingent.yaml), `teilnehmer-anlegen.sh` wendet es an): hoechstens 4 CPU und 8 GiB Speicher als Requests, 20 Pods, kein eigener `LoadBalancer`. Das ist ein Sicherheitsnetz gegen Versehen wie `kubectl scale --replicas=50`, keine Uebung kommt in die Naehe (die groesste braucht etwa 1 CPU). Keine Uebung darf am Kontingent scheitern; eine neue Uebung mit mehr Bedarf hebt die Grenze an, und externe Adressen (`IN_USE_ADDRESSES`, 8 in `europe-west3`) bleiben frei. Ein Pod ohne `resources` bekommt 100m CPU und 256 MiB als Request, aber kein Limit. Ueberschreitungen erscheinen als Event `FailedCreate ... exceeded quota` am ReplicaSet, nicht als `Pending`. Pruefen: `kubectl -n workshop-personNN describe resourcequota kurs`.
+
 ```bash
 gcloud container node-pools create kurs \
   --cluster="$CLUSTER" --location="$ZONE" --project="$PROJECT_ID" \
