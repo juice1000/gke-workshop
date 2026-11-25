@@ -1,8 +1,6 @@
-# Lab 5, Release A: absichtlich mit einem Fehler.
-# Bewusst ohne Feldkommentare, damit die Datei den Fehler nicht verraet.
-# Gleicher Name hallo und gleiche Labels wie ../loesung/deployment.yaml:
-# "apply" aendert das laufende Deployment per Rolling Update.
-# Korrigierte Fassung fuer den Trainer: ../repariert/release-a.yaml.
+# Lab 6, Stoerung 6.2 repariert. Bezuege wie in ../loesung/deployment.yaml.
+# Der entscheidende Bezug: Das Speicherlimit PASST ZU der JVM: -Xms512m -Xmx512m belegen schon
+# 512 MiB Heap, dazu kommt JVM-Nebenspeicher. Deshalb 1Gi statt 512Mi.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,18 +41,20 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: hallo-config
-                  key: GRUSS
+                  key: GREETING
             - name: DB_PASSWORT
               valueFrom:
                 secretKeyRef:
                   name: hallo-secret
                   key: DB_PASSWORT
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Xms512m -Xmx512m -XX:+AlwaysPreTouch"
           resources:
             requests:
               cpu: 250m
               memory: 512Mi
             limits:
-              memory: 512Mi
+              memory: 1Gi
           startupProbe:
             httpGet:
               path: /actuator/health/liveness

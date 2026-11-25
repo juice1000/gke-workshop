@@ -1,10 +1,10 @@
-# Lab 6: Vertiefung Betrieb
+# Lab 7: Vertiefung Betrieb
 
-**Ziel:** Ihr lest Clustereinstellungen und untersucht Scheduling und Pod Disruption Budgets. Dauer: 90 Minuten. Dieses Lab läuft parallel zu Lab 5. Der Cloud-Teil ist lesend. Änderungen an Nodes führt ihr ausschließlich im eigenen lokalen Ein-Node-Cluster aus.
+**Ziel:** Ihr lest Clustereinstellungen und untersucht Scheduling und Pod Disruption Budgets. Dauer: 90 Minuten. Dieses Lab läuft parallel zu Lab 6. Der Cloud-Teil ist lesend. Änderungen an Nodes führt ihr ausschließlich im eigenen lokalen Ein-Node-Cluster aus.
 
 ## Teil 1: Betriebsrundgang auf GKE (30 Minuten)
 
-Öffnet die Clusterdetails in der Konsole. Notiert Betriebsart, Standort, Kubernetes-Version, Release Channel und Wartungsfenster. Bei Standard untersucht ihr zusätzlich Node-Pools, Auto-Upgrade und die Upgrade-Strategie. Bei Autopilot verwaltet Google die Nodes; dokumentiert die sichtbaren Einstellungen.
+Öffnet die Clusterdetails in der Konsole. Notiert Betriebsart, Standort, Kubernetes-Version, Störung 6.3hannel und Wartungsfenster. Bei Standard untersucht ihr zusätzlich Node-Pools, Auto-Upgrade und die Upgrade-Strategie. Bei Autopilot verwaltet Google die Nodes; dokumentiert die sichtbaren Einstellungen.
 
 Wenn eure Rolle es erlaubt:
 
@@ -23,7 +23,7 @@ resource.labels.cluster_name="workshop"
 resource.labels.namespace_name="kube-system"
 ```
 
-Falls ihr diese Rechte nicht habt, zeigt der Trainer den Rundgang. Änderungen an Release Channel, Wartungsfenstern, Node-Pools oder Alarmrichtlinien gehören nicht zu diesem Lab.
+Falls ihr diese Rechte nicht habt, zeigt der Trainer den Rundgang. Änderungen an Störung 6.3hannel, Wartungsfenstern, Node-Pools oder Alarmrichtlinien gehören nicht zu diesem Lab.
 
 ## Teil 2: Scheduling lokal erleben (35 Minuten)
 
@@ -72,13 +72,13 @@ kubectl --context minikube -n workshop rollout status deployment/hallo --timeout
 ## Teil 3: Pod Disruption Budget und Alarm (15 Minuten)
 
 ```bash
-kubectl --context minikube -n workshop apply -f lab06-betrieb/pdb.yaml
+kubectl --context minikube -n workshop apply -f lab07-betrieb/pdb.yaml
 kubectl --context minikube -n workshop get pdb
 ```
 
 Bei zwei bereiten Pods erlaubt `minAvailable: 1` eine freiwillige Unterbrechung. Ein PDB schützt nicht vor Containerabstürzen, direktem `delete pod` oder jedem Node-Ausfall. Es wird unter anderem von der Eviction-API berücksichtigt. Die Deployment-Rolloutstrategie bleibt eine eigene Einstellung. Ein einzelner Node kann trotz PDB keine Verfügbarkeit während seiner vollständigen Abschaltung garantieren.
 
-Formuliert einen Alarm mit Bedingung, Dauer und Handlung. Beispiel: Ein Container startet innerhalb von zehn Minuten wiederholt neu. Dann prüft der Bereitschaftsdienst zuerst `Last State`, vorige Logs und den letzten Rollout. Legt den Alarm hier als Vorschlag vor. Auf GKE legt ihr ihn in [Lab 7, Abschnitt 5](../lab07-stoerungen/README.md) wirklich an und löst ihn mit einer Störung aus.
+Formuliert einen Alarm mit Bedingung, Dauer und Handlung. Beispiel: Ein Container startet innerhalb von zehn Minuten wiederholt neu. Dann prüft der Bereitschaftsdienst zuerst `Last State`, vorige Logs und den letzten Rollout. Legt den Alarm hier als Vorschlag vor. Auf GKE legt ihr ihn in [Lab 5, Abschnitt 5](../lab05-stoerungen/README.md) wirklich an und löst ihn mit einer Störung aus.
 
 **Abgabe:** Clustereinstellungen, Erklärung des `Pending`-Pods, Bedeutung von `ALLOWED DISRUPTIONS` und ein handlungsfähiger Alarmvorschlag.
 
@@ -87,7 +87,7 @@ Formuliert einen Alarm mit Bedingung, Dauer und Handlung. Beispiel: Ein Containe
 ```bash
 kubectl --context minikube uncordon minikube
 kubectl --context minikube -n workshop delete -f lab02-hallo-app/k8s/
-kubectl --context minikube -n workshop delete -f lab06-betrieb/pdb.yaml
+kubectl --context minikube -n workshop delete -f lab07-betrieb/pdb.yaml
 ```
 
-Ohne Cloud führt ihr Teile 2 und 3 aus. Der Trainer bespricht Release Channels und Monitoring anhand der Dokumentation oder einer Demo.
+Ohne Cloud führt ihr Teile 2 und 3 aus. Der Trainer bespricht Störung 6.3hannels und Monitoring anhand der Dokumentation oder einer Demo.

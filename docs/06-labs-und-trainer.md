@@ -4,7 +4,7 @@
 
 Die Labs übernehmen die Struktur des IaC-Workshops: kleine Ordner, deutsche Aufgaben, beobachtbare Ergebnisse, Checkpoints und direkt auffindbare Lösungen. Statt eines separaten `start`-Branches liegen unvollständige Starter und Lösungen nebeneinander. So bleiben Übungen und Lösungen in einem gemeinsamen Prüfablauf.
 
-Die ersten beiden Labs sind geführt. Lab 3 gibt ein festes Diagnoseverfahren vor (von Hand, das Skript ist Extra), nennt die Ursache erst in der Auflösung. Lab 5 fordert das Schreiben der zuvor verwendeten Felder. Ein Repository allein ersetzt keine Erklärung: vor jeder Änderung den erwarteten Zustand abfragen und danach den Beleg ansehen.
+Die ersten beiden Labs sind geführt. Lab 3 gibt ein festes Diagnoseverfahren vor (von Hand, das Skript ist Extra), nennt die Ursache erst in der Auflösung. Lab 6 fordert das Schreiben der zuvor verwendeten Felder. Ein Repository allein ersetzt keine Erklärung: vor jeder Änderung den erwarteten Zustand abfragen und danach den Beleg ansehen.
 
 Alle Befehle werden aus dem Repository-Hauptordner ausgeführt. Die Übungsanwendung und die Objektnamen bleiben gleich. Lab 3 verwendet eigene Namen. Auf GKE arbeitet jede Person oder Gruppe in einem eigenen Namespace und nutzt einen eigenen Image-Namen.
 
@@ -38,9 +38,9 @@ Unterschiede zu Notion und zum bisherigen Stand:
 - Lab 3 Kern sind die fünf Fälle von Hand. `diagnose.sh` liegt jetzt in `lab03-defekt/extra/`. Wer am 23.11. `practice` geklont und `diagnose.sh` lokal geändert hat, muss die Änderung vor `git pull` sichern (`git stash`).
 - Lab 4 Abschnitt 6 (Logs Explorer) ist jetzt Extra 1. Tag 3 behandelt Logs Explorer als Kern.
 - Lab 4 Extra 4 (seit 24.11.2026): ein gemeinsames Gateway mit einer öffentlichen Adresse, angelegt vom Trainer mit `trainer/gateway.yaml`. Teilnehmende schreiben nur ihre `HTTPRoute` (in `practice` mit TODOs). Das ändert die Festlegung "kein öffentlicher LoadBalancer" für diesen einen Eingang. Das Gateway wird abends gelöscht. In Notion noch nicht übernommen.
-- Lab 5 mit Pipeline (seit 25.11.2026): CI/CD wird an Tag 3 geübt, nicht nur in 3.4 erklärt. Der Kunde baut mit TeamCity, das können wir nicht bereitstellen. Deshalb gibt es `scripts/pipeline.sh` mit den Stufen einer TeamCity-Build-Konfiguration: Pruefen, Build, Deploy, Gate (`rollout status` mit Zeitgrenze), Rollback mit Belegen. Etappe A bleibt von Hand und endet mit einem grünen Pipeline-Lauf. Etappe B liefert die drei kaputten Releases über die Pipeline aus; das manuelle `rollout undo` entfällt. Keine zusätzliche Zeit an Tag 3. Demo 3.4c zeigt die Pipeline vorab. Vorlage: [CI/CD-Brief](11-cicd-brief.md). In Notion noch nicht übernommen.
-- Lab 5, Reihenfolge in Etappe B: Vor jedem Release läuft der Starter. `rollout undo` setzt die `last-applied-configuration` von `kubectl apply` nicht zurück. Ohne Starter dazwischen kann ein Feld aus dem zurückgerollten Stand stehen bleiben (lokal nachgestellt: reparierte B mit `JAVA_TOOL_OPTIONS`, danach C repariert, wird mit OOMKilled rot).
-- Lab 7 Störungssuche (neu, 25.11.2026): Störungen, die `kubectl get pods` nicht oder nur halb zeigt. Ein Verkehrsgenerator `verkehr` im eigenen Namespace liefert die Sicht des Nutzers als Logzeilen, `lab07-stoerungen/stoerung.sh` baut fünf Störungen ein (Liveness-Pfad, Service-Port, Secret, Fehlerflut, gemischte Konfiguration) und prüft den gesunden Stand. Keine neuen Rechte nötig. Optional leert der Trainer einen Node für alle. Der Zeitplatz an Tag 3 ist noch offen: Lab 5 und Lab 6 belegen schon je 90 Minuten. In Notion noch nicht übernommen.
+- Lab 6 mit Pipeline (seit 25.11.2026): CI/CD wird an Tag 3 geübt, nicht nur in 3.4 erklärt. Der Kunde baut mit TeamCity, das können wir nicht bereitstellen. Deshalb gibt es `scripts/pipeline.sh` mit den Stufen einer TeamCity-Build-Konfiguration: Pruefen, Build, Deploy, Gate (`rollout status` mit Zeitgrenze), Rollback mit Belegen. Etappe A bleibt von Hand und endet mit einem grünen Pipeline-Lauf. Etappe B liefert die drei kaputten Releases über die Pipeline aus; das manuelle `rollout undo` entfällt. Keine zusätzliche Zeit an Tag 3. Demo 3.4c zeigt die Pipeline vorab. Vorlage: [CI/CD-Brief](11-cicd-brief.md). In Notion noch nicht übernommen.
+- Lab 6, Reihenfolge in Etappe B: Vor jedem Release läuft der Starter. `rollout undo` setzt die `last-applied-configuration` von `kubectl apply` nicht zurück. Ohne Starter dazwischen kann ein Feld aus dem zurückgerollten Stand stehen bleiben (lokal nachgestellt: reparierte B mit `JAVA_TOOL_OPTIONS`, danach C repariert, wird mit OOMKilled rot).
+- Lab 5 Störungssuche (neu, 25.11.2026): Störungen, die `kubectl get pods` nicht oder nur halb zeigt. Ein Verkehrsgenerator `verkehr` im eigenen Namespace liefert die Sicht des Nutzers als Logzeilen, `lab05-stoerungen/stoerung.sh` baut fünf Störungen ein (Liveness-Pfad, Service-Port, Secret, Fehlerflut, gemischte Konfiguration) und prüft den gesunden Stand. Keine neuen Rechte nötig. Optional leert der Trainer einen Node für alle. Läuft seit der Umnummerierung am 25.11.2026 als Kurzfassung (30 Minuten, Störungen 5.1 und 5.4) in Block 3.2 an Tag 3, vor Lab 6. Die übrigen Störungen und der Alarm sind Extras. In Notion noch nicht übernommen.
 - Extras laufen nur im eigenen Namespace und räumen selbst auf. HPA braucht lokal `minikube addons enable metrics-server`. `spread.yaml` fordert wenig an (`10m`, `384Mi`), damit 15 Personen auf drei Nodes passen.
 
 ## Zuordnung zur vorhandenen Notion-Fassung
@@ -55,8 +55,8 @@ Unterschiede zu Notion und zum bisherigen Stand:
 | 2.5 Fehlersuche | `lab03-defekt` | [Lab 3](https://app.notion.com/p/41b7a614759581d088dbc3e0d76a2531) |
 | 2.8 GKE | `lab04-gke` | [Lab 4](https://app.notion.com/p/41b7a61475958122b72bfe6684c0ada6) |
 | 3.2 Beobachtung | Lab 4 Extra 1, Pipeline-Cheat-Sheet | [Tag 3](https://app.notion.com/p/41b7a61475958152a452ee3523787434) |
-| 3.5 Abschluss | `lab05-abschluss` | [Lab 5](https://app.notion.com/p/41b7a614759581e3a5aada0b4749c2ff) |
-| 3.6 Betrieb | `lab06-betrieb` | [Lab 6](https://app.notion.com/p/41b7a614759581a0b0a7f5e9e0c02041) |
+| 3.5 Abschluss | `lab06-abschluss` | [Lab 6](https://app.notion.com/p/41b7a614759581e3a5aada0b4749c2ff) |
+| 3.6 Betrieb | `lab07-betrieb` | [Lab 7](https://app.notion.com/p/41b7a614759581a0b0a7f5e9e0c02041) |
 
 Die folgenden Unterschiede wurden am 21.11.2026 in die Notion-Kapitel übernommen. Die Theorie in Notion blieb, Lab-Schritte, Lösungen und Trainerhinweise folgen jetzt den READMEs. Die Seite "Repository und Lernumgebung" entspricht [VORBEREITUNG.md](../VORBEREITUNG.md). Zusätzlich geändert: kein GitHub-Konto nötig, kein öffentlicher LoadBalancer als Bonus in Lab 4, Google-Konten werden in 1.1 eingesammelt. Bei späteren Änderungen an den Labs beide Stellen anpassen.
 
@@ -69,8 +69,8 @@ Die folgenden Unterschiede wurden am 21.11.2026 in die Notion-Kapitel übernomme
 - Der Maven-Build verwendet die native Build-Plattform. Das portable Java-Archiv wird in das Laufzeitimage der Zielplattform kopiert. So funktioniert der amd64-Build auch auf ARM-Laptops ohne x86-Emulation.
 - `scripts/render.py` erstellt Arbeitskopien mit passendem Image. Dadurch bleiben Registry-Platzhalter nicht versehentlich im Cluster.
 - Cloud-Deployments geben neuen Nodes und Image-Pulls ein Fortschrittsbudget von zehn Minuten. Die absichtlichen Fehler-Rollouts werden weiterhin nach 60 Sekunden untersucht.
-- Release B nutzt einen fest vorbelegten 512-MiB-Heap bei 512-MiB-Containerlimit. Die Korrektur erhöht das Limit auf 1 GiB. Das ersetzt das unzuverlässigere Beispiel mit 64 MiB, das auf Autopilot auch angepasst oder abgelehnt werden könnte.
-- Vor jedem neuen Release in Lab 5 wird der gesunde Starter wieder angewendet. `rollout undo` zeigt sonst auf den jeweils letzten Stand, nicht zwingend auf den ursprünglichen Ausgangszustand.
+- Störung 6.2 nutzt einen fest vorbelegten 512-MiB-Heap bei 512-MiB-Containerlimit. Die Korrektur erhöht das Limit auf 1 GiB. Das ersetzt das unzuverlässigere Beispiel mit 64 MiB, das auf Autopilot auch angepasst oder abgelehnt werden könnte.
+- Vor jedem neuen Release in Lab 6 wird der gesunde Starter wieder angewendet. `rollout undo` zeigt sonst auf den jeweils letzten Stand, nicht zwingend auf den ursprünglichen Ausgangszustand.
 - EndpointSlices ersetzen die Betrachtung alter Endpoints-Objekte. Unbereite Adressen können weiterhin enthalten sein, entscheidend ist `conditions.ready`.
 - Das PDB begrenzt bestimmte freiwillige Unterbrechungen. Es schützt weder vor jedem Ausfall noch vor direktem Pod-Löschen.
 
@@ -83,9 +83,9 @@ Die folgenden Unterschiede wurden am 21.11.2026 in die Notion-Kapitel übernomme
 | Tag 2 Konfiguration | geänderte Begrüßung nach Rollout | Env-Werte werden erst beim Start gesetzt |
 | Lab 3 je Fall | Symptom und eine Event-/Logzeile | Nach dem Diagnosebefehl fragen, keine Lösung vorwegnehmen |
 | Lab 4 Push | Digest in der Push-Ausgabe | Push-Recht, Docker-Login, Proxy und Zielarchitektur trennen |
-| Lab 5 A | `pruefen.py abschluss` grün | Muster aus Lab 2, notfalls gerenderte Lösung |
-| Lab 5 B | alter Service funktioniert trotz Fehler | neue Pods gezielt untersuchen, `maxUnavailable` erklären |
-| Lab 6 fertig | Node wieder entsperrt | `uncordon` vor dem Wechsel zur nächsten Aufgabe |
+| Lab 6 A | `pruefen.py abschluss` grün | Muster aus Lab 2, notfalls gerenderte Lösung |
+| Lab 6 B | alter Service funktioniert trotz Fehler | neue Pods gezielt untersuchen, `maxUnavailable` erklären |
+| Lab 7 fertig | Node wieder entsperrt | `uncordon` vor dem Wechsel zur nächsten Aufgabe |
 
 ## Kürzungen und Vertiefungen
 
@@ -93,7 +93,7 @@ Tag 1: HTTP und Selbstheilung priorisieren. Dashboard, Lastverteilung und zusät
 
 Tag 2: ConfigMap, Readiness, Requests, Rollback und zwei Troubleshooting-Fälle gemeinsam sicher abschließen. Fälle 3 bis 5 an Paare verteilen und im Plenum besprechen, wenn die Zeit knapp wird. GKE muss nicht durch Cluster-Erstellung erweitert werden.
 
-Tag 3: Abschluss A und mindestens zwei fehlerhafte Releases haben Vorrang. Rechteprüfung kann als gemeinsame Demo erfolgen. Lab 6 ist ein paralleles Angebot, kein Zusatzblock für alle.
+Tag 3: Abschluss A und mindestens zwei fehlerhafte Releases haben Vorrang. Rechteprüfung kann als gemeinsame Demo erfolgen. Lab 7 ist ein paralleles Angebot, kein Zusatzblock für alle.
 
 Schnelle Gruppen erklären sich gegenseitig den Unterschied zwischen Container-Restart und neuem Pod, prüfen Service-Bereitschaft mit EndpointSlices oder beschreiben einen konkreten Alarm. Keine Erweiterung auf Helm, Service Mesh oder GitOps im Kernprogramm.
 
@@ -105,7 +105,7 @@ Schnelle Gruppen erklären sich gegenseitig den Unterschied zwischen Container-R
 
 `demos/` enthält kurze Trainer-Skripte für die Folienstreifen „Lokal ausprobieren“, siehe [Demonstrationen](../demos/README.md). Sie laufen nur gegen minikube, bauen Fehler im Namespace `workshop` ein und stellen danach den Stand aus `lab02-hallo-app/betrieb/` wieder her. Sie liegen nur auf `main`, weil sie Lösungen aus Lab 2 Tag 2 und Lab 3 zeigen.
 
-Die Manifeste auf `main` markieren jeden Bezug: `FEST` (von Kubernetes oder der Anwendung vorgegeben), `FREI` (frei wählbar, nichts verweist darauf), `PASST ZU` (frei wählbar, muss aber an der genannten Stelle gleich lauten). Legende und Übersicht stehen im Kopf von [lab02-hallo-app/k8s/deployment.yaml](../lab02-hallo-app/k8s/deployment.yaml). Die Fehlerdateien aus Lab 3 und Lab 5 haben nur einen Kopfkommentar.
+Die Manifeste auf `main` markieren jeden Bezug: `FEST` (von Kubernetes oder der Anwendung vorgegeben), `FREI` (frei wählbar, nichts verweist darauf), `PASST ZU` (frei wählbar, muss aber an der genannten Stelle gleich lauten). Legende und Übersicht stehen im Kopf von [lab02-hallo-app/k8s/deployment.yaml](../lab02-hallo-app/k8s/deployment.yaml). Die Fehlerdateien aus Lab 3 und Lab 6 haben nur einen Kopfkommentar.
 
 `scripts/pruefen.py` ist für Teilnehmende. Es repariert keine Ressourcen. Für HTTP öffnet es einen kurzlebigen Tunnel auf Loopback. Ein Checkpoint kann noch fehlschlagen, während ein Rollout läuft; zuerst `rollout status` abwarten.
 

@@ -1,4 +1,4 @@
-# Lab 7: Konfiguration der hallo-app.
+# Lab 5: Konfiguration der hallo-app.
 apiVersion: v1
 kind: ConfigMap
 metadata:

@@ -1,6 +1,6 @@
 # Demo 3.6a: Gesperrter Node, Ersatz-Pod Pending
 
-**Folie:** Tag 3, 3.6 Lab 6: Vertiefung Betrieb  
+**Folie:** Tag 3, 3.6 Lab 7: Vertiefung Betrieb  
 **Dauer:** etwa 3 Minuten  
 **Ändert den Cluster:** ja, sperrt den Node und hebt die Sperre am Ende auf, auch bei Strg+C  
 **Voraussetzung:** Ausgangslage aus [00-vorbereiten](../../tag2/00-vorbereiten/README.md)

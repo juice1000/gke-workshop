@@ -1,8 +1,8 @@
-# Lab 5, Release C: absichtlich mit einem Fehler.
+# Lab 6, Stoerung 6.1: absichtlich mit einem Fehler.
 # Bewusst ohne Feldkommentare, damit die Datei den Fehler nicht verraet.
 # Gleicher Name hallo und gleiche Labels wie ../loesung/deployment.yaml:
 # "apply" aendert das laufende Deployment per Rolling Update.
-# Korrigierte Fassung fuer den Trainer: ../repariert/release-c.yaml.
+# Korrigierte Fassung fuer den Trainer: ../repariert/6.1-konfiguration.yaml.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,7 +43,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: hallo-config
-                  key: GREETING
+                  key: GRUSS
             - name: DB_PASSWORT
               valueFrom:
                 secretKeyRef:
@@ -64,7 +64,7 @@ spec:
             failureThreshold: 30
           readinessProbe:
             httpGet:
-              path: /bereit-aber-falsch
+              path: /actuator/health/readiness
               port: 8080
             periodSeconds: 5
             timeoutSeconds: 2

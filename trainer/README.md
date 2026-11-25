@@ -13,11 +13,11 @@ Der Node verwendet ein eigenes IAM-Servicekonto mit der GKE-Node-Rolle und Leser
 ## Vor dem Kurs
 
 1. Ein eigenes Übungsprojekt mit geklärter Abrechnung und einem GKE-Cluster bereitstellen. Standard ist der geplante Kursmodus. Autopilot ist als weitere Variante vorgesehen und braucht einen eigenen Probelauf.
-2. Kubernetes-Version und eine dazu passende kubectl-Version festlegen. Der lokale Probelauf verwendet Kubernetes 1.35.0; die GKE-Version richtet sich nach dem vorbereiteten Cluster und Release Channel.
+2. Kubernetes-Version und eine dazu passende kubectl-Version festlegen. Der lokale Probelauf verwendet Kubernetes 1.35.0; die GKE-Version richtet sich nach dem vorbereiteten Cluster und Störung 6.3hannel.
 3. Netzwerkzugang aus dem Kundennetz zum API-Endpunkt testen. Bei privaten Clustern den tatsächlichen VPN-/Proxy-Zugang mit dem Kunden durchspielen. Cloud Shell ist ein möglicher CLI-Fallback, ersetzt aber nicht ohne Weiteres den lokalen Docker-Build.
 4. Kubernetes Engine und Artifact Registry verfügbar machen, ein Docker-Repository anlegen. Anwendungslogs und Systemmetriken aktivieren. In der Konsole einen aktuellen Testeintrag und Container-Metriken nachweisen.
 5. Je Person oder Paar einen Namespace und eine abgegrenzte Rolle vorbereiten. Zwei echte Testkonten verwenden, nicht nur das eigene Admin-Konto.
-6. Für jeden Rollout Kapazität für drei Pods je Gruppe einplanen: zwei gesunde Pods plus ein neuer Pod. Die Basis fordert zusammen bis zu 750m CPU und 1536 MiB Speicher je gleichzeitigem Rollout. Release B reserviert 512 MiB für den fehlerhaften Pod und braucht nach der Reparatur bis zu 1 GiB Limit für diesen Pod.
+6. Für jeden Rollout Kapazität für drei Pods je Gruppe einplanen: zwei gesunde Pods plus ein neuer Pod. Die Basis fordert zusammen bis zu 750m CPU und 1536 MiB Speicher je gleichzeitigem Rollout. Störung 6.2 reserviert 512 MiB für den fehlerhaften Pod und braucht nach der Reparatur bis zu 1 GiB Limit für diesen Pod.
 7. Ein vorgebautes Image für die tatsächliche Node-Architektur bereithalten. Artifact-Registry-Push und Image-Pull unabhängig voneinander testen.
 
 ## Zugriffsmodell
@@ -29,7 +29,7 @@ Der Node verwendet ein eigenes IAM-Servicekonto mit der GKE-Node-Rolle und Leser
 | GKE-Node-Servicekonto | Private Images laden | `roles/artifactregistry.reader` am Repository, passende Node-OAuth-Scopes bei Standard |
 | Teilnehmerkonto oder Trainerdemo | Logs Explorer | `roles/logging.viewer` im Übungsprojekt |
 | Teilnehmerkonto oder Trainerdemo | Monitoring ansehen | `roles/monitoring.viewer` im Übungsprojekt |
-| Teilnehmerkonto | Alarm-Übung in Lab 7 | `roles/monitoring.alertPolicyEditor` im Übungsprojekt, projektweit, Namensregel `workshop-personNN: ...` |
+| Teilnehmerkonto | Alarm-Übung in Lab 5 | `roles/monitoring.alertPolicyEditor` im Übungsprojekt, projektweit, Namensregel `workshop-personNN: ...` |
 | Anwendungs-Pod | Antworten und Health liefern | Kein Zugriff auf Cloud-APIs nötig |
 
 Die genauen Freigaben richten sich nach den Organisationsrichtlinien. Logging- und Monitoring-Viewer sind keine Namespace-Rollen. Falls projektweite Sicht nicht vorgesehen ist, zeigt der Trainer diese Bereiche als Demo. Auch die Workload-Ansicht der Konsole kann zusätzliche Leserechte erwarten. Prüft den Rundgang mit einem Teilnehmerkonto und dokumentiert jede Abweichung.
@@ -65,7 +65,7 @@ Erwartet: `yes`, `yes`, `no`, `no`, `no`. Prüft zusätzlich mit `kubectl auth c
 
 - Lab 4 vollständig als Teilnehmer durchspielen. Registry und Cluster können unterschiedliche Standorte haben.
 - Beide Konten gleichzeitig einsetzen und die Trennung der Namespaces nachweisen. Ein eigener Image-Name pro Namespace verhindert Tag-Kollisionen.
-- Die gerenderten Lösungen aus Lab 5 anwenden und alle drei Fehlerbilder auslösen. Bei B muss `OOMKilled` aus dem Containerzustand belegbar sein. Die Autopilot-Admission darf die beabsichtigte Knappheit nicht aufheben; falls Regeln das Manifest ablehnen oder anpassen, die Übung vorab passend ändern.
+- Die gerenderten Lösungen aus Lab 6 anwenden und alle drei Fehlerbilder auslösen. Bei B muss `OOMKilled` aus dem Containerzustand belegbar sein. Die Autopilot-Admission darf die beabsichtigte Knappheit nicht aufheben; falls Regeln das Manifest ablehnen oder anpassen, die Übung vorab passend ändern.
 - Nach jedem fehlgeschlagenen Rollout zwei alte bereite Pods und eine funktionierende HTTP-Antwort nachweisen. Danach Rollback und Reparatur prüfen.
 - `/fehler` aufrufen. Die Logzeile über Cluster und Namespace filtern. Im Monitoring CPU, Speicher und `kubernetes.io/container/restart_count` mit passenden Filtern finden. Logs und Metriken brauchen eventuell Zeit bis zur Anzeige.
 - Konsolennavigation, Rechte, tatsächliche Cluster-Version, Node-Architektur und Laufzeiten in [Teststatus](../docs/07-teststatus.md) eintragen.
@@ -74,7 +74,7 @@ Es gibt in den Labs keinen öffentlichen LoadBalancer. Das vereinfacht Netzwerk 
 
 ## Cloud-Fallback
 
-Lab 4 als Trainerdemo zeigen. Lab 5 A/B lokal in minikube mit `IMAGE=hallo-app:2.0` ausführen. Lab 6 Teil 2/3 ebenfalls lokal. Die Aufgaben zur Cloud-Konsole und zu IAM gemeinsam an der Demo erklären. Die lokalen Anweisungen stehen in den jeweiligen READMEs.
+Lab 4 als Trainerdemo zeigen. Lab 6 A/B lokal in minikube mit `IMAGE=hallo-app:2.0` ausführen. Lab 7 Teil 2/3 ebenfalls lokal. Die Aufgaben zur Cloud-Konsole und zu IAM gemeinsam an der Demo erklären. Die lokalen Anweisungen stehen in den jeweiligen READMEs.
 
 ## Nach dem Kurs
 

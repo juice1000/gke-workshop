@@ -1,58 +1,78 @@
-# Lab 5, Release C repariert. Bezuege wie in ../loesung/deployment.yaml.
-# Der entscheidende Bezug: readinessProbe.path ist FEST, von Spring Boot Actuator vorgegeben:
-# /actuator/health/readiness.
+# Lab 6, Ausgangsloesung: So sieht out/lab06/starter/deployment.yaml nach
+# den TODOs aus. Releases A, B, C heissen auch hallo: apply aktualisiert es.
+#
+#   service.yaml selector app=hallo --> template.metadata.labels
+#   configmap.yaml hallo-config ------> env GREETING
+#   Secret hallo-secret --------------> env DB_PASSWORT
+#   render.py --image "$IMAGE" -------> image: WORKSHOP_IMAGE
+
+# FEST
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  # PASST ZU: ../stoerungen/, ../repariert/ und deployment/hallo.
   name: hallo
+  # FREI: nur zum Filtern.
   labels:
     app: hallo
 spec:
   replicas: 2
   revisionHistoryLimit: 5
   minReadySeconds: 3
+  # FREI: hoeher als lokal, der erste Image-Download dauert.
   progressDeadlineSeconds: 600
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
+  # PASST ZU: template.metadata.labels. Nicht aenderbar.
   selector:
     matchLabels:
       app: hallo
   template:
     metadata:
+      # PASST ZU: selector oben und service.yaml.
       labels:
         app: hallo
     spec:
       terminationGracePeriodSeconds: 30
       containers:
+        # PASST ZU: "kubectl set image deployment/hallo hallo=...".
         - name: hallo
+          # PASST ZU: render.py ersetzt dies durch $IMAGE.
           image: WORKSHOP_IMAGE
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:
+            # FEST: Pod-Name in der Antwort.
             - name: HOSTNAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            # FEST: Die Anwendung liest GREETING.
             - name: GREETING
               valueFrom:
                 configMapKeyRef:
+                  # PASST ZU: name und Schluessel in configmap.yaml.
                   name: hallo-config
                   key: GREETING
+            # FREI: zeigt nur, wie ein Secret in den Container kommt.
             - name: DB_PASSWORT
               valueFrom:
                 secretKeyRef:
+                  # PASST ZU: kubectl create secret generic hallo-secret.
                   name: hallo-secret
                   key: DB_PASSWORT
+          # FREI: Auf GKE plant der Scheduler alle Teilnehmenden danach.
           resources:
             requests:
               cpu: 250m
               memory: 512Mi
             limits:
               memory: 512Mi
+          # Probes. path: FEST. port: PASST ZU 8080.
           startupProbe:
             httpGet:
               path: /actuator/health/liveness

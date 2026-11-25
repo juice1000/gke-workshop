@@ -1,4 +1,4 @@
-# Lab 5, Starter: TODO-Zeilen ergaenzen. Muster: lab02-hallo-app/betrieb/deployment.yaml.
+# Lab 6, Starter: TODO-Zeilen ergaenzen. Muster: lab02-hallo-app/betrieb/deployment.yaml.
 #
 #   configmap.yaml hallo-config, Schluessel GREETING --> env GREETING
 #   Secret hallo-secret, Schluessel DB_PASSWORT -------> env DB_PASSWORT

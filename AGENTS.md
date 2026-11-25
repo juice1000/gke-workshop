@@ -4,7 +4,7 @@ Three-day German introduction for developers. Read `README.md` and `docs/06-labs
 
 - Participant instructions are German. Code comments use ASCII. No em dashes.
 - Keep the same small Spring Boot application throughout the course.
-- Lab 3 faults and Lab 5 TODOs are intentional. Solutions live alongside exercises.
+- Lab 3 faults and Lab 6 TODOs are intentional. Solutions live alongside exercises.
 - Use current Kubernetes APIs. No Terraform, Helm or GitOps in the core labs.
 - Scripts must work with Bash 3.2 and Python 3.9+. Runtime scripts use explicit context and namespace. Never silently use a current cloud context.
 - `bash scripts/validate.sh` runs static checks. `bash scripts/dry-run.sh` creates its own local minikube profile, checks healthy and broken cases, and deletes only its own profile.

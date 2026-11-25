@@ -246,7 +246,7 @@ kubectl delete -f lab02-hallo-app/betrieb/         # alles aus den Dateien in be
 kubectl delete secret hallo-secret                 # steht in keiner Datei
 ```
 
-Der lokale Cluster bleibt für Lab 3 und Lab 6 bestehen.
+Der lokale Cluster bleibt für Lab 3 und Lab 7 bestehen.
 
 ## Für den Trainer
 

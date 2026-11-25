@@ -2,7 +2,7 @@
 
 **Folie:** Tag 3, 3.4 „Unsere Pipeline“  
 **Dauer:** etwa 4 Minuten  
-**Ändert den Cluster:** ja, rollt die Lab-5-Lösung und Release C aus, stellt am Ende `betrieb/` wieder her  
+**Ändert den Cluster:** ja, rollt die Lab-5-Lösung und Störung 6.3 aus, stellt am Ende `betrieb/` wieder her  
 **Voraussetzung:** Ausgangslage aus [00-vorbereiten](../../tag2/00-vorbereiten/README.md)
 
 ```bash
@@ -23,7 +23,7 @@ bash demos/tag3/3.4c-pipeline/demo.sh --trocken  # nur Befehle zeigen
 2. `bash scripts/pipeline.sh out/demo-3.4c/loesung/; echo "Exit-Code: $?"`  
    Zeigen: `[1/5]` bis `[5/5]`, Build und Rollback `uebersprungen`, `Pipeline GRUEN`, `Exit-Code: 0`.
 
-3. `bash scripts/pipeline.sh out/demo-3.4c/releases/release-c.yaml; echo "Exit-Code: $?"`  
+3. `bash scripts/pipeline.sh out/demo-3.4c/stoerungen/6.3-bereitschaft.yaml; echo "Exit-Code: $?"`  
    Zeigen: Gate `timed out`, Belege gesichert, `rollout undo`, `Pipeline ROT`, `Exit-Code: 1`. Erscheint beim Undo eine Warnung: Der Cluster läuft wieder alt, die Datei nennt den neuen Stand (Demo 2.4d).
 
 4. `ls "$BELEGE"` und `grep 'Readiness probe failed' "$BELEGE/describe.txt"`  
@@ -36,7 +36,7 @@ bash demos/tag3/3.4c-pipeline/demo.sh --trocken  # nur Befehle zeigen
 
 - **Warum ein Skript und kein TeamCity?** Die Stufen sind dieselben. TeamCity ruft pro Build-Schritt ein Skript auf und wertet den Exit-Code aus. Wer das Skript versteht, versteht die Build-Konfiguration.
 - **Warum 45 Sekunden?** Damit der rote Lauf in die Demo passt. Im Lab wartet das Gate 120 Sekunden (`PIPELINE_TIMEOUT`).
-- **Wo ist der Build?** Ohne `--build` nimmt die Pipeline das Image aus dem Manifest. Mit `--build` baut sie zuerst ein Image mit dem Git-Commit im Tag. Das ist das Extra in Lab 5.
+- **Wo ist der Build?** Ohne `--build` nimmt die Pipeline das Image aus dem Manifest. Mit `--build` baut sie zuerst ein Image mit dem Git-Commit im Tag. Das ist das Extra in Lab 6.
 - **Was heißt Exit-Code 2?** Die Pipeline hat vor dem Deploy angehalten: falscher Kontext, Platzhalter im Manifest, Dry Run abgelehnt. Im Cluster hat sich nichts geändert.
 
 ## Wenn es hakt

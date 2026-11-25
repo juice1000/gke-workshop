@@ -103,8 +103,8 @@ Tag 3 läuft auf GKE. Die Demonstrationen zeigen dieselben Mechanismen lokal, be
 | [3.4a](tag3/3.4a-rollout-exitcode/README.md) | 3.4 Anbindung an den Build-Prozess | Exit-Code 1 bei falschem Tag, 0 nach undo | ja |
 | [3.4b](tag3/3.4b-imageid-pullpolicy/README.md) | 3.4 Anbindung an den Build-Prozess | Tag gegen imageID, imagePullPolicy | nein |
 | [3.4c](tag3/3.4c-pipeline/README.md) | 3.4 Unsere Pipeline | `scripts/pipeline.sh` grün, dann rot mit Belegen und Rollback | ja |
-| [3.6a](tag3/3.6a-cordon-pending/README.md) | 3.6 Lab 6: Vertiefung Betrieb | cordon, Ersatz-Pod Pending, uncordon | ja |
-| [3.6b](tag3/3.6b-pdb-drain/README.md) | 3.6 Lab 6: Vertiefung Betrieb | PDB `minAvailable: 2` blockiert drain | ja |
+| [3.6a](tag3/3.6a-cordon-pending/README.md) | 3.6 Lab 7: Vertiefung Betrieb | cordon, Ersatz-Pod Pending, uncordon | ja |
+| [3.6b](tag3/3.6b-pdb-drain/README.md) | 3.6 Lab 7: Vertiefung Betrieb | PDB `minAvailable: 2` blockiert drain | ja |
 
 3.2a ersetzt einen Pod von hallo. 3.3a legt Role und RoleBinding `demo-leser` für die Testperson `demo-person@example.com` an und löscht beide wieder. 3.6a und 3.6b sperren den einzigen Node und heben die Sperre am Ende auf, auch bei Strg+C.
 
@@ -123,7 +123,7 @@ Pending                       2.3f   CPU-Request auf 60 Prozent des Nodes
 OOMKilled                     2.3g   lab03-defekt/extra/oom.yaml
 ImagePullBackOff              2.4b   set image auf einen Tag, den es nicht gibt
 rollout status Exit-Code 1    3.4a   set image auf einen Tag, den es nicht gibt
-Pipeline rot, Rollback       3.4c   Lab 5 Release C ueber scripts/pipeline.sh
+Pipeline rot, Rollback       3.4c   Lab 6 Störung 6.3 ueber scripts/pipeline.sh
 Pending nach cordon           3.6a   Node gesperrt, ein Pod geloescht
 drain blockiert               3.6b   PDB minAvailable 2 bei 2 Kopien
 ```

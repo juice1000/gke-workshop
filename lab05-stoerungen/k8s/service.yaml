@@ -1,4 +1,4 @@
-# Lab 7: Service hallo. Der Verkehrsgenerator ruft http://hallo auf.
+# Lab 5: Service hallo. Der Verkehrsgenerator ruft http://hallo auf.
 apiVersion: v1
 kind: Service
 metadata:

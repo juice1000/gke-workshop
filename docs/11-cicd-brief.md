@@ -1,3 +1,5 @@
+Renumbered on 25 Nov, see docs/12. Lab 5 here is now Lab 6 (`lab06-abschluss`), releases a to c are faults 6.1 to 6.3.
+
 # Brief: CI/CD on Day 3 (pipeline script, merged into Lab 5)
 
 Brief for Claude Code in `gke-workshop`. Read `AGENTS.md`, `lab05-abschluss/README.md`, `scripts/render.py`, `scripts/workshop-env.sh` and `demos/README.md` first. Everything in `AGENTS.md` still applies.

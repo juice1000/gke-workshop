@@ -1,4 +1,4 @@
-# ConfigMap fuer Lab 5. Fertig, keine Aufgabe.
+# ConfigMap fuer Lab 6. Fertig, keine Aufgabe.
 apiVersion: v1
 kind: ConfigMap
 metadata:

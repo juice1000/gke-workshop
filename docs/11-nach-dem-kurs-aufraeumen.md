@@ -36,7 +36,7 @@ gcloud container clusters resize workshop --node-pool=kurs --num-nodes=1 \
 - [ ] Übrige Load Balancer prüfen, erwartet: keine. `kubectl --context "$CTX" get services -A | grep LoadBalancer`
 - [ ] Teilnehmer-Namespaces ansehen, dann löschen: `kubectl --context "$CTX" get namespaces`, je Namespace `kubectl --context "$CTX" delete namespace workshop-personNN`.
 - [ ] IAM-Bindungen der Teilnehmenden entfernen. Die Zuordnung steht in `out/trainer/teilnehmer.tsv`. Je Konto `remove-iam-policy-binding` für `container.clusterViewer`, `logging.viewer`, `monitoring.viewer` und `monitoring.alertPolicyEditor` am Projekt sowie `artifactregistry.writer` am Repository `workshop`. Prüfen: `gcloud projects get-iam-policy "$PROJECT_ID"`.
-- [ ] Alarmrichtlinien aus Lab 7 löschen. Ansehen: Monitoring, Alerting, Policies, Namen beginnen mit `workshop-`. Löschen dort oder per API mit `curl -X DELETE` auf den Namen der Richtlinie.
+- [ ] Alarmrichtlinien aus Lab 5 löschen. Ansehen: Monitoring, Alerting, Policies, Namen beginnen mit `workshop-`. Löschen dort oder per API mit `curl -X DELETE` auf den Namen der Richtlinie.
 - [ ] Kontingente in den Namespaces verschwinden mit den Namespaces. `workshop-trainer` behält sein Kontingent, bis der Namespace gelöscht wird.
 - [ ] Personenbezogene Dateien lokal löschen: `out/konten.txt`, `out/trainer/`.
 

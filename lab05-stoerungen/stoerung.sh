@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
-# Lab 7: Stoerungen in den eigenen Namespace einbauen.
+# Lab 5: Stoerungen in den eigenen Namespace einbauen.
 # Lest dieses Skript erst nach dem Lab. Es verraet die Ursachen.
 #
 # Aufruf aus dem Repository-Hauptordner:
-#   bash lab07-stoerungen/stoerung.sh start      Ausgangslage herstellen (auch zum Zuruecksetzen)
-#   bash lab07-stoerungen/stoerung.sh 1 ... 5    eine bestimmte Stoerung einbauen
-#   bash lab07-stoerungen/stoerung.sh zufall     eine zufaellige Stoerung, ohne Nummer
-#   bash lab07-stoerungen/stoerung.sh pruefen    ist alles wieder gesund?
-#   bash lab07-stoerungen/stoerung.sh aufloesen  welche Stoerung war eingebaut?
+#   bash lab05-stoerungen/stoerung.sh start      Ausgangslage herstellen (auch zum Zuruecksetzen)
+#   bash lab05-stoerungen/stoerung.sh 1 ... 5    Stoerung 5.1 ... 5.5 einbauen
+#   bash lab05-stoerungen/stoerung.sh zufall     eine zufaellige Stoerung, ohne Nummer
+#   bash lab05-stoerungen/stoerung.sh pruefen    ist alles wieder gesund?
+#   bash lab05-stoerungen/stoerung.sh aufloesen  welche Stoerung war eingebaut?
 #
 # Umgebung wie in Lab 4: WORKSHOP_CONTEXT, WORKSHOP_NAMESPACE, IMAGE.
 set -u
 
 AKTION="${1:-}"
-AUSGABE=out/lab07
+AUSGABE=out/lab05
 MERKER="$AUSGABE/.stoerung"
 
 fail() { printf 'FEHLER: %s\n' "$*" >&2; exit 1; }
 k() { kubectl --context "$WORKSHOP_CONTEXT" --namespace "$WORKSHOP_NAMESPACE" "$@"; }
 
-[ -f lab07-stoerungen/stoerung.sh ] || fail "Aus dem Repository-Hauptordner starten."
+[ -f lab05-stoerungen/stoerung.sh ] || fail "Aus dem Repository-Hauptordner starten."
 [ -n "${WORKSHOP_CONTEXT:-}" ] || fail "WORKSHOP_CONTEXT ist nicht gesetzt (Lab 4, Schritt 1)."
 [ -n "${WORKSHOP_NAMESPACE:-}" ] || fail "WORKSHOP_NAMESPACE ist nicht gesetzt (Lab 4, Schritt 1)."
 printf 'Ziel: Kontext %s, Namespace %s\n' "$WORKSHOP_CONTEXT" "$WORKSHOP_NAMESPACE"
@@ -35,7 +35,7 @@ titel() {
 }
 
 ausgangslage_da() {
-  k get deployment verkehr >/dev/null 2>&1 || fail "Ausgangslage fehlt. Erst: bash lab07-stoerungen/stoerung.sh start"
+  k get deployment verkehr >/dev/null 2>&1 || fail "Ausgangslage fehlt. Erst: bash lab05-stoerungen/stoerung.sh start"
 }
 
 neuester_hallo_pod() {
@@ -71,7 +71,7 @@ case "$AKTION" in
     fi
     # Jedes Mal frisch rendern, damit immer das aktuelle IMAGE gilt.
     rm -rf "$AUSGABE"
-    python3 scripts/render.py lab07-stoerungen/k8s --image "$IMAGE" --output "$AUSGABE" >/dev/null || exit 1
+    python3 scripts/render.py lab05-stoerungen/k8s --image "$IMAGE" --output "$AUSGABE" >/dev/null || exit 1
     k delete deployment hallo --ignore-not-found --wait=true >/dev/null
     k delete secret hallo-secret --ignore-not-found >/dev/null
     k create secret generic hallo-secret --from-literal=DB_PASSWORT=uebung123 >/dev/null || exit 1
@@ -84,17 +84,17 @@ case "$AKTION" in
   1|2|3|4|5)
     ausgangslage_da
     einbauen "$AKTION"
-    printf 'Stoerung %s eingebaut: %s. Beobachtet zuerst die Logs.\n' "$AKTION" "$(titel "$AKTION")"
+    printf 'Stoerung 5.%s eingebaut: %s. Beobachtet zuerst die Logs.\n' "$AKTION" "$(titel "$AKTION")"
     ;;
   zufall)
     ausgangslage_da
     einbauen $(( RANDOM % 5 + 1 ))
-    printf 'Eine Stoerung ist eingebaut. Welche, verraet: bash lab07-stoerungen/stoerung.sh aufloesen\n'
+    printf 'Eine Stoerung ist eingebaut. Welche, verraet: bash lab05-stoerungen/stoerung.sh aufloesen\n'
     ;;
   aufloesen)
     [ -f "$MERKER" ] || fail "Keine Stoerung eingebaut, oder start hat sie zurueckgesetzt."
     nummer="$(cat "$MERKER")"
-    printf 'Eingebaut war Stoerung %s: %s\n' "$nummer" "$(titel "$nummer")"
+    printf 'Eingebaut war Stoerung 5.%s: %s\n' "$nummer" "$(titel "$nummer")"
     ;;
   pruefen)
     fehlt=0

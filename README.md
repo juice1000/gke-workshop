@@ -11,9 +11,9 @@
 | [2: hallo-app](lab02-hallo-app/README.md) | Tag 1 und Tag 2 | Image bauen, deployen, konfigurieren, Probes und Updates | 60 Min. plus Tag-2-Übungen |
 | [3: Fehlersuche](lab03-defekt/README.md) | Tag 2 | Fünf defekte Deployments untersuchen und reparieren | 35 Min. |
 | [4: Auf GKE](lab04-gke/README.md) | Tag 2 | Artifact Registry, Kontextwechsel, Konsole | 60 Min. |
-| [5: Abschluss](lab05-abschluss/README.md) | Tag 3 | Manifest vervollständigen, drei Releases reparieren, Rollback | 90 Min. |
-| [6: Betrieb](lab06-betrieb/README.md) | Tag 3, parallel zu Lab 5 | Cluster lesen, lokal cordon/uncordon und PDB untersuchen | 90 Min. |
-| [7: Störungssuche](lab07-stoerungen/README.md) | Tag 3 | Störungen über Logs, Events und Logs Explorer finden | 60 Min. |
+| [5: Störungssuche](lab05-stoerungen/README.md) | Tag 3, 3.2 (Kurzfassung 30 Min.) | Störungen über Logs, Events, Logs Explorer und einen Alarm finden | 30 bis 80 Min. |
+| [6: Abschluss](lab06-abschluss/README.md) | Tag 3, 3.5 | Manifest vervollständigen, Störungen 6.1 bis 6.3 über die Pipeline reparieren | 90 Min. |
+| [7: Betrieb](lab07-betrieb/README.md) | Tag 3, 3.6, parallel zu Lab 6 | Cluster lesen, lokal cordon/uncordon und PDB untersuchen | 90 Min. |
 
 ## Voraussetzungen
 

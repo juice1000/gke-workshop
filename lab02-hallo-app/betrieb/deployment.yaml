@@ -38,7 +38,7 @@ spec:
       app: hallo
   template:
     metadata:
-      # PASST ZU: selector oben, service.yaml, lab06-betrieb/pdb.yaml.
+      # PASST ZU: selector oben, service.yaml, lab07-betrieb/pdb.yaml.
       labels:
         app: hallo
     spec:

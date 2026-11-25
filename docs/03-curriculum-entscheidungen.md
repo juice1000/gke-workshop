@@ -30,7 +30,7 @@ Das ist für drei Tage mit gemischtem Niveau deutlich zu viel und setzt Cluster-
 | IAM gegen RBAC abgrenzen | Kunde fühlt sich von der Konsole erschlagen; Abgrenzung der Zuständigkeiten ist ein Kernwunsch |
 | Pipeline nur konzeptionell | Der Kunde nutzt TeamCity und Artifactory, die wir nicht im Zugriff haben; wir zeigen, wo Kubernetes andockt |
 | Terraform nur kurz einordnen | Kein Alltag beim Kunden, Zusammenhang trotzdem relevant |
-| Ops-Themen als Vertiefung | Wenige Ops-Kollegen; Tag 3 Lab 6 und optionale Themen bedienen sie |
+| Ops-Themen als Vertiefung | Wenige Ops-Kollegen; Tag 3 Lab 7 und optionale Themen bedienen sie |
 
 ## Im Kernprogramm gestrichen oder nur optional
 

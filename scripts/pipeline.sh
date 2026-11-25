@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Pipeline als Skript (Tag 3, Lab 5). Dieselben Befehle wie von Hand, plus ein
+# Pipeline als Skript (Tag 3, Lab 6). Dieselben Befehle wie von Hand, plus ein
 # Gate, das gruen oder rot entscheidet, plus eine automatische Reaktion.
 #
 # Aufruf aus dem Repository-Hauptordner:
 #   bash scripts/pipeline.sh MANIFEST [--build]
-#   MANIFEST: gerenderte Datei oder Ordner, z. B. out/lab05/starter/
+#   MANIFEST: gerenderte Datei oder Ordner, z. B. out/lab06/starter/
 #
 # Umgebung wie in Lab 4 und 5: WORKSHOP_CONTEXT, WORKSHOP_NAMESPACE, IMAGE.
 # Optional: PIPELINE_TIMEOUT in Sekunden (Standard 120).

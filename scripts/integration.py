@@ -168,8 +168,8 @@ def main():
         checkpoint("gke")
         command("delete", "-f", str(temp / "gke"))
 
-        print("===== Lab 5: Fehlerhafte Releases, Verfuegbarkeit und Rollback", flush=True)
-        render("lab05-abschluss", temp / "abschluss")
+        print("===== Lab 6: Fehlerhafte Releases, Verfuegbarkeit und Rollback", flush=True)
+        render("lab06-abschluss", temp / "abschluss")
         command("create", "secret", "generic", "hallo-secret", "--from-literal=DB_PASSWORT=nur-uebung")
         baseline = temp / "abschluss/loesung"
         for letter in "abc":
@@ -177,7 +177,7 @@ def main():
             rollout()
             checkpoint("abschluss")
             before = {pod["metadata"]["uid"] for pod in pods() if ready(pod)}
-            command("apply", "-f", str(temp / f"abschluss/releases/release-{letter}.yaml"))
+            command("apply", "-f", str(temp / f"abschluss/stoerungen/release-{letter}.yaml"))
 
             def broken():
                 if letter == "a":
@@ -215,7 +215,7 @@ def main():
                          "--as=workshop-test-user", success=False)
         assert (result.returncode == 0) == expected, result.stdout + result.stderr
 
-    print("===== Lab 6: cordon, Pending, uncordon und PDB", flush=True)
+    print("===== Lab 7: cordon, Pending, uncordon und PDB", flush=True)
     apply("lab02-hallo-app/k8s")
     rollout()
     nodes = get("nodes")["items"]
@@ -230,7 +230,7 @@ def main():
     finally:
         command("uncordon", node)
     rollout()
-    apply("lab06-betrieb/pdb.yaml")
+    apply("lab07-betrieb/pdb.yaml")
     wait_for("PDB erlaubt eine freiwillige Unterbrechung", lambda: get("pdb", "hallo-pdb").get(
         "status", {}).get("disruptionsAllowed") == 1)
     print("OK: Alle lokalen Labs und erwarteten Fehlerbilder bestanden. GKE separat pruefen.", flush=True)

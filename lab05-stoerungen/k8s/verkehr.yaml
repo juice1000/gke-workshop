@@ -1,4 +1,4 @@
-# Lab 7: Verkehrsgenerator. Ruft jede Sekunde http://hallo auf und schreibt
+# Lab 5: Verkehrsgenerator. Ruft jede Sekunde http://hallo auf und schreibt
 # eine Logzeile pro Anfrage. So sehen die Logs aus, was Nutzer erleben.
 # Gleiches Image wie hallo, darin ist curl enthalten.
 #

@@ -53,7 +53,7 @@ Die ursprüngliche Planung enthielt die folgenden Prüfpunkte. Aktuelle Ergebnis
 - Probe-Intervalle und Schwellwerte: in den Manifesten ausdrücklich gesetzt, siehe [Lab 2](../lab02-hallo-app/README.md)
 - Menünamen der Google-Cloud-Konsole und die Bezeichnung "Google Cloud Observability"
 - Details zu Extended-Channel und Upgrade-Strategien von Node Pools
-- JVM-Speicherfall: Release B nutzt nun einen fest vorbelegten Heap ohne Platz für JVM-Nebenspeicher, siehe [Lab 5](../lab05-abschluss/README.md)
+- JVM-Speicherfall: Störung 6.2 nutzt nun einen fest vorbelegten Heap ohne Platz für JVM-Nebenspeicher, siehe [Lab 6](../lab06-abschluss/README.md)
 - Sichtbarkeit von Container-Restarts in den Metriken
 - Label des CoreDNS-Pods (`k8s-app=kube-dns`)
 - Mindestanforderungen von minikube an die Hardware

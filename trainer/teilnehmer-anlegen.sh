@@ -65,7 +65,7 @@ while IFS= read -r zeile || [ -n "$zeile" ]; do
     --role=roles/logging.viewer --condition=None --quiet >/dev/null
   gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="user:${konto}" \
     --role=roles/monitoring.viewer --condition=None --quiet >/dev/null
-  # Alarm-Uebung (Lab 7): eigene Alarmrichtlinien anlegen. Projektweit, deshalb
+  # Alarm-Uebung (Lab 5): eigene Alarmrichtlinien anlegen. Projektweit, deshalb
   # Namensregel "workshop-personNN: ..." und Aufraeumen nach dem Kurs.
   gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="user:${konto}" \
     --role=roles/monitoring.alertPolicyEditor --condition=None --quiet >/dev/null

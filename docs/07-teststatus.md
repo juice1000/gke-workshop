@@ -39,9 +39,9 @@ Die Anmeldung erfolgte mit dem autorisierten Look-Beyond-Gmail-Konto. Lokale Clu
 | Fehlerroute | `/fehler` liefert absichtlich HTTP 500, danach bleibt Liveness `UP` |
 | Cloud Logging | die ausgelöste `FEHLER`-Zeile aus dem Container wurde über die Logging-API abgerufen |
 | Cloud Monitoring | Datenpunkte für CPU-Verbrauch, Speicherverbrauch und `kubernetes.io/container/restart_count` über die Monitoring-API abgerufen |
-| Release A | `CreateContainerConfigError` wegen fehlendem Schlüssel beobachtet; Verfügbarkeit, Rollback und Reparatur bestanden |
-| Release B | `OOMKilled` beobachtet; Verfügbarkeit, Rollback und Reparatur mit 1-GiB-Limit bestanden |
-| Release C | Readiness-404 beobachtet; Verfügbarkeit, Rollback und Reparatur bestanden |
+| Störung 6.1 | `CreateContainerConfigError` wegen fehlendem Schlüssel beobachtet; Verfügbarkeit, Rollback und Reparatur bestanden |
+| Störung 6.2 | `OOMKilled` beobachtet; Verfügbarkeit, Rollback und Reparatur mit 1-GiB-Limit bestanden |
+| Störung 6.3 | Readiness-404 beobachtet; Verfügbarkeit, Rollback und Reparatur bestanden |
 | Namespace-RBAC | `workshop-person01` und `workshop-person02`: per Kubernetes-ServiceAccount-Impersonation im eigenen Namespace Deployments/Secrets erlaubt, anderer Namespace, `kube-system` und Node-Liste verweigert |
 | Zustand nach dem Probelauf | gesundes Lab-4-Deployment wiederhergestellt, temporäres Übungs-Secret entfernt |
 
@@ -103,9 +103,9 @@ Umgebung: macOS auf ARM64 mit OrbStack/Docker 29.4.0, minikube 1.39.0, Kubernete
 | ConfigMap und Secret | Referenzen korrekt, neue Env-Begrüßung erst nach Neustart, Version 2.0 erreichbar |
 | Fünf Troubleshooting-Fälle | alle beabsichtigten Fehler erkannt, jede Lösung erfolgreich ausgerollt |
 | GKE-Manifeste mit lokalem Image | gerendert und lokal erfolgreich ausgerollt; kein Cloud-Nachweis |
-| Abschluss Release A | fehlender ConfigMap-Schlüssel beobachtet, Rollback und Reparatur bestanden |
-| Abschluss Release B | `OOMKilled` nachgewiesen, Rollback und Reparatur mit 1-GiB-Limit bestanden |
-| Abschluss Release C | Readiness-404 nachgewiesen, Rollback und Reparatur bestanden |
+| Abschluss Störung 6.1 | fehlender ConfigMap-Schlüssel beobachtet, Rollback und Reparatur bestanden |
+| Abschluss Störung 6.2 | `OOMKilled` nachgewiesen, Rollback und Reparatur mit 1-GiB-Limit bestanden |
+| Abschluss Störung 6.3 | Readiness-404 nachgewiesen, Rollback und Reparatur bestanden |
 | Verfügbarkeit bei allen drei Fehler-Releases | die vorherigen bereiten Pods blieben erhalten und HTTP antwortete weiter |
 | Namespace-RBAC | per Impersonation eigener Zugriff erlaubt, fremder Namespace und Node-Liste verweigert |
 | Lokales Node-Experiment | Ersatz-Pod nach `cordon` nicht planbar, nach `uncordon` wieder bereit |
@@ -124,8 +124,8 @@ Nach dem Umzug auf den Pool `kurs` (ein `e2-standard-4`). Kubernetes-Aktionen li
 | --- | --- |
 | Rechte | eigener Namespace: Deployments und Secrets `yes`; `kube-system`, `workshop-person02`, Nodes `no` |
 | Lab 4 | eigenes Image `hallo-app-workshop-person01:2.0` (amd64) gepusht, Rollout in 17 s, Checkpoint `gke` grün, HTTP-Antwort aus GKE, `/fehler` liefert 500 und Logzeile `FEHLER` |
-| Lab 5 A | Lösung ausgerollt, Checkpoint `abschluss` grün |
-| Release A, B, C | `CreateContainerConfigError`, `OOMKilled`, Readiness 404 beobachtet; jeweils zwei alte Pods bereit und HTTP erreichbar; Rollback und Reparatur grün |
+| Lab 6 A | Lösung ausgerollt, Checkpoint `abschluss` grün |
+| Störung 6.1, B, C | `CreateContainerConfigError`, `OOMKilled`, Readiness 404 beobachtet; jeweils zwei alte Pods bereit und HTTP erreichbar; Rollback und Reparatur grün |
 
 Gesamtdauer 8 Minuten. Der gleichzeitige lokale Probelauf `scripts/dry-run.sh` bestand ebenfalls. Danach blieb Lab 4 in `workshop-person01` zum Ansehen in der Konsole stehen.
 
@@ -173,7 +173,7 @@ Alle 7 Skripte in `demos/tag3/` mit `--auto` gegen das lokale Profil `minikube` 
 
 Nicht geprüft: interaktiver Modus, Lauf in einem frischen minikube-Profil, Mehr-Node-Cluster.
 
-Alle Manifeste auf `main` tragen Kommentare `FEST`, `FREI` und `PASST ZU` (Legende im Kopf von `lab02-hallo-app/k8s/deployment.yaml`). Geprüft: Ohne Kommentar- und Leerzeilen sind alle 37 Dateien unverändert, `validate.sh` bestanden. Fehlerdateien aus Lab 3 und Lab 5 haben nur einen Kopfkommentar, damit sie den Fehler nicht verraten. Auf `practice` bleiben die Manifeste ohne diese Kommentare.
+Alle Manifeste auf `main` tragen Kommentare `FEST`, `FREI` und `PASST ZU` (Legende im Kopf von `lab02-hallo-app/k8s/deployment.yaml`). Geprüft: Ohne Kommentar- und Leerzeilen sind alle 37 Dateien unverändert, `validate.sh` bestanden. Fehlerdateien aus Lab 3 und Lab 6 haben nur einen Kopfkommentar, damit sie den Fehler nicht verraten. Auf `practice` bleiben die Manifeste ohne diese Kommentare.
 
 ## NodePort ohne Tunnel, 24.11.2026
 
@@ -187,39 +187,39 @@ Lab 2, Abschnitt 2.4 „Gut zu wissen“ und `lab02-hallo-app/extra/nodeport.yam
 
 Nicht geprüft: Linux ohne `--ports` über `minikube ip`, Windows mit WSL.
 
-## Pipeline für Lab 5 (`scripts/pipeline.sh`), 25.11.2026
+## Pipeline für Lab 6 (`scripts/pipeline.sh`), 25.11.2026
 
 Lokal: minikube-Profil `minikube`, Namespace `pipeline-test`, `IMAGE=hallo-app:2.0`, kubectl 1.37. GKE: Namespace `workshop-trainer` mit Trainerrechten, Image `hallo-app-workshop-trainer:2.0`. Ablauf wie Etappe B: je Release Starter (hier die gerenderte `loesung/`), kaputtes Release, repariertes Release.
 
 | Lauf | Lokal | GKE |
 | --- | --- | --- |
 | Starter | grün, Exit 0 | grün, Exit 0, 57 bis 59 s |
-| Release A | rot, Exit 1, 121 s; `describe.txt`: `couldn't find key GRUSS in ConfigMap` | rot, Exit 1, 155 s, gleicher Beleg |
-| Release B | rot, Exit 1, 121 s; `describe.txt`: `Last State: Terminated`, `OOMKilled`, Exit Code 137 | rot, Exit 1, 157 s; OOMKilled nach etwa 1 s Laufzeit, 4 Neustarts in 2 Minuten |
-| Release C | rot, Exit 1, 121 s; `describe.txt`: `Readiness probe failed ... 404` | rot, Exit 1, 155 s, gleicher Beleg |
+| Störung 6.1 | rot, Exit 1, 121 s; `describe.txt`: `couldn't find key GRUSS in ConfigMap` | rot, Exit 1, 155 s, gleicher Beleg |
+| Störung 6.2 | rot, Exit 1, 121 s; `describe.txt`: `Last State: Terminated`, `OOMKilled`, Exit Code 137 | rot, Exit 1, 157 s; OOMKilled nach etwa 1 s Laufzeit, 4 Neustarts in 2 Minuten |
+| Störung 6.3 | rot, Exit 1, 121 s; `describe.txt`: `Readiness probe failed ... 404` | rot, Exit 1, 155 s, gleicher Beleg |
 | Reparierte Releases | grün, Exit 0; Spezifikation danach wie die Datei | grün, Exit 0 |
 | Rollback | stellt den Starter wieder her | stellt den Starter wieder her |
 | `--build` | Bau für die Rechnerarchitektur, `minikube image load`, grün, Antwort `Version 2.0-a329ca9` | Bau für amd64, Push `hallo-app-workshop-trainer:2.0-a329ca9`, grün, gleiche Antwort |
 | Abbruch vor Deploy, Exit 2 | ohne Argument, fehlendes Manifest, leerer Namespace, Manifest ohne Deployment `hallo`, Platzhalter `TODO_IMAGE` | nicht geprüft |
 
-`PIPELINE_TIMEOUT` bleibt bei 120 s. Release B erreicht OOMKilled auf GKE innerhalb weniger Sekunden.
+`PIPELINE_TIMEOUT` bleibt bei 120 s. Störung 6.2 erreicht OOMKilled auf GKE innerhalb weniger Sekunden.
 
 Gefunden und behoben: kubectl 1.37 zeigt bei `describe pod -l ...` mit mehreren Pods keine Events. Die Pipeline ruft deshalb `--show-events=true` auf. Ein unbearbeiteter Starter (`TODO_IMAGE`) bestand den Dry Run; die Pipeline prüft Platzhalter jetzt selbst. `--build` mit `--platform linux/amd64` lief auf minikube mit Apple-Chip nicht (`exec format error`); lokal wird jetzt ohne `--platform` gebaut.
 
 Beobachtet: Ohne Starter zwischen zwei Releases kann `apply` nach `rollout undo` Felder des zurückgerollten Stands behalten (reparierte B mit `JAVA_TOOL_OPTIONS`, danach C repariert: rot mit OOMKilled). Mit Starter vor jedem Release nicht. Nebenbei gesehen: Fehlt `hallo-secret`, wird schon der Starter rot und zurückgerollt.
 
-Zeitmessung: Zwei GKE-Läufe dauerten 22 und 25 Minuten, weil der Mac in dieser Zeit schlief (`pmset -g log`). Die Zeitgrenze von `rollout status` zählt Ruhezeit nicht. Release B wurde danach mit wachem Rechner wiederholt (Werte oben).
+Zeitmessung: Zwei GKE-Läufe dauerten 22 und 25 Minuten, weil der Mac in dieser Zeit schlief (`pmset -g log`). Die Zeitgrenze von `rollout status` zählt Ruhezeit nicht. Störung 6.2 wurde danach mit wachem Rechner wiederholt (Werte oben).
 
 Demo 3.4c lokal mit `--auto` in etwa 65 s durchgelaufen, Aufräumen stellt `betrieb/` wieder her. Nach dem GKE-Test steht in `workshop-trainer` wieder Lab 4, `pruefen.py gke` grün. Nicht geprüft: Lauf mit einem Teilnehmerkonto, gleichzeitige Läufe mehrerer Personen.
 
-## Lab 7 Störungssuche, 25.11.2026
+## Lab 5 Störungssuche, 25.11.2026
 
 Lokal (minikube, Namespace `lab7-test`, `hallo-app:2.0`) und auf GKE (`workshop-trainer`, Trainerrechte, `hallo-app-workshop-trainer:2.0`). Je Störung: `start`, einbauen, 75 s (lokal) bzw. 90 s (GKE) warten, Befund ansehen, `pruefen`, reparieren, `pruefen`.
 
 | Störung | Befund lokal und GKE | `pruefen` vorher | nach Reparatur |
 | --- | --- | --- | --- |
-| 1 Liveness-Pfad | Verkehr weiter `200`; RESTARTS 1 bis 2 nach 90 s; Events `Liveness probe failed: ... 404` | rot (Neustarts, lokal zusätzlich ein Pod nicht bereit) | grün nach `apply -f out/lab07/deployment.yaml` |
-| 2 Service-Port | Verkehr nur `curl-Fehler 7`, Anwendung ohne neue Zeilen | rot | grün nach `apply -f out/lab07/service.yaml` |
+| 1 Liveness-Pfad | Verkehr weiter `200`; RESTARTS 1 bis 2 nach 90 s; Events `Liveness probe failed: ... 404` | rot (Neustarts, lokal zusätzlich ein Pod nicht bereit) | grün nach `apply -f out/lab05/deployment.yaml` |
+| 2 Service-Port | Verkehr nur `curl-Fehler 7`, Anwendung ohne neue Zeilen | rot | grün nach `apply -f out/lab05/service.yaml` |
 | 3 Secret | ein Pod `CreateContainerConfigError`, Event `secret "hallo-secret" not found`, Verkehr weiter `200` von einem Pod | rot | grün nach `create secret` |
 | 4 Fehlerflut | Verkehr zwei von drei Anfragen `500`, Anwendung `ERROR ... FEHLER` | rot | grün nach `set env PFADE=/` |
 | 5 Gemischte Antworten | zwei Begrüßungen im Wechsel, sonst nichts | rot | grün nach `apply` ConfigMap und `rollout restart` |
@@ -236,7 +236,7 @@ Nicht geprüft: Abfragen in der Konsole und im Monitoring mit Teilnehmerrechten,
 - [x] Registry-Push und privater Image-Pull mit der tatsächlichen Node-Identität prüfen.
 - [ ] Test mit zwei Teilnehmerkonten und getrennten Namespaces; IAM darf die RBAC-Trennung nicht aufheben.
 - [ ] Logs Explorer, CPU-/Speicher-Metriken und Restart-Metrik mit Teilnehmerrechten nachweisen.
-- [ ] Konsolennavigation, Release Channel, Wartungsfenster und Node-Pools im tatsächlichen Projekt prüfen.
+- [ ] Konsolennavigation, Störung 6.3hannel, Wartungsfenster und Node-Pools im tatsächlichen Projekt prüfen.
 - [ ] Frischen Windows-/WSL-Rechner testen: bewusst ausgelassen, siehe unten.
 - [ ] Noch offene Kursdetails aus [Lernumgebung](04-lernumgebung-und-offene-punkte.md) mit dem Kunden klären.
 - [x] Notion-Differenzen aus [Lab-Zuordnung](06-labs-und-trainer.md) in die Kursunterlagen übernehmen (21.11.2026).
@@ -250,12 +250,12 @@ Die GKE-Ergebnisse beziehen sich auf Standard mit Trainerrechten. Autopilot, Kun
 
 - `trainer/kontingent.yaml` in `workshop-trainer` getestet: `scale --replicas=8` mit dem ersten Entwurf (1500m) endete bei 6 Pods mit `FailedCreate ... exceeded quota`, `create service loadbalancer` abgelehnt, `rollout restart` gruen, Pod ohne `resources` bekam 100m/256Mi als Request.
 - Danach angehoben auf 4 CPU, 8 GiB, 20 Pods, damit keine Uebung daran scheitert. Angewendet auf `workshop-trainer` und `workshop-person01` bis `16`. Laufende Pods unveraendert. `workshop-person12` hatte schon einen eigenen `LoadBalancer`, der bleibt.
-- Audit-Log-Abfrage aus Lab 7 Extra 3 mit dem Trainerkonto geprueft. Mit Teilnehmerrechten (`roles/logging.viewer`) nicht geprueft.
-- Live-Beobachtung in Lab 4 (Konsole), Lab 5 (`get pods -w`) und Lab 6 (`get pods -w`) ergaenzt, nicht im Kurs erprobt.
+- Audit-Log-Abfrage aus Lab 5 Extra 3 mit dem Trainerkonto geprueft. Mit Teilnehmerrechten (`roles/logging.viewer`) nicht geprueft.
+- Live-Beobachtung in Lab 4 (Konsole), Lab 6 (`get pods -w`) und Lab 7 (`get pods -w`) ergaenzt, nicht im Kurs erprobt.
 
-## Alarm-Uebung Lab 7 Abschnitt 5 und Kontingent-Fehler (25.11.2026, GKE)
+## Alarm-Uebung Lab 5 Abschnitt 5 und Kontingent-Fehler (25.11.2026, GKE)
 
-- Alarmrichtlinie aus `lab07-stoerungen/alarm.json` fuer `workshop-trainer` per Monitoring-API angelegt. Stoerung 1 um 05:23:02 UTC, `restart_count`-Delta sichtbar ab 05:24, Vorfall offen um 05:27:04. Ohne Benachrichtigungskanal.
+- Alarmrichtlinie aus `lab05-stoerungen/alarm.json` fuer `workshop-trainer` per Monitoring-API angelegt. Stoerung 1 um 05:23:02 UTC, `restart_count`-Delta sichtbar ab 05:24, Vorfall offen um 05:27:04. Ohne Benachrichtigungskanal.
 - Weg B aus dem README (sed, curl POST, `grep -m1 '"name"'`, curl DELETE) mit dem Trainerkonto durchgespielt. Weg A (Konsole) nicht durchgeklickt. Mit Teilnehmerrechten (`roles/monitoring.alertPolicyEditor`, vergeben an 15 Konten) nicht geprueft.
 - Neuer Fehler 7.1 (Brief docs/12): Deployment mit `requests.cpu: "5"` ueber `pipeline.sh`, Zeitgrenze 60 s: ROT, zurueckgerollt, `events.txt` zeigt `FailedCreate ... exceeded quota`.
 - CPU-Kontingent des Projekts: Antrag auf 20 abgelehnt, Antrag auf 16 offen.

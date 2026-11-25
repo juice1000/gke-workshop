@@ -244,7 +244,7 @@ kubectl config current-context    # erwartet: gke_...
 kubectl delete -f out/lab04/
 ```
 
-Den Namespace und die Registry verwaltet der Trainer. Für Tag 3 könnt ihr das Deployment nach Absprache stehen lassen. Vor Lab 5 wird es entfernt.
+Den Namespace und die Registry verwaltet der Trainer. Für Tag 3 könnt ihr das Deployment nach Absprache stehen lassen. Vor Lab 6 wird es entfernt.
 
 Ohne Cloud: Der Trainer zeigt Konsole und Registry. Ihr setzt Kontext und Namespace auf `minikube`/`workshop`, verwendet `IMAGE=hallo-app:2.0` und ladet das Image mit `minikube image load hallo-app:2.0`. Dann rendert ihr in einen neuen Ausgabeordner und übt Deployment, Checkpoint und Fehlersuche lokal. Cloud Logging, Monitoring und Cloud-Rechte bleiben eine Demo.
 
