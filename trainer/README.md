@@ -13,7 +13,7 @@ Der Node verwendet ein eigenes IAM-Servicekonto mit der GKE-Node-Rolle und Leser
 ## Vor dem Kurs
 
 1. Ein eigenes Übungsprojekt mit geklärter Abrechnung und einem GKE-Cluster bereitstellen. Standard ist der geplante Kursmodus. Autopilot ist als weitere Variante vorgesehen und braucht einen eigenen Probelauf.
-2. Kubernetes-Version und eine dazu passende kubectl-Version festlegen. Der lokale Probelauf verwendet Kubernetes 1.35.0; die GKE-Version richtet sich nach dem vorbereiteten Cluster und Störung 6.3hannel.
+2. Kubernetes-Version und eine dazu passende kubectl-Version festlegen. Der lokale Probelauf verwendet Kubernetes 1.35.0; die GKE-Version richtet sich nach dem vorbereiteten Cluster und Release Channel.
 3. Netzwerkzugang aus dem Kundennetz zum API-Endpunkt testen. Bei privaten Clustern den tatsächlichen VPN-/Proxy-Zugang mit dem Kunden durchspielen. Cloud Shell ist ein möglicher CLI-Fallback, ersetzt aber nicht ohne Weiteres den lokalen Docker-Build.
 4. Kubernetes Engine und Artifact Registry verfügbar machen, ein Docker-Repository anlegen. Anwendungslogs und Systemmetriken aktivieren. In der Konsole einen aktuellen Testeintrag und Container-Metriken nachweisen.
 5. Je Person oder Paar einen Namespace und eine abgegrenzte Rolle vorbereiten. Zwei echte Testkonten verwenden, nicht nur das eigene Admin-Konto.

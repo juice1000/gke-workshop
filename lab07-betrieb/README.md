@@ -4,7 +4,7 @@
 
 ## Teil 1: Betriebsrundgang auf GKE (30 Minuten)
 
-Öffnet die Clusterdetails in der Konsole. Notiert Betriebsart, Standort, Kubernetes-Version, Störung 6.3hannel und Wartungsfenster. Bei Standard untersucht ihr zusätzlich Node-Pools, Auto-Upgrade und die Upgrade-Strategie. Bei Autopilot verwaltet Google die Nodes; dokumentiert die sichtbaren Einstellungen.
+Öffnet die Clusterdetails in der Konsole. Notiert Betriebsart, Standort, Kubernetes-Version, Release Channel und Wartungsfenster. Bei Standard untersucht ihr zusätzlich Node-Pools, Auto-Upgrade und die Upgrade-Strategie. Bei Autopilot verwaltet Google die Nodes; dokumentiert die sichtbaren Einstellungen.
 
 Wenn eure Rolle es erlaubt:
 
@@ -23,7 +23,7 @@ resource.labels.cluster_name="workshop"
 resource.labels.namespace_name="kube-system"
 ```
 
-Falls ihr diese Rechte nicht habt, zeigt der Trainer den Rundgang. Änderungen an Störung 6.3hannel, Wartungsfenstern, Node-Pools oder Alarmrichtlinien gehören nicht zu diesem Lab.
+Falls ihr diese Rechte nicht habt, zeigt der Trainer den Rundgang. Änderungen an Release Channel, Wartungsfenstern, Node-Pools oder Alarmrichtlinien gehören nicht zu diesem Lab.
 
 ## Teil 2: Scheduling lokal erleben (35 Minuten)
 
@@ -90,4 +90,4 @@ kubectl --context minikube -n workshop delete -f lab02-hallo-app/k8s/
 kubectl --context minikube -n workshop delete -f lab07-betrieb/pdb.yaml
 ```
 
-Ohne Cloud führt ihr Teile 2 und 3 aus. Der Trainer bespricht Störung 6.3hannels und Monitoring anhand der Dokumentation oder einer Demo.
+Ohne Cloud führt ihr Teile 2 und 3 aus. Der Trainer bespricht Release Channels und Monitoring anhand der Dokumentation oder einer Demo.

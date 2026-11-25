@@ -168,26 +168,27 @@ def main():
         checkpoint("gke")
         command("delete", "-f", str(temp / "gke"))
 
-        print("===== Lab 6: Fehlerhafte Releases, Verfuegbarkeit und Rollback", flush=True)
+        print("===== Lab 6: Stoerungen 6.1 bis 6.3, Verfuegbarkeit und Rollback", flush=True)
         render("lab06-abschluss", temp / "abschluss")
         command("create", "secret", "generic", "hallo-secret", "--from-literal=DB_PASSWORT=nur-uebung")
         baseline = temp / "abschluss/loesung"
-        for letter in "abc":
+        faelle = [("6.1", "6.1-konfiguration"), ("6.2", "6.2-speicher"), ("6.3", "6.3-bereitschaft")]
+        for nummer, datei in faelle:
             command("apply", "-f", str(baseline))
             rollout()
             checkpoint("abschluss")
             before = {pod["metadata"]["uid"] for pod in pods() if ready(pod)}
-            command("apply", "-f", str(temp / f"abschluss/stoerungen/release-{letter}.yaml"))
+            command("apply", "-f", str(temp / f"abschluss/stoerungen/{datei}.yaml"))
 
             def broken():
-                if letter == "a":
+                if nummer == "6.1":
                     return waiting_reason("CreateContainerConfigError")
-                if letter == "b":
+                if nummer == "6.2":
                     return any(status.get(where, {}).get("terminated", {}).get("reason") == "OOMKilled"
                                for status in statuses() for where in ("state", "lastState"))
                 return has_event("hallo", "Readiness probe failed") and has_event("hallo", "404")
 
-            wait_for(f"Release {letter.upper()}: erwartetes Fehlerbild", broken)
+            wait_for(f"Stoerung {nummer}: erwartetes Fehlerbild", broken)
             assert command("rollout", "status", "deployment/hallo", "--timeout=5s", success=False).returncode != 0
             surviving = {pod["metadata"]["uid"] for pod in pods() if ready(pod)}
             assert before <= surviving, "Alte bereite Pods gingen waehrend fehlerhaftem Rollout verloren"
@@ -195,7 +196,7 @@ def main():
             command("rollout", "undo", "deployment/hallo")
             rollout()
             checkpoint("abschluss")
-            command("apply", "-f", str(temp / f"abschluss/repariert/release-{letter}.yaml"))
+            command("apply", "-f", str(temp / f"abschluss/repariert/{datei}.yaml"))
             rollout()
             checkpoint("abschluss")
         command("delete", "-f", str(baseline))

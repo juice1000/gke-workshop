@@ -236,7 +236,7 @@ Nicht geprüft: Abfragen in der Konsole und im Monitoring mit Teilnehmerrechten,
 - [x] Registry-Push und privater Image-Pull mit der tatsächlichen Node-Identität prüfen.
 - [ ] Test mit zwei Teilnehmerkonten und getrennten Namespaces; IAM darf die RBAC-Trennung nicht aufheben.
 - [ ] Logs Explorer, CPU-/Speicher-Metriken und Restart-Metrik mit Teilnehmerrechten nachweisen.
-- [ ] Konsolennavigation, Störung 6.3hannel, Wartungsfenster und Node-Pools im tatsächlichen Projekt prüfen.
+- [ ] Konsolennavigation, Release Channel, Wartungsfenster und Node-Pools im tatsächlichen Projekt prüfen.
 - [ ] Frischen Windows-/WSL-Rechner testen: bewusst ausgelassen, siehe unten.
 - [ ] Noch offene Kursdetails aus [Lernumgebung](04-lernumgebung-und-offene-punkte.md) mit dem Kunden klären.
 - [x] Notion-Differenzen aus [Lab-Zuordnung](06-labs-und-trainer.md) in die Kursunterlagen übernehmen (21.11.2026).
@@ -274,5 +274,5 @@ Die GKE-Ergebnisse beziehen sich auf Standard mit Trainerrechten. Autopilot, Kun
 - Oeffentliche Route aus den Manifesten (`basis/httproute.yaml`, Label `workshop-lab`): `http://GATEWAY_IP/workshop-trainer/` und `/ui.html` HTTP 200 mit Image 2.2. Route bleibt ueber `stoerung.sh start` stehen.
 - Alarm mit E-Mail: Kanaele fuer alle 16 Personen und den Trainer angelegt. Richtlinie nach README Weg B in `workshop-trainer`, Stoerung 5.1 um 06:49:20 UTC, Vorfall offen um 06:53:48. E-Mail-Zustellung muss der Trainer im Postfach bestaetigen. Mit Teilnehmerkonten nicht getestet (keine Anmeldung moeglich), Leserecht auf Kanaele kommt aus `monitoring.viewer`.
 - Nicht getestet: `basis.sh` auf minikube, Ablauf mit echten Teilnehmerkonten, Kurzfassung Lab 5 im Browser bei 16 gleichzeitigen Routen.
-- Image `hallo-app:2.4` (25.11.2026): `ERROR`-Zeilen auf stderr (logback-spring.xml), Heap-Option als Startargument statt `JAVA_TOOL_OPTIONS`. GKE: `/fehler` ueber das Gateway erscheint im Logs Explorer mit `severity=ERROR`, ein Pod-Start erzeugt keine ERROR-Zeile. Lab-3-Extra-2 lokal mit 128 MiB ohne Swap: alt und neu `OOMKilled`, Exit 137.
+- Image `hallo-app:2.5` (25.11.2026): `ERROR`-Zeilen auf stderr (logback-spring.xml), Heap-Option als Startargument statt `JAVA_TOOL_OPTIONS`. GKE: `/fehler` ueber das Gateway erscheint im Logs Explorer mit `severity=ERROR`, ein Pod-Start erzeugt keine ERROR-Zeile. Lab-3-Extra-2 lokal mit 128 MiB ohne Swap: alt und neu `OOMKilled`, Exit 137.
 - `preStop` mit `sleep: 10` in den Tag-3-Deployments: Waehrend `rollout restart` 90 Anfragen ueber das Gateway in 45 s, alle HTTP 200. Vorher sichtbar: mehrere 503 `upstream connect error` pro Rollout.
