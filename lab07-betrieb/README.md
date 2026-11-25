@@ -80,7 +80,7 @@ Bei zwei bereiten Pods erlaubt `minAvailable: 1` eine freiwillige Unterbrechung.
 
 Formuliert einen Alarm mit Bedingung, Dauer und Handlung. Beispiel: Ein Container startet innerhalb von zehn Minuten wiederholt neu. Dann prüft der Bereitschaftsdienst zuerst `Last State`, vorige Logs und den letzten Rollout. Legt den Alarm hier als Vorschlag vor. Auf GKE legt ihr ihn in [Lab 5, Abschnitt 5](../lab05-stoerungen/README.md) wirklich an und löst ihn mit einer Störung aus.
 
-**Abgabe:** Clustereinstellungen, Erklärung des `Pending`-Pods, Bedeutung von `ALLOWED DISRUPTIONS` und ein handlungsfähiger Alarmvorschlag.
+**Abgabe, in den Chat:** Clustereinstellungen, Erklärung des `Pending`-Pods, Bedeutung von `ALLOWED DISRUPTIONS` und ein handlungsfähiger Alarmvorschlag.
 
 ## Aufräumen (10 Minuten)
 

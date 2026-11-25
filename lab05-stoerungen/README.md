@@ -32,7 +32,7 @@ Die Uhrzeit im Container ist UTC.
 
 ## Kurzfassung (30 Minuten, Tag 3)
 
-Zu zweit, zwei Störungen: 5.1 und 5.4. Die Langfassung darunter bleibt für später und als Nachschlagewerk.
+Jeder für sich, zwei Störungen: 5.1 und 5.4. Die Langfassung darunter bleibt für später und als Nachschlagewerk.
 
 **0. Neues Terminal? Umgebung aus Lab 4 setzen** (eure Nummer einsetzen):
 
@@ -78,7 +78,7 @@ bash lab05-stoerungen/stoerung.sh start         # gesund für Runde 5.4
 
 **3. Runde 5.4:** dasselbe mit `bash lab05-stoerungen/stoerung.sh 4`.
 
-**Abgabe:** pro Störung eine Zeile: Symptom beim Nutzer, Fundort (Befehl und Zeile), Ursache, Reparatur. Eine der beiden Zeilen belegt ihr mit einer Abfrage im Logs Explorer (Abschnitt 4).
+**Abgabe, in den Chat:** pro Störung eine Zeile: Symptom beim Nutzer, Fundort (Befehl und Zeile), Ursache, Reparatur. Eine der beiden Zeilen belegt ihr mit einer Abfrage im Logs Explorer (Abschnitt 4).
 
 Früher fertig? Weitere Störungen mit `zufall` (Abschnitt 3) oder der Alarm (Abschnitt 5).
 
@@ -229,7 +229,7 @@ bash lab05-stoerungen/stoerung.sh pruefen
 
 Erwartet nach der letzten Reparatur: `Ergebnis: 0 Pruefung(en) fehlgeschlagen`.
 
-**Abgabe:** Die Tabelle für mindestens drei verschiedene Störungen, davon eine mit Fundort im Logs Explorer. Auf GKE dazu: Öffnungs- und Schließzeit eures Vorfalls und die Antworten auf die beiden Fragen aus Abschnitt 5.
+**Abgabe, in den Chat:** Die Tabelle für mindestens drei verschiedene Störungen, davon eine mit Fundort im Logs Explorer. Auf GKE dazu: Öffnungs- und Schließzeit eures Vorfalls und die Antworten auf die beiden Fragen aus Abschnitt 5.
 
 ## Extra zum Ausprobieren
 

@@ -1,8 +1,8 @@
 # Lab 6: Abschlussübung
 
-**Ziel:** Ihr schreibt ein vollständiges Deployment und untersucht drei fehlgeschlagene Releases. Dauer: 90 Minuten, zu zweit. Alle Befehle aus dem Repository-Hauptordner.
+**Ziel:** Ihr schreibt ein vollständiges Deployment und untersucht die Störungen 6.1 bis 6.3. Pflicht sind 6.1 und 6.2. Dauer: 110 Minuten, jeder für sich. Alle Befehle aus dem Repository-Hauptordner.
 
-Voraussetzung: Zielkontext und eigener Namespace aus Lab 4, erreichbares Image der Version 2.0. Die Anwendung aus Lab 4 oder Lab 5 läuft weiter, `apply` ersetzt sie. Alternativ funktioniert diese Übung lokal, siehe unten.
+Voraussetzung: Zielkontext und eigener Namespace aus Lab 4, erreichbares Image der Version 2.0. Die Anwendung aus Lab 4 oder Lab 5 läuft weiter, `apply` ersetzt sie.
 
 **Festgefahren?** Wer länger als 10 Minuten nicht weiterkommt, setzt den Namespace auf einen bekannten guten Stand und macht mit dem nächsten Schritt weiter. Das Skript sichert eure Arbeitskopie `out/lab06/` vorher unter neuem Namen, rollt die fertige Lösung über die Pipeline aus und prüft sie:
 
@@ -46,7 +46,7 @@ echo "Exit-Code: $?"
 
 Erwartet: fünf Stufen, am Ende `Pipeline GRUEN: ... laeuft in ...` und `Exit-Code: 0`. Die Pipeline führt dieselben Befehle aus wie ihr eben von Hand. Neu ist das Gate: `rollout status` mit Zeitgrenze entscheidet über grün oder rot. Lest den Kopf von [scripts/pipeline.sh](../scripts/pipeline.sh): Jede Stufe entspricht einem Build-Schritt in TeamCity.
 
-**Abgabe A:** Zwei bereite Pods, Antwort, grüner Checkpoint und grüner Pipeline-Lauf. `DB_PASSWORT` wird nur als Umgebungsvariable eingebunden. Verwendet keine echten Zugangsdaten.
+**Abgabe A, in den Chat:** Zwei bereite Pods, Antwort, grüner Checkpoint und grüner Pipeline-Lauf. `DB_PASSWORT` wird nur als Umgebungsvariable eingebunden. Verwendet keine echten Zugangsdaten.
 
 ## Etappe B: Störungen 6.1 bis 6.3 über die Pipeline (45 Minuten)
 
@@ -60,7 +60,7 @@ kubectl get pods -w                       # neuer Pod kommt, scheitert, verschwi
 
 Läuft `verkehr` aus Lab 5 noch, öffnet ein drittes Terminal mit `kubectl logs deployment/verkehr -f`. Achtet darauf, ob Nutzer während eines roten Release Fehler sehen.
 
-Ihr arbeitet die drei Störungen 6.1 bis 6.3 nacheinander ab. Für 6.1:
+Ihr arbeitet die Störungen nacheinander ab. Pflicht sind 6.1 und 6.2, 6.3 wenn Zeit bleibt. Für 6.1:
 
 1. Bekannten guten Stand herstellen. Erwartet: grün.
 
@@ -92,7 +92,7 @@ Die Stufe Rollback macht genau das, was ihr in 2.4 von Hand gemacht habt: `kubec
 
 Warum antworten die alten Pods weiter, während das Release scheitert? Sucht die beiden Einstellungen unter `strategy.rollingUpdate`. Das funktioniert, solange die alten Pods selbst gesund bleiben und genug Kapazität für den zusätzlichen Pod vorhanden ist.
 
-**Abgabe B:** Pro Störung Symptom, Ursache, Belegdatei, Reparatur und die Exit-Codes des roten und des grünen Laufs.
+**Abgabe B, in den Chat:** Pro Störung Symptom, Ursache, Belegdatei, Reparatur und die Exit-Codes des roten und des grünen Laufs.
 
 <details>
 <summary>Hinweise</summary>
@@ -174,7 +174,7 @@ bash scripts/pipeline.sh out/lab06/stoerungen/6.6-fremder-tresor.yaml
 
 Der neue Pod bleibt in `ContainerCreating`. Die Anwendung startet nie, also gibt es keine Logzeile. Der Befund steht in den Events (`events.txt`, `kubectl describe pod`). Auch das ist ein Befund: keine Logzeile, Ursache in den Events.
 
-**Abgabe D:** Die Startzeile aus `kubectl logs` und aus dem Logs Explorer. Pro Störung Event-Zeile, Ursache und Reparatur.
+**Abgabe D, in den Chat:** Die Startzeile aus `kubectl logs` und aus dem Logs Explorer. Pro Störung Event-Zeile, Ursache und Reparatur.
 
 ## Extra zum Ausprobieren: Den Lauf in GitHub Actions lesen
 
@@ -193,7 +193,7 @@ kubectl auth can-i get secrets
 kubectl auth can-i list nodes
 ```
 
-**Abgabe C:** Vier Antworten und eure Erklärung. Erwartet in der vorbereiteten Teilnehmerrolle: im eigenen Namespace Deployments und Secrets erlaubt, keine Deployment-Änderung in `kube-system`. Das Auflisten von Nodes hängt von zusätzlichen Rechten ab.
+**Abgabe C, in den Chat:** Vier Antworten und eure Erklärung. Erwartet in der vorbereiteten Teilnehmerrolle: im eigenen Namespace Deployments und Secrets erlaubt, keine Deployment-Änderung in `kube-system`. Das Auflisten von Nodes hängt von zusätzlichen Rechten ab.
 
 `can-i` zeigt das wirksame Ergebnis. Es beweist auf GKE allein nicht, ob eine Freigabe von IAM oder RBAC kommt. Zusätzliche IAM-Rechte können Zugriff erlauben, den eine enge RBAC-Rolle nicht gewährt. Vergleicht die Antworten mit der Konfiguration des Trainers.
 

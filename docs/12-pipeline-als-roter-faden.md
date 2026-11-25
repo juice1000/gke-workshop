@@ -220,7 +220,7 @@ Timing in 3.2 (09:30 to 10:25 German time, 16:30 to 17:25 SGT):
 | Time | What |
 | --- | --- |
 | 09:30 to 09:50 | Talk: logs, Logs Explorer, metrics (unchanged) |
-| 09:50 to 10:20 | **Lab 5 short, 30 min, in pairs:** `start`, fault 5.1 (restarts, `stoerung.sh 1`), fault 5.4 (flood of errors, `stoerung.sh 4`) |
+| 09:50 to 10:20 | **Lab 5 short, 30 min, everyone alone (remote):** `start`, fault 5.1 (restarts, `stoerung.sh 1`), fault 5.4 (flood of errors, `stoerung.sh 4`) |
 | 10:20 to 10:25 | One check-in (3.2 1/1, logs of a replaced pod). The second check-in moved to the appendix |
 
 Faults 5.2, 5.3 and 5.5 become an Extra for teams that finish Lab 6 early.
@@ -281,6 +281,15 @@ In `lab06-abschluss/README.md`, Extra: open the trainer's run under `https://git
 ### Slides (done separately, after the first green run)
 
 One slide in 3.4 after "Unsere Pipeline": "Merge auf main: dieselbe Pipeline in GitHub Actions", the five stages next to the workflow steps, a GKE strip with Demo 3.4d.
+
+## Remote course: no pair work on Day 3 (decided 25 Nov, 15:00 SGT)
+
+Participants work remotely, each alone in their own namespace. Hand-ins go into the meeting chat, help comes by screen share. Slides and Notion are already changed.
+
+- [x] Replace every "zu zweit", "Paar" or "in Paaren" in the Day 3 READMEs (`lab05-stoerungen`, `lab06-abschluss`, `lab07-betrieb`) and Day 3 demo READMEs with "jeder für sich". Abgabe lines say "in den Chat"
+- [x] `lab06-abschluss/README.md` line 3: also fix "90 Minuten" (now 110) and "drei fehlgeschlagene Releases" (now Störungen 6.1 to 6.3, Pflicht 6.1 und 6.2)
+- [x] Leave Day 1 and Day 2 material and `lab00-check` as they are
+- [x] Do it with the next phase commit, not separately
 
 ## Scope and order
 
