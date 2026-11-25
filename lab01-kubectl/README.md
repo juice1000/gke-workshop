@@ -1,6 +1,6 @@
 # Lab 1: kubectl-Rallye
 
-**Ziel:** Ihr lest Clusterzustand, Logs und Events und findet Befehle selbst. Dauer: 35 Minuten. Voraussetzung: [Lab 0](../lab00-check/README.md). Diese Rallye ändert keine Kubernetes-Objekte.
+**Ziel:** Ihr lest Clusterzustand, Logs und Events. Dauer: 25 Minuten. Voraussetzung: [Lab 0](../lab00-check/README.md). Diese Rallye ändert keine Kubernetes-Objekte.
 
 ## Worum es geht
 
@@ -122,25 +122,9 @@ Aus den Schritten ergibt sich das Vorgehen für jede Fehlersuche im Kurs:
 3. `kubectl logs NAME`: Was sagt die Anwendung?
 4. `kubectl get events --sort-by=.metadata.creationTimestamp`: Was ist im Namespace passiert?
 
-## Selbst herausfinden (10 Minuten)
+## Selbst herausfinden: Lösungen
 
-Jetzt ohne vorgegebene Befehle. Das ist der Alltag im Betrieb: Ihr wisst, welche Information ihr braucht, und sucht den Weg dorthin. Werkzeuge:
-
-- `kubectl BEFEHL --help` zeigt Optionen und Beispiele
-- `kubectl explain` erklärt Felder
-- [kubectl Quick Reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/)
-
-Alle Aufgaben lesen nur.
-
-1. **Nur Warnungen.** Zeigt in `kube-system` ausschließlich Events vom Typ `Warning`. Tipp: Events haben ein Feld `type`. Sucht in `kubectl get --help` nach einer Option, die nach Feldern filtert.
-2. **Image auf einen Blick.** Gebt für jeden Pod in `kube-system` eine Zeile aus: Pod-Name und Image, ohne die lange YAML-Ausgabe. Tipp: `kubectl get --help`, Stichwort `custom-columns`. Den Pfad zum Image kennt ihr aus Schritt 7.
-3. **Wer startet neu?** Sortiert die Pods in `kube-system` nach der Anzahl ihrer Neustarts. Tipp: `--sort-by` und das Feld `restartCount` im Status eines Pods (`kubectl explain pod.status.containerStatuses`).
-4. **Kurzformen.** Welche Kurzform hat `deployments`, welche `services`? Gibt es ein Objekt `namespaces` in einem Namespace? Tipp: Ein Befehl listet alle Objektarten mit Kurzform und der Spalte `NAMESPACED`.
-
-Aufgaben 3 und 4 sind für Schnelle. Notiert zu jeder Aufgabe den Befehl, den ihr gefunden habt. Ihr braucht sie in Lab 3 wieder.
-
-<details>
-<summary>Lösungen</summary>
+Lösungen zu den Aufgaben im Branch `practice`.
 
 ```bash
 # 1. Nur Warnungen
@@ -155,8 +139,6 @@ kubectl api-resources
 
 Zu 4: `deploy` und `svc`. `namespaces` hat `NAMESPACED false`, ein Namespace liegt also in keinem anderen Namespace.
 
-</details>
-
 ## Checkpoint
 
 ```bash
@@ -165,7 +147,7 @@ python3 scripts/pruefen.py dns
 
 Das Skript prüft, ob ihr mit dem richtigen Cluster sprecht und die DNS-Pods laufen. Es liest nur und meldet `OK` oder `FEHLT` mit einem Hinweis.
 
-**Abgabe:** DNS-Pod, Image, Node, euer Befehl aus Aufgabe 1 und ein Satz dazu, welche Ausgabe euch bei einem fehlgeschlagenen Image-Pull helfen würde.
+**Abgabe:** DNS-Pod, Image, Node und ein Satz dazu, welche Ausgabe euch bei einem fehlgeschlagenen Image-Pull helfen würde.
 
 ## Bonus
 

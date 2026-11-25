@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Demo 3.6a: Gesperrter Node, Ersatz-Pod Pending
-# Folie: Tag 3, 3.6 Lab 6: Vertiefung Betrieb
+# Folie: Tag 3, 3.6 Lab 7: Vertiefung Betrieb
 # Zeigt: cordon sperrt den Node fuer neue Pods. Laufende Pods bleiben. Ein
 # Ersatz-Pod findet im Ein-Node-Cluster keinen Platz und bleibt Pending.
 # Sperre wird am Ende aufgehoben, auch bei Strg+C.
 # Voraussetzung: demos/tag2/00-vorbereiten/demo.sh. Dauer: etwa 3 Minuten.
 # shellcheck disable=SC1091
 . "$(dirname "$0")/../../lib.sh"
-title 3.6a "Gesperrter Node, Ersatz-Pod Pending" "3.6 Lab 6: Vertiefung Betrieb"
+title 3.6a "Gesperrter Node, Ersatz-Pod Pending" "3.6 Lab 7: Vertiefung Betrieb"
 require_betrieb
 
 if [ "$MODE" = dry ]; then NODE_NAME=minikube; else

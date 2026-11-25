@@ -1,40 +1,45 @@
-# Extra: Drei Replikas auf verschiedene Nodes verteilen.
-# Eigenes Deployment mit eigenem Label, der Service hallo waehlt es nicht aus.
-# Kleine Requests, weil alle Teilnehmenden sich drei Nodes teilen.
-# Vor dem Anwenden mit render.py den Platzhalter WORKSHOP_IMAGE ersetzen.
+# Extra: drei Pods auf verschiedene Nodes verteilen.
+# Vorher render.py ausfuehren (ersetzt WORKSHOP_IMAGE).
+# app=hallo-spread muss in selector, Pod-Labels und labelSelector gleich sein.
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  # FREI.
   name: hallo-spread
+  # FREI: nur zum Filtern.
   labels:
     app: hallo-spread
 spec:
   replicas: 3
+  # PASST ZU: Pod-Labels. Nicht app: hallo, sonst mischt es sich mit hallo.
   selector:
     matchLabels:
       app: hallo-spread
   template:
     metadata:
+      # PASST ZU: selector oben und labelSelector unten.
       labels:
         app: hallo-spread
     spec:
-      # Regel fuer den Scheduler: Pods mit app=hallo-spread sollen sich auf
-      # die Nodes (topologyKey: Hostname) verteilen. Die Anzahl pro Node darf
-      # hoechstens um 1 abweichen (maxSkew). Geht das nicht, bleibt der Pod
-      # Pending (DoNotSchedule), statt sich zu den anderen zu legen.
+      # Pro Node hoechstens 1 Pod Unterschied. Sonst bleibt der Pod Pending.
       topologySpreadConstraints:
         - maxSkew: 1
+          # FEST: Hostname-Label jedes Nodes.
           topologyKey: kubernetes.io/hostname
           whenUnsatisfiable: DoNotSchedule
+          # PASST ZU: Pod-Labels. Welche Pods gezaehlt werden.
           labelSelector:
             matchLabels:
               app: hallo-spread
       containers:
         - name: hallo
+          # PASST ZU: render.py ersetzt dies durch $IMAGE.
           image: WORKSHOP_IMAGE
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+          # Klein, weil sich alle Teilnehmenden die Nodes teilen.
           resources:
             requests:
               cpu: 10m

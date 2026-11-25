@@ -1,0 +1,14 @@
+# Service fuer Lab 6. Fertig, keine Aufgabe. ClusterIP, Zugriff per port-forward.
+apiVersion: v1
+kind: Service
+metadata:
+  # PASST ZU: port-forward service/hallo.
+  name: hallo
+spec:
+  # PASST ZU: Pod-Labels im Deployment und in allen Releases.
+  selector:
+    app: hallo
+  ports:
+    # port: FREI. targetPort: PASST ZU containerPort.
+    - port: 80
+      targetPort: 8080

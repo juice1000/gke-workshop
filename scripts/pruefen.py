@@ -14,7 +14,7 @@ import urllib.request
 
 # Wo die Manifeste je Etappe liegen. Fuer Hinweise bei fehlenden Objekten.
 FOLDERS = {"lab02": "lab02-hallo-app/k8s/", "betrieb": "lab02-hallo-app/betrieb/",
-           "gke": "out/lab04/", "abschluss": "out/lab05/starter/"}
+           "gke": "out/lab04/", "abschluss": "out/lab06/starter/"}
 
 
 class Checkpoint:

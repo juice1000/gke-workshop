@@ -1,0 +1,103 @@
+# Lab 5: Deployment hallo, wie Lab 4 plus Secret wie Lab 6.
+# Nur die Arbeitskopie aus out/lab05/ anwenden (render.py ersetzt das Image).
+#
+#   service.yaml selector app=hallo --> template.metadata.labels
+#   configmap.yaml hallo-config ------> env GREETING
+#   Secret hallo-secret --------------> env DB_PASSWORT
+#   render.py --image "$IMAGE" -------> image: WORKSHOP_IMAGE
+
+# FEST
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # PASST ZU: deployment/hallo in Befehlen.
+  name: hallo
+  # FREI: nur zum Filtern.
+  labels:
+    workshop-lab: "05"
+    app: hallo
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  minReadySeconds: 3
+  # FREI: hoeher als lokal, der erste Image-Download dauert.
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  # PASST ZU: template.metadata.labels. Nicht aenderbar.
+  selector:
+    matchLabels:
+      app: hallo
+  template:
+    metadata:
+      # PASST ZU: selector oben und service.yaml.
+      labels:
+        app: hallo
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        # PASST ZU: "kubectl set image deployment/hallo hallo=...".
+        - name: hallo
+          # PASST ZU: render.py ersetzt dies durch $IMAGE aus Schritt 2.
+          image: WORKSHOP_IMAGE
+          # FEST: Fehlt das Image, laedt der Node es aus der Registry.
+          imagePullPolicy: IfNotPresent
+          # Vor dem Stoppen 10 s warten: So nimmt der Load Balancer des Gateways
+          # den Pod erst aus dem Verkehr. Ohne das gibt es beim Rollout 503.
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 10
+          ports:
+            - containerPort: 8080
+          env:
+            # FEST: Pod-Name in der Antwort.
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            # FEST: Die Anwendung liest GREETING.
+            - name: GREETING
+              valueFrom:
+                configMapKeyRef:
+                  # PASST ZU: name und Schluessel in configmap.yaml.
+                  name: hallo-config
+                  key: GREETING
+            # PASST ZU: stoerung.sh start legt hallo-secret an.
+            - name: DB_PASSWORT
+              valueFrom:
+                secretKeyRef:
+                  name: hallo-secret
+                  key: DB_PASSWORT
+          # FREI: Auf GKE plant der Scheduler alle Teilnehmenden danach.
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              memory: 512Mi
+          # Probes wie lokal. path: FEST. port: PASST ZU 8080.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3

@@ -1,10 +1,16 @@
+# Derselbe Service wie in k8s/service.yaml, damit betrieb/ vollstaendig ist.
+
+# FEST
 apiVersion: v1
 kind: Service
 metadata:
+  # PASST ZU: ../k8s/service.yaml. Gleicher Name: apply aktualisiert ihn.
   name: hallo
 spec:
+  # PASST ZU: template.metadata.labels in deployment.yaml.
   selector:
     app: hallo
   ports:
+    # port: FREI. targetPort: PASST ZU containerPort.
     - port: 80
       targetPort: 8080

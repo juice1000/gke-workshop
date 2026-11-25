@@ -33,7 +33,7 @@ bash demos/tag2/2.1c-objekte-und-labels/demo.sh --trocken  # nur Befehle zeigen
 
 - **Zeigt `get all` wirklich alles?** Nein. ConfigMaps, Secrets und EndpointSlices fehlen zum Beispiel. `get all` zeigt nur die gängigen Workload- und Service-Objekte.
 - **Woher kommt `pod-template-hash`?** Das Deployment hängt es an, um die Pods verschiedener ReplicaSets zu unterscheiden. Demo 2.1f zeigt, warum es mehrere gibt.
-- **Müssen Pod-Name, Label, Container-Name und Image gleich heißen?** Nein. Passen müssen nur Selektor und Pod-Labels.
+- **Müssen Pod-Name, Label, Container-Name und Image gleich heißen?** Nein. Passen müssen nur Selektor und Pod-Labels. Die Kommentare `FEST`, `FREI`, `PASST ZU` in `lab02-hallo-app/k8s/deployment.yaml` zeigen jeden Bezug.
 - **Warum gibt es ein ReplicaSet, wenn ich es nie angelegt habe?** Das Deployment legt es an und hält darüber die Anzahl Pods. Bei jedem Update entsteht ein neues.
 
 ## Wenn es hakt

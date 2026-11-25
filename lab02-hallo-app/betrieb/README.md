@@ -9,7 +9,7 @@ Alle Befehle aus dem Repository-Hauptordner.
 - Eine **ConfigMap** liefert Werte als Umgebungsvariable. Der Container liest sie nur beim Start. Nach einer Änderung braucht es `kubectl rollout restart`.
 - Ein **Secret** ist nur Base64, keine Verschlüsselung. Echte Werte gehören nie in Git.
 - Fällt die **Readiness** aus, bleibt der Pod `Running`, zeigt `0/1` und bekommt keinen Traffic. Fällt die **Liveness** dauerhaft aus, startet Kubernetes den Container neu.
-- Ein **Rolling Update** behält die alten Pods, bis neue bereit sind. Zurück rollt Kubernetes nicht von selbst: `rollout status` zeigt das Problem, ihr nehmt es zurück.
+- Ein **Rolling Update** behält die alten Pods, bis neue bereit sind. Zurück rollt Kubernetes nicht von selbst: `rollout status` zeigt das Problem, `rollout undo` nimmt es zurück.
 - Der dauerhafte Fix gehört in die Datei, nicht nur in den Cluster.
 
 ## Das Bild dazu
@@ -43,7 +43,9 @@ Erwartet: `minikube image ls` zeigt `docker.io/library/hallo-app:2.0`.
 
 Was passiert: Ihr legt das Secret per Befehl an, ohne Datei. So landet kein Passwort im Repository.
 
-**Aufgabe:** Legt ein Secret `hallo-secret` mit dem Schlüssel `DB_PASSWORT` und dem Wert `uebung123` an. Startet bei `kubectl create --help` und folgt den Unterbefehlen. Prüft das Ergebnis mit `kubectl get secrets`.
+```bash
+kubectl create secret generic hallo-secret --from-literal=DB_PASSWORT=uebung123   # Secret mit einem Schluessel
+```
 
 Erwartet: `secret/hallo-secret created`. Bei einem zweiten Durchlauf `AlreadyExists`, das vorhandene Secret reicht dann.
 
@@ -51,14 +53,7 @@ Erwartet: `secret/hallo-secret created`. Bei einem zweiten Durchlauf `AlreadyExi
 
 ### 3. Ausrollen und das Rolling Update beobachten
 
-Was passiert: Das Deployment holt `GREETING` aus der ConfigMap und `DB_PASSWORT` aus dem Secret. `apply` ersetzt das Deployment von Tag 1. Kubernetes tauscht die Pods einzeln aus.
-
-**Aufgabe:** In [deployment.yaml](deployment.yaml) fehlen zwei Umgebungsvariablen. Ergänzt sie an den `TODO`-Stellen:
-
-- `GREETING` aus der ConfigMap `hallo-config`, Schlüssel `GREETING`
-- `DB_PASSWORT` aus dem Secret `hallo-secret`, Schlüssel `DB_PASSWORT`
-
-Als Muster dient `HOSTNAME` direkt darüber, ebenfalls über `valueFrom`. Welche Felder es dort gibt, zeigt `kubectl explain`. Der Befehl steht als Kommentar in der Datei.
+Was passiert: [deployment.yaml](deployment.yaml) holt `GREETING` aus der ConfigMap und `DB_PASSWORT` aus dem Secret, über `valueFrom` wie `HOSTNAME`. `apply` ersetzt das Deployment von Tag 1. Kubernetes tauscht die Pods einzeln aus.
 
 ```bash
 kubectl config current-context                              # erwartet: minikube
@@ -66,7 +61,9 @@ kubectl apply -f lab02-hallo-app/betrieb/                   # ConfigMap, Service
 kubectl rollout status deployment/hallo --timeout=180s      # wartet, bis alle neuen Pods bereit sind
 ```
 
-Erwartet: `successfully rolled out`. Meldet `apply` einen Fehler, prüft Einrückung, Namen und Schlüssel. Im Beobachtungs-Terminal entsteht erst ein neuer Pod, wird `1/1`, dann verschwindet ein alter. Danach dasselbe noch einmal.
+Erwartet: `successfully rolled out`. Im Beobachtungs-Terminal entsteht erst ein neuer Pod, wird `1/1`, dann verschwindet ein alter. Danach dasselbe noch einmal.
+
+> **Hintergrund:** `maxSurge: 1` erlaubt einen Pod über der Sollzahl, `maxUnavailable: 0` verbietet, dass ein bereiter Pod wegfällt. Deshalb kommt immer erst der neue, dann geht der alte. Die Anwendung bleibt die ganze Zeit erreichbar.
 
 **Gut zu wissen:** YAML erlaubt nur Leerzeichen, keine Tabs. Die Einrückung ist die Struktur.
 
@@ -91,13 +88,20 @@ kubectl port-forward service/hallo 8080:80                # erneut aufrufen
 
 Erwartet: die **neue** Begrüßung.
 
+> **Hintergrund:** Umgebungsvariablen setzt der Container einmal beim Start, wie bei jedem Prozess. `rollout restart` ändert nichts an der Datei. Es ersetzt nur alle Pods, und neue Pods lesen die ConfigMap neu.
+
 ### 5. Ein Secret ist nicht geheim
 
 Was passiert: Ihr lest den Wert aus dem Secret zurück. Jeder mit Leserecht auf Secrets kann das.
 
-**Aufgabe:** Gebt den Wert von `DB_PASSWORT` aus `hallo-secret` erst so aus, wie er im Secret steht, und dann im Klartext. Nur mit `kubectl` und einem Standardwerkzeug der Shell. Tipp: `kubectl get secret --help`, Stichwort `jsonpath`, und `base64 --help`.
+```bash
+kubectl get secret hallo-secret -o jsonpath='{.data.DB_PASSWORT}'; echo               # Base64-Text
+kubectl get secret hallo-secret -o jsonpath='{.data.DB_PASSWORT}' | base64 -d; echo   # Klartext
+```
 
-Erwartet: erst ein unlesbarer Text, dann `uebung123`. Was folgt daraus für die Frage, wer Secrets lesen darf?
+Erwartet: erst `dWVidW5nMTIz`, dann `uebung123`.
+
+> **Hintergrund:** Base64 ist eine Schreibweise, keine Verschlüsselung. Schutz kommt aus den Rechten (wer darf Secrets lesen), aus der Verschlüsselung durch die Plattform und oft aus einem externen Secret-Speicher.
 
 ### 6. Readiness brechen und beobachten
 
@@ -123,11 +127,13 @@ kubectl rollout status deployment/hallo --timeout=180s     # jetzt erfolgreich
 
 Erwartet: `successfully rolled out`, wieder zwei Pods `1/1`.
 
+> **Hintergrund:** Der Service schickt Traffic nur an Pods, deren Readiness erfolgreich ist. Ein Pod mit `0/1` wird nicht neu gestartet, das wäre Aufgabe der Liveness. Und weil kein neuer Pod bereit wird, entfernt das Rolling Update keinen alten.
+
 **Gut zu wissen:** Langsame Starter wie eine JVM bekommen zusätzlich eine `startupProbe`. Bis sie Erfolg meldet, laufen Readiness und Liveness nicht.
 
 ### 7. Kaputtes Update und Rollback
 
-Was passiert: Ihr setzt ein Image, das es nicht gibt. Das Update bleibt hängen, die Anwendung läuft weiter. Ihr nehmt es zurück.
+Was passiert: Ihr setzt ein Image, das es nicht gibt. Das Update bleibt hängen, die Anwendung läuft weiter. Ihr nehmt es mit `rollout undo` zurück.
 
 ```bash
 kubectl set image deployment/hallo hallo=hallo-app:nicht-vorhanden   # Container hallo bekommt falschen Tag
@@ -137,18 +143,15 @@ kubectl get pods                                                     # neuer Pod
 
 Erwartet: zwei alte Pods `1/1`, ein neuer Pod in `ErrImagePull` oder `ImagePullBackOff`.
 
-**Aufgabe:** Alle Befehle rund um Rollouts zeigt `kubectl rollout --help`. Findet dort heraus,
-
-1. wie ihr die gespeicherten Stände (Revisionen) des Deployments `hallo` anzeigt,
-2. wie ihr zur vorherigen Revision zurückkehrt.
-
-Führt beides aus und wartet dann:
-
 ```bash
+kubectl rollout history deployment/hallo                  # gespeicherte Staende (Revisionen)
+kubectl rollout undo deployment/hallo                     # zurueck zur vorherigen Revision
 kubectl rollout status deployment/hallo --timeout=180s
 ```
 
 Erwartet: `successfully rolled out`, der kaputte Pod ist weg.
+
+> **Hintergrund:** Kubernetes rollt ein fehlgeschlagenes Update nicht selbst zurück. Es wartet und meldet nach `progressDeadlineSeconds` den Grund `ProgressDeadlineExceeded`. `undo` ändert nur das Objekt im Cluster. Eure Datei enthält weiter den gesunden Stand.
 
 **Gut zu wissen:** `kubectl set image` ist für Tests. Im Betrieb ändert ihr das Image in der Datei oder die Pipeline tut es, sonst weichen Git und Cluster voneinander ab.
 
@@ -202,9 +205,9 @@ Das Deployment hat 2 Replikas, `maxSurge: 1`, `maxUnavailable: 0`. Wie viele Pod
 
 ```bash
 kubectl annotate deployment/hallo kubernetes.io/change-cause="Begruessung geaendert"
+kubectl rollout history deployment/hallo                     # die neueste Revision traegt jetzt den Text
+kubectl rollout history deployment/hallo --revision=NUMMER   # Details, Nummer aus der Liste
 ```
-
-Zeigt danach die Revisionen an, mit dem Befehl aus Schritt 7. Die neueste Revision trägt jetzt euren Text. Mit `--revision=NUMMER` seht ihr die Details einer einzelnen Revision.
 
 Aufräumen: `kubectl annotate deployment/hallo kubernetes.io/change-cause-`.
 
@@ -243,4 +246,34 @@ kubectl delete -f lab02-hallo-app/betrieb/         # alles aus den Dateien in be
 kubectl delete secret hallo-secret                 # steht in keiner Datei
 ```
 
-Der lokale Cluster bleibt für Lab 3 und Lab 6 bestehen.
+Der lokale Cluster bleibt für Lab 3 und Lab 7 bestehen.
+
+## Für den Trainer
+
+**So erklärt ihr es:**
+
+- ConfigMap wie eine Einstellungsdatei neben dem Programm. Umgebungsvariablen liest das Programm einmal beim Start, deshalb der Neustart.
+- Readiness ist die Ampel vor dem Pod: rot heißt kein Traffic, aber der Pod lebt. Liveness ist der Notarzt: Neustart.
+- Rolling Update wie ein Schichtwechsel: Die alte Schicht geht erst, wenn die neue da ist. Kommt die neue nie, bleibt die alte.
+- Rollback ist ein Knopf im Cluster. Die Wahrheit bleibt die Datei in Git.
+
+**Häufige Fragen:**
+
+- *Prüft Kubernetes von selbst, ob mein Container gesund ist?* Es merkt nur, wenn der Prozess endet. Alles andere prüft es mit Probes.
+- *Sind Secrets in Produktion automatisch sicher?* Nein, nirgends. Base64 ist keine Verschlüsselung. Schutz kommt aus Rechten, Plattformverschlüsselung und oft einem externen Speicher.
+- *Was heißt Konfiguration an den Container geben?* Werte kommen von außen als Variable oder Datei, nicht ins Image gebaut. So läuft dasselbe Image in Test und Produktion.
+- *Welche Pods bekommen Traffic?* Pods, deren Labels zum Selektor passen und die bereit sind. Wie ausgelastet ein Pod ist, prüft der Service nicht.
+- *Kann der HPA Nodes hinzufügen?* Nein. Er skaliert Pods. Nodes kommen über den Cluster Autoscaler, wenn Pods keinen Platz finden.
+- *Sind die Daten weg, wenn ein Pod stirbt?* Das Dateisystem des Containers ja. Was bleiben soll, gehört in ein PersistentVolume oder eine Datenbank.
+
+**Nur nennen, nicht erklären:** Startup-Probe, Tabs in YAML, CPU-Limit drosselt statt zu beenden, `set image` nur für Tests, `progressDeadlineSeconds`, `minReadySeconds`.
+
+**Wenn es hakt:**
+
+- `CreateContainerConfigError` nach Schritt 3: Secret aus Schritt 2 fehlt oder Name und Schlüssel passen nicht. `kubectl describe pod` nennt das fehlende Objekt.
+- Alte Begrüßung nach Schritt 4: Port-Forward hängt noch am alten Pod. Tunnel neu starten.
+- Checkpoint meldet nach Schritt 6 oder 7 `FEHLT`: Readiness-Pfad in der Datei nicht zurückgesetzt, oder `undo` vergessen. `kubectl get pods` zeigt den Pod mit `0/1` oder `ErrImagePull`.
+
+**Lösung Extra 3:** Mit `maxSurge: 1`, `maxUnavailable: 0` höchstens 3 Pods, mindestens 2 bereite. Mit `maxSurge: 0`, `maxUnavailable: 1` höchstens 2 Pods, mindestens 1 bereiter, die Kapazität sinkt also während des Updates.
+
+**Lösung Extra 1:** Die Datei unter `/config` zeigt nach einiger Zeit den neuen Wert, die Variable nicht. Dateien aus einem ConfigMap-Volume werden nachgeführt, Umgebungsvariablen nie.

@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: hallo-config
-data:
-  GREETING: Hallo zum Abschluss

@@ -30,8 +30,7 @@ def get(*args):
 
 
 # Im Branch practice sind diese Dateien Uebungen. Der Probelauf nutzt die Loesung aus main.
-UEBUNGEN = {"lab02-hallo-app/k8s/deployment.yaml", "lab02-hallo-app/k8s/service.yaml", "lab02-hallo-app/betrieb/deployment.yaml",
-            "lab06-betrieb/pdb.yaml"}
+UEBUNGEN = {"lab07-betrieb/pdb.yaml"}
 
 
 def loesung(relative):
@@ -124,13 +123,6 @@ def main():
     negative = subprocess.run(["python3", str(ROOT / "scripts/pruefen.py"), "abschluss"], env=env,
                               capture_output=True, timeout=60)
     assert negative.returncode != 0, "Checkpoint akzeptiert fehlende Anwendung"
-    # Unvollstaendige Uebungsdateien muessen mit einer klaren Fehlermeldung scheitern.
-    for starter in ("lab02-hallo-app/k8s/deployment.yaml", "lab02-hallo-app/k8s/service.yaml",
-                    "lab06-betrieb/pdb.yaml"):
-        if (ROOT / starter).read_text() != loesung(starter):
-            rejected = command("apply", "--dry-run=server", "-f", str(ROOT / starter), success=False)
-            assert rejected.returncode != 0, f"Cluster akzeptiert unvollstaendige Datei {starter}"
-            print(f"OK: Uebung {starter} wird ohne Ergaenzung abgelehnt", flush=True)
     apply("lab02-hallo-app/k8s")
     rollout()
     checkpoint("lab02")
@@ -176,11 +168,10 @@ def main():
                 current = command("logs", name, success=False)
                 return "FEHLER: Falscher Startbefehl" in previous.stdout + current.stdout
             wait_for("Fall 3: Startfehler im aktuellen oder vorigen Log belegt", crash_log_available, seconds=45)
-        repariert = loesung(f"lab03-defekt/loesungen/fall{number}.yaml")
-        command("apply", "-f", "-", input_text=repariert)
+        apply(f"lab03-defekt/loesungen/fall{number}.yaml")
         rollout(app)
         assert any(ready(pod) for pod in pods(app))
-        command("delete", "-f", "-", input_text=repariert)
+        command("delete", "-f", str(ROOT / f"lab03-defekt/loesungen/fall{number}.yaml"))
         wait_for(f"Fall {number}: aufgeraeumt", lambda a=app: not pods(a))
 
     with tempfile.TemporaryDirectory(prefix="gke-labs-") as directory:
@@ -192,31 +183,32 @@ def main():
         checkpoint("gke")
         command("delete", "-f", str(temp / "gke"))
 
-        print("===== Lab 5: Fehlerhafte Releases, Verfuegbarkeit und Rollback", flush=True)
-        # Loesung und reparierte Releases liegen nur in main.
-        archiv = subprocess.run(["git", "-C", str(ROOT), "archive", "main", "lab05-abschluss"],
+        print("===== Lab 6: Stoerungen 6.1 bis 6.3, Verfuegbarkeit und Rollback", flush=True)
+        # Loesung und reparierte Fassungen liegen nur in main.
+        archiv = subprocess.run(["git", "-C", str(ROOT), "archive", "main", "lab06-abschluss"],
                                 capture_output=True, check=True).stdout
         (temp / "main").mkdir()
         subprocess.run(["tar", "-x", "-C", str(temp / "main")], input=archiv, check=True)
-        render(temp / "main/lab05-abschluss", temp / "abschluss")
+        render(temp / "main/lab06-abschluss", temp / "abschluss")
         command("create", "secret", "generic", "hallo-secret", "--from-literal=DB_PASSWORT=nur-uebung")
         baseline = temp / "abschluss/loesung"
-        for letter in "abc":
+        faelle = [("6.1", "6.1-konfiguration"), ("6.2", "6.2-speicher"), ("6.3", "6.3-bereitschaft")]
+        for nummer, datei in faelle:
             command("apply", "-f", str(baseline))
             rollout()
             checkpoint("abschluss")
             before = {pod["metadata"]["uid"] for pod in pods() if ready(pod)}
-            command("apply", "-f", str(temp / f"abschluss/releases/release-{letter}.yaml"))
+            command("apply", "-f", str(temp / f"abschluss/stoerungen/{datei}.yaml"))
 
             def broken():
-                if letter == "a":
+                if nummer == "6.1":
                     return waiting_reason("CreateContainerConfigError")
-                if letter == "b":
+                if nummer == "6.2":
                     return any(status.get(where, {}).get("terminated", {}).get("reason") == "OOMKilled"
                                for status in statuses() for where in ("state", "lastState"))
                 return has_event("hallo", "Readiness probe failed") and has_event("hallo", "404")
 
-            wait_for(f"Release {letter.upper()}: erwartetes Fehlerbild", broken)
+            wait_for(f"Stoerung {nummer}: erwartetes Fehlerbild", broken)
             assert command("rollout", "status", "deployment/hallo", "--timeout=5s", success=False).returncode != 0
             surviving = {pod["metadata"]["uid"] for pod in pods() if ready(pod)}
             assert before <= surviving, "Alte bereite Pods gingen waehrend fehlerhaftem Rollout verloren"
@@ -224,7 +216,7 @@ def main():
             command("rollout", "undo", "deployment/hallo")
             rollout()
             checkpoint("abschluss")
-            command("apply", "-f", str(temp / f"abschluss/repariert/release-{letter}.yaml"))
+            command("apply", "-f", str(temp / f"abschluss/repariert/{datei}.yaml"))
             rollout()
             checkpoint("abschluss")
         command("delete", "-f", str(baseline))
@@ -244,7 +236,7 @@ def main():
                          "--as=workshop-test-user", success=False)
         assert (result.returncode == 0) == expected, result.stdout + result.stderr
 
-    print("===== Lab 6: cordon, Pending, uncordon und PDB", flush=True)
+    print("===== Lab 7: cordon, Pending, uncordon und PDB", flush=True)
     apply("lab02-hallo-app/k8s")
     rollout()
     nodes = get("nodes")["items"]
@@ -259,7 +251,7 @@ def main():
     finally:
         command("uncordon", node)
     rollout()
-    apply("lab06-betrieb/pdb.yaml")
+    apply("lab07-betrieb/pdb.yaml")
     wait_for("PDB erlaubt eine freiwillige Unterbrechung", lambda: get("pdb", "hallo-pdb").get(
         "status", {}).get("disruptionsAllowed") == 1)
     print("OK: Alle lokalen Labs und erwarteten Fehlerbilder bestanden. GKE separat pruefen.", flush=True)

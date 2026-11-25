@@ -27,7 +27,7 @@ bash demos/tag2/00-vorbereiten/demo.sh --trocken  # nur Befehle zeigen
    Zeigen: `AlreadyExists` ist in Ordnung: Das Secret gibt es schon.
 
 4. `kubectl delete ... --ignore-not-found`  
-   Zeigen: Entfernt Reste anderer Demos: `oom`, HPA, PDB, Role `demo-leser`.
+   Zeigen: Entfernt Reste anderer Demos: `fall2`, `fall2-config`, Namespace `demo-anders`, `oom`, HPA.
 
 5. `kubectl apply -f lab02-hallo-app/betrieb/`  
    Zeigen: Alles `configured` oder `unchanged`. Ein Service mit `type: LoadBalancer` aus eigenen Versuchen wird wieder `ClusterIP`: Die Datei gewinnt.

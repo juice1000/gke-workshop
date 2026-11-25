@@ -1,0 +1,18 @@
+{
+  "displayName": "workshop-person01: hallo startet neu",
+  "combiner": "OR",
+  "conditions": [{
+    "displayName": "Neustarts von hallo in workshop-person01",
+    "conditionThreshold": {
+      "filter": "resource.type = \"k8s_container\" AND resource.labels.namespace_name = \"workshop-person01\" AND resource.labels.container_name = \"hallo\" AND metric.type = \"kubernetes.io/container/restart_count\"",
+      "aggregations": [{"alignmentPeriod": "60s", "perSeriesAligner": "ALIGN_DELTA", "crossSeriesReducer": "REDUCE_SUM"}],
+      "comparison": "COMPARISON_GT",
+      "thresholdValue": 0,
+      "duration": "0s",
+      "trigger": {"count": 1}
+    }
+  }],
+  "notificationChannels": ["KANAL"],
+  "alertStrategy": {"autoClose": "1800s"},
+  "documentation": {"content": "Zuerst Last State, kubectl logs --previous und Events pruefen.", "mimeType": "text/markdown"}
+}

@@ -8,7 +8,7 @@ Kurzfassung:
 2. Repository klonen und das Einrichtungsskript starten. Es installiert fehlende Werkzeuge und endet mit dem Setup-Check:
 
    ```bash
-   git clone -b practice https://github.com/juice1000/gke-workshop.git
+   git clone https://github.com/juice1000/gke-workshop.git
    cd gke-workshop
    bash scripts/setup.sh
    ```
@@ -106,7 +106,7 @@ Docker: [Docker Desktop für Mac](https://docs.docker.com/desktop/setup/install/
 Im Terminal (Windows: Ubuntu-Shell):
 
 ```bash
-git clone -b practice https://github.com/juice1000/gke-workshop.git
+git clone https://github.com/juice1000/gke-workshop.git
 cd gke-workshop
 bash lab00-check/check.sh
 ```

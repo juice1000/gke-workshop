@@ -1,6 +1,15 @@
+# ConfigMap: Konfiguration ausserhalb des Images.
+# Wird beim Containerstart gelesen. Nach Aenderung: rollout restart.
+#
+#   metadata.name hallo-config --> configMapKeyRef.name in deployment.yaml
+#   data.GREETING ---------------> configMapKeyRef.key in deployment.yaml
+
+# FEST
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  # PASST ZU: configMapKeyRef.name in deployment.yaml.
   name: hallo-config
 data:
+  # Schluessel: PASST ZU configMapKeyRef.key. Wert: FREI.
   GREETING: Hallo aus der ConfigMap

@@ -154,8 +154,8 @@ Im Namespace `workshop` kommt mit jedem Lab etwas dazu. Wählt ihn oben links, d
 | Lab 2, Tag 1 | Deployment `hallo`, ein ReplicaSet, zwei Pods `hallo-...`, Service `hallo`. Das ReplicaSet steht in keiner Datei. Das Deployment legt es an, um seine Pods zu verwalten |
 | Lab 2, Tag 2 | Config Map `hallo-config`, Secret `hallo-secret`. Nach dem Update ein zweites ReplicaSet: das neue läuft, das alte bleibt für den Rollback stehen |
 | Lab 3 | Fünf Deployments `fall1` bis `fall5` mit absichtlichen Fehlern, dazu Config Map `fall2-config` |
-| Lab 5 | Wieder `hallo` mit Config Map und Secret, dann drei fehlerhafte Releases nacheinander |
-| Lab 6 | Pod Disruption Budget `hallo-pdb`. Bei Nodes: ein gesperrter Node (cordon) |
+| Lab 6 | Wieder `hallo` mit Config Map und Secret, dann drei fehlerhafte Releases nacheinander |
+| Lab 7 | Pod Disruption Budget `hallo-pdb`. Bei Nodes: ein gesperrter Node (cordon) |
 
 Die Labs enden mit einem Abschnitt Aufräumen. Danach ist der Namespace wieder übersichtlich.
 

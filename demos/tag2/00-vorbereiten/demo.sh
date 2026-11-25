@@ -25,7 +25,7 @@ say "Secret anlegen. AlreadyExists heisst: gibt es schon, alles gut."
 run "kubectl create secret generic hallo-secret --from-literal=DB_PASSWORT=uebung123 || true"
 
 say "Reste abgebrochener Demonstrationen entfernen (nur Demo-Objekte)."
-run "kubectl delete deployment oom --ignore-not-found; kubectl delete hpa hallo --ignore-not-found; kubectl delete pdb hallo-pdb-demo --ignore-not-found; kubectl delete rolebinding,role demo-leser --ignore-not-found"
+run "kubectl delete -f lab03-defekt/fall2.yaml --ignore-not-found; kubectl delete configmap fall2-config --ignore-not-found; kubectl delete namespace demo-anders --ignore-not-found --wait=false; kubectl delete deployment oom --ignore-not-found; kubectl delete hpa hallo --ignore-not-found; kubectl delete pdb hallo-pdb-demo --ignore-not-found; kubectl delete rolebinding,role demo-leser --ignore-not-found"
 
 say "Node wieder freigeben, falls Demo 3.6a oder 3.6b abgebrochen wurde."
 if [ "$MODE" = dry ]; then demo_node=minikube; else

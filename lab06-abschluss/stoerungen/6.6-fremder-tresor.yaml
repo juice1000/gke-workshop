@@ -1,0 +1,104 @@
+# Lab 6, Stoerung 6.6: absichtlich mit einem Fehler. Nur fuer Etappe D.
+# Bewusst ohne Feldkommentare, damit die Datei den Fehler nicht verraet.
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: hallo-db-v2
+  labels:
+    workshop-lab: "06"
+spec:
+  provider: gke
+  parameters:
+    secrets: |
+      - resourceName: "projects/lookbeyond-gke-workshop/secrets/hallo-db-fremd/versions/latest"
+        path: "DB_PASSWORT"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hallo
+  labels:
+    workshop-lab: "06"
+    app: hallo
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  minReadySeconds: 3
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: hallo
+  template:
+    metadata:
+      labels:
+        app: hallo
+    spec:
+      serviceAccountName: hallo
+      nodeSelector:
+        iam.gke.io/gke-metadata-server-enabled: "true"
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: hallo
+          image: WORKSHOP_IMAGE
+          imagePullPolicy: IfNotPresent
+          # Vor dem Stoppen 10 s warten: So nimmt der Load Balancer des Gateways
+          # den Pod erst aus dem Verkehr. Ohne das gibt es beim Rollout 503.
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 10
+          ports:
+            - containerPort: 8080
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: GREETING
+              valueFrom:
+                configMapKeyRef:
+                  name: hallo-config
+                  key: GREETING
+          volumeMounts:
+            - name: secrets
+              mountPath: /var/secrets
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+      volumes:
+        - name: secrets
+          csi:
+            driver: secrets-store-gke.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: hallo-db-v2

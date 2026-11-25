@@ -1,48 +1,90 @@
+# Deployment Tag 2: wie k8s/deployment.yaml, plus Konfiguration,
+# Ressourcen, Probes und Update-Strategie.
+#
+#   service.yaml selector app=hallo --> template.metadata.labels
+#   configmap.yaml hallo-config ------> env GREETING
+#   Secret hallo-secret (per Befehl) -> env DB_PASSWORT
+#   Anwendung Port 8080 --------------> containerPort, Probes, targetPort
+#
+# ConfigMap, Secret und Service muessen im selben Namespace liegen.
+
+# FEST
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  # PASST ZU: ../k8s/deployment.yaml. Gleicher Name: apply aktualisiert es.
   name: hallo
+  # FREI: nur zum Filtern.
   labels:
     app: hallo
 spec:
+  # FREI: Anzahl Pods.
   replicas: 2
+  # FREI: alte Versionen fuer rollout undo.
   revisionHistoryLimit: 5
+  # FREI: so lange muss ein neuer Pod bereit sein.
   minReadySeconds: 3
+  # FREI: danach meldet der Rollout einen Fehler. Kein Auto-Rollback.
   progressDeadlineSeconds: 180
+  # Pods einzeln tauschen: einer mehr erlaubt, keiner weniger.
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
+  # PASST ZU: template.metadata.labels. Nicht aenderbar.
   selector:
     matchLabels:
       app: hallo
   template:
     metadata:
+      # PASST ZU: selector oben, service.yaml, lab07-betrieb/pdb.yaml.
       labels:
         app: hallo
     spec:
+      # FREI: Zeit fuer sauberes Herunterfahren.
       terminationGracePeriodSeconds: 30
       containers:
+        # PASST ZU: "kubectl set image deployment/hallo hallo=...".
         - name: hallo
+          # PASST ZU: docker build -t und minikube image load.
           image: hallo-app:2.0
+          # FEST: lokales Image nehmen.
           imagePullPolicy: IfNotPresent
           ports:
+            # PASST ZU: server.port der Anwendung.
             - containerPort: 8080
           env:
+            # FEST: Pod-Name in der Antwort.
             - name: HOSTNAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            # TODO: GREETING aus der ConfigMap hallo-config, Schluessel GREETING.
-            #       Hilfe: kubectl explain deployment.spec.template.spec.containers.env.valueFrom
-            # TODO: DB_PASSWORT aus dem Secret hallo-secret, Schluessel DB_PASSWORT.
+            # FEST: Die Anwendung liest GREETING.
+            - name: GREETING
+              valueFrom:
+                configMapKeyRef:
+                  # PASST ZU: name und Schluessel in configmap.yaml.
+                  name: hallo-config
+                  key: GREETING
+            # FREI: zeigt nur, wie ein Secret in den Container kommt.
+            - name: DB_PASSWORT
+              valueFrom:
+                secretKeyRef:
+                  # PASST ZU: kubectl create secret generic hallo-secret
+                  # --from-literal=DB_PASSWORT=... (keine Datei in Git).
+                  name: hallo-secret
+                  key: DB_PASSWORT
           resources:
+            # FREI: Reservierung fuer die Planung.
             requests:
               cpu: 250m
               memory: 512Mi
+            # FREI: Obergrenze. Darueber: OOMKilled. Kein CPU-Limit, bewusst.
             limits:
               memory: 512Mi
+          # Probes. path: FEST (Spring Boot Actuator). port: PASST ZU 8080.
+          # Startup: Start fertig? Bis zu 30 x 5 s.
           startupProbe:
             httpGet:
               path: /actuator/health/liveness
@@ -50,6 +92,7 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 2
             failureThreshold: 30
+          # Readiness: Anfragen schicken? Nein heisst 0/1, kein Neustart.
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -57,6 +100,7 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 2
             failureThreshold: 3
+          # Liveness: noch am Leben? Nein heisst Neustart.
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness

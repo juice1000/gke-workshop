@@ -73,6 +73,7 @@ Anderer Kontext oder Namespace: `DEMO_KONTEXT=... DEMO_NAMESPACE=...`. Eigene ku
 | [2.1e](tag2/2.1e-connection-refused/README.md) | Check-in 2.1, 2/3 „Connection refused am Morgen“ | Meldung ohne API-Server, minikube status | nein |
 | [2.1f](tag2/2.1f-replicasets/README.md) | Check-in 2.1, 3/3 „Zwei ReplicaSets“ | neues ReplicaSet durch rollout restart | ja |
 | [2.2a](tag2/2.2a-configmap-neustart/README.md) | Check-in 2.2, 1/2 „ConfigMap geändert, alte Begrüßung“ | alter Wert bis zum Neustart | ja |
+| [2.2b](tag2/2.2b-falscher-namespace/README.md) | Check-in 2.2, 2/2 „CreateContainerConfigError“ | ConfigMap im falschen Namespace | ja |
 | [2.2c](tag2/2.2c-secret-base64/README.md) | Anhang „ConfigMap oder Secret?“ (Extra) | base64 dekodieren, auth can-i | nein |
 | [2.3a](tag2/2.3a-probes-ansehen/README.md) | 2.3 „Zwei Probes, zwei Fragen“ | READY, RESTARTS, Probe-Zeiten | nein |
 | [2.3b](tag2/2.3b-readiness-faellt-aus/README.md) | Check-in 2.3 P, 1/3 „Die Anwendung hängt“ | READY 0/1 ohne Neustart, Ready false | ja |
@@ -101,8 +102,9 @@ Tag 3 läuft auf GKE. Die Demonstrationen zeigen dieselben Mechanismen lokal, be
 | [3.3a](tag3/3.3a-role-rolebinding/README.md) | 3.3 Zugriffsrechte | Role, RoleBinding, `auth can-i --as` | ja |
 | [3.4a](tag3/3.4a-rollout-exitcode/README.md) | 3.4 Anbindung an den Build-Prozess | Exit-Code 1 bei falschem Tag, 0 nach undo | ja |
 | [3.4b](tag3/3.4b-imageid-pullpolicy/README.md) | 3.4 Anbindung an den Build-Prozess | Tag gegen imageID, imagePullPolicy | nein |
-| [3.6a](tag3/3.6a-cordon-pending/README.md) | 3.6 Lab 6: Vertiefung Betrieb | cordon, Ersatz-Pod Pending, uncordon | ja |
-| [3.6b](tag3/3.6b-pdb-drain/README.md) | 3.6 Lab 6: Vertiefung Betrieb | PDB `minAvailable: 2` blockiert drain | ja |
+| [3.4d](tag3/3.4d-github-actions/README.md) | 3.4 Merge auf main | Merge auf `main` startet dieselbe Pipeline in GitHub Actions, Anmeldung ohne Schlüssel | ja, `workshop-trainer` |
+| [3.6a](tag3/3.6a-cordon-pending/README.md) | 3.6 Lab 7: Vertiefung Betrieb | cordon, Ersatz-Pod Pending, uncordon | ja |
+| [3.6b](tag3/3.6b-pdb-drain/README.md) | 3.6 Lab 7: Vertiefung Betrieb | PDB `minAvailable: 2` blockiert drain | ja |
 
 3.2a ersetzt einen Pod von hallo. 3.3a legt Role und RoleBinding `demo-leser` für die Testperson `demo-person@example.com` an und löscht beide wieder. 3.6a und 3.6b sperren den einzigen Node und heben die Sperre am Ende auf, auch bei Strg+C.
 
@@ -114,6 +116,7 @@ Die Streifen „Auf GKE ausprobieren“ in 2.9 haben keine Demonstration. Sie la
 Fehlerbild                    Demo   wie
 ----------------------------  -----  ------------------------------------------
 Service ohne Endpunkte        2.1d   Selektor per patch auf app=hallo-app
+CreateContainerConfigError    2.2b   Lab 3 Fall 2, ConfigMap im falschen Namespace
 READY 0/1                     2.3b   Readiness-Pfad per patch auf /gibtsnicht
 Neustarts, CrashLoopBackOff   2.3d   Startup-Probe entfernt, Liveness alle 2 s
 Pending                       2.3f   CPU-Request auf 60 Prozent des Nodes

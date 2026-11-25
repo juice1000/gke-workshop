@@ -4,16 +4,6 @@
 
 Alle Befehle aus dem Repository-Hauptordner. Voraussetzung: [Lab 0](../lab00-check/README.md). Kontext `minikube`, Namespace `workshop`.
 
-## So übt ihr
-
-Einige Schritte sind als **Aufgabe** markiert. Dort steht, was ihr erreichen sollt, aber nicht der Befehl oder die fertige Datei. Sucht selbst, so wie später im Betrieb:
-
-- `kubectl --help` listet alle Befehle, `kubectl BEFEHL --help` zeigt Optionen und Beispiele
-- `kubectl explain OBJEKT.FELD` erklärt Felder eines Manifests
-- [kubectl Quick Reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/) und die [Kubernetes-Dokumentation](https://kubernetes.io/docs/home/)
-
-Der Checkpoint sagt euch, ob das Ergebnis stimmt. Kommt ihr nach etwa zehn Minuten nicht weiter, fragt eure Nachbarn oder den Trainer.
-
 ## Worum es geht
 
 In Lab 1 habt ihr einen Cluster gelesen. Jetzt bringt ihr eine eigene Anwendung hinein. Der Weg ist immer derselbe, lokal wie später auf GKE:
@@ -30,14 +20,14 @@ Quellcode -> docker build -> Image -> Cluster kann es laden -> Deployment -> Pod
 
 Eine kleine Spring-Boot-Anwendung (Java 21), die nur Text zurückgibt. So bleibt Kubernetes im Mittelpunkt.
 
-| Pfad | Zweck |
-| --- | --- |
-| `/` | Begrüßung, Pod-Name und Version als Text |
-| `/actuator/health` | Gesundheitsstatus |
-| `/actuator/health/liveness` | Läuft die Anwendung? |
-| `/actuator/health/readiness` | Ist sie bereit für Anfragen? |
-| `/actuator/info` | Version |
-| `/fehler` | Absichtlich HTTP 500 und Logzeile mit `FEHLER` |
+| Pfad                         | Zweck                                          |
+| ---------------------------- | ---------------------------------------------- |
+| `/`                          | Begrüßung, Pod-Name und Version als Text       |
+| `/actuator/health`           | Gesundheitsstatus                              |
+| `/actuator/health/liveness`  | Läuft die Anwendung?                           |
+| `/actuator/health/readiness` | Ist sie bereit für Anfragen?                   |
+| `/actuator/info`             | Version                                        |
+| `/fehler`                    | Absichtlich HTTP 500 und Logzeile mit `FEHLER` |
 
 Drei Umgebungsvariablen steuern die Antwort: `GREETING` die Begrüßung, `APP_VERSION` die Version, `HOSTNAME` den angezeigten Pod-Namen.
 
@@ -46,6 +36,8 @@ Drei Umgebungsvariablen steuern die Antwort: `GREETING` die Begrüßung, `APP_VE
 ### 1.1 Bauen
 
 ```bash
+# Image aus dem Dockerfile in lab02-hallo-app bauen. Maven kompiliert und testet
+# im Build, danach landet nur die JAR im Laufzeit-Image. Version 1.0 als Tag.
 docker build --build-arg APP_VERSION=1.0 -t hallo-app:1.0 lab02-hallo-app
 ```
 
@@ -59,6 +51,8 @@ Deshalb braucht ihr weder Java noch Maven lokal. `-t hallo-app:1.0` gibt dem Ima
 ### 1.2 Optional: ohne Kubernetes testen
 
 ```bash
+# Image ohne Kubernetes als einzelnen Container starten. Port 8080 eures
+# Rechners geht in den Container. --rm entfernt ihn nach Strg+C.
 docker run --rm -p 127.0.0.1:8080:8080 hallo-app:1.0
 ```
 
@@ -69,7 +63,10 @@ So prüft ihr, ob ein Problem am Image oder an Kubernetes liegt.
 ### 1.3 Image an minikube übergeben
 
 ```bash
+# Image aus eurem Docker in den getrennten Image-Speicher von minikube kopieren
 minikube image load hallo-app:1.0
+
+# Alle Images im Cluster auflisten. Gesucht: docker.io/library/hallo-app:1.0
 minikube image ls
 ```
 
@@ -81,54 +78,59 @@ Auf GKE übernimmt diese Rolle später eine Registry: Ihr ladet das Image hoch, 
 
 ## 2. Deployment und Service
 
-### 2.1 Das Deployment lesen
+### 2.1 Manifeste lesen
 
-Öffnet [k8s/deployment.yaml](k8s/deployment.yaml). Ein **Manifest** beschreibt den gewünschten Zustand. Ihr sagt Kubernetes, was laufen soll, nicht wie es zu starten ist. Die Kommentare zeigen, welche Werte fest sind, welche frei und welche zueinander passen müssen.
+Öffnet [k8s/deployment.yaml](k8s/deployment.yaml) und [k8s/service.yaml](k8s/service.yaml). Ein **Manifest** beschreibt den gewünschten Zustand. Ihr sagt Kubernetes, was laufen soll, nicht wie es zu starten ist.
 
-| Feld | Bedeutung |
-| --- | --- |
-| `replicas: 2` | Zwei Pods sollen laufen |
-| `selector.matchLabels: app: hallo` | Diese Pods gehören zum Deployment |
-| `template` | Die Vorlage für jeden neuen Pod |
-| `template.metadata.labels: app: hallo` | Jeder Pod erhält dieses Label. Es muss zum Selektor passen |
-| `image: hallo-app:1.0` | Welches Image läuft |
-| `imagePullPolicy: IfNotPresent` | Das lokal geladene Image verwenden, nicht aus dem Internet holen |
+Im Deployment:
+
+| Feld                                         | Bedeutung                                                                        |
+| -------------------------------------------- | -------------------------------------------------------------------------------- |
+| `replicas: 2`                                | Zwei Pods sollen laufen                                                          |
+| `selector.matchLabels: app: hallo`           | Diese Pods gehören zum Deployment                                                |
+| `template`                                   | Die Vorlage für jeden neuen Pod                                                  |
+| `template.metadata.labels: app: hallo`       | Jeder Pod erhält dieses Label. Es muss zum Selektor passen                       |
+| `image: hallo-app:1.0`                       | Welches Image läuft                                                              |
+| `imagePullPolicy: IfNotPresent`              | Das lokal geladene Image verwenden, nicht aus dem Internet holen                 |
 | `env HOSTNAME` mit `fieldRef: metadata.name` | Kubernetes trägt den Pod-Namen in die Variable ein. So nennt die Antwort den Pod |
-| `containerPort: 8080` | Die Anwendung hört auf Port 8080 |
+| `containerPort: 8080`                        | Die Anwendung hört auf Port 8080                                                 |
 
-### 2.2 Den Service lesen
+Im Service:
 
-Öffnet [k8s/service.yaml](k8s/service.yaml).
-
-| Feld | Bedeutung |
-| --- | --- |
+| Feld                   | Bedeutung                                               |
+| ---------------------- | ------------------------------------------------------- |
 | `selector: app: hallo` | Der Service leitet an alle Pods mit diesem Label weiter |
-| `port: 80` | Der Port des Service |
-| `targetPort: 8080` | Der Port im Pod, an den weitergeleitet wird |
+| `port: 80`             | Der Port des Service                                    |
+| `targetPort: 8080`     | Der Port im Pod, an den weitergeleitet wird             |
 
 Merkt euch: **Labels verbinden alles.** Der Service kennt keine Pod-Namen, er sucht nach dem Label.
 
-### 2.3 Ausrollen
+### 2.2 Ausrollen
 
 ```bash
+# Mit welchem Cluster spricht kubectl? Erwartet: minikube
 kubectl config current-context
 ```
 
 Zur Sicherheit vor jeder Änderung: Erwartet `minikube`.
 
 ```bash
+# Alle Manifeste im Ordner an den Cluster schicken: Deployment und Service
+# anlegen oder an die Dateien anpassen. Beliebig oft wiederholbar.
 kubectl apply -f lab02-hallo-app/k8s/
 ```
 
 `apply` schickt alle Manifeste im Ordner an den Cluster. Existiert ein Objekt noch nicht, wird es angelegt. Existiert es schon, wird es an die Datei angepasst. Ihr könnt den Befehl also beliebig oft wiederholen. Erwartet: `deployment.apps/hallo created` und `service/hallo created`.
 
 ```bash
+# Warten, bis alle Pods des Deployments bereit sind, hoechstens 180 Sekunden
 kubectl rollout status deployment/hallo --timeout=180s
 ```
 
 Wartet, bis alle Pods des Deployments laufen, höchstens 180 Sekunden. Erwartet: `successfully rolled out`. Bricht der Befehl ab, wendet die Reihenfolge aus Lab 1 an: `get pods`, `describe pod`, `logs`.
 
 ```bash
+# Deployment, Pods und Service auf einen Blick, mit Node und IP
 kubectl get deployment,pods,service -o wide
 ```
 
@@ -138,17 +140,20 @@ Zeigt alle drei Objektarten auf einmal. Erwartet: Deployment `hallo` mit `READY 
 
 An Tag 1 bedeutet `1/1` nur, dass der Container läuft. Ob die Anwendung wirklich Anfragen beantworten kann, prüft Kubernetes erst mit der Readiness-Probe aus Tag 2.
 
-### 2.4 Checkpoint
+### 2.3 Checkpoint
 
 ```bash
+# Checkpoint: Replikas, Service, Selektor, Ports und HTTP-Antwort pruefen
 python3 scripts/pruefen.py lab02
 ```
 
-Das Skript prüft Replikas, Service, Selektor, Ports und die HTTP-Antwort. Jede Zeile meldet `OK` oder `FEHLT` mit einem Hinweis. Meldet es `FEHLT` beim Service, korrigiert `service.yaml` und wendet den Ordner erneut an.
+Das Skript prüft Replikas, Service, Selektor, Ports und die HTTP-Antwort. Jede Zeile meldet `OK` oder `FEHLT` mit einem Hinweis.
 
-### 2.5 Die Anwendung aufrufen
+### 2.4 Die Anwendung aufrufen
 
 ```bash
+# Tunnel von Port 8080 eures Rechners zu Port 80 des Service.
+# Laeuft im Vordergrund, beenden mit Strg+C.
 kubectl port-forward service/hallo 8080:80
 ```
 
@@ -162,60 +167,89 @@ Baut einen Tunnel von Port 8080 eures Rechners zu Port 80 des Service. Der Befeh
 # Nur beim Anlegen des Clusters moeglich. 127.0.0.1: nur von eurem Rechner
 # erreichbar, nicht aus dem Netzwerk.
 minikube start --driver=docker --cpus=2 --memory=4096 --kubernetes-version=v1.35.0 --ports=127.0.0.1:30080:30080
-# Zusaetzlicher Service vom Typ NodePort auf Port 30080, hallo bleibt ClusterIP.
-# Vorher die TODOs in extra/nodeport.yaml ergaenzen (wie in k8s/service.yaml).
+# Zusaetzlicher Service vom Typ NodePort auf Port 30080, hallo bleibt ClusterIP
 kubectl apply -f lab02-hallo-app/extra/nodeport.yaml
 # Wie ein Nutzer: ohne kubectl, ohne Tunnel. Mehrmals aufrufen.
 curl http://127.0.0.1:30080/
 ```
 
-Erwartet: Nach einigen Sekunden antworten abwechselnd beide Pods, anders als bei `port-forward`. Für einen bestehenden Cluster heißt das `minikube delete` und neu anlegen. Danach Namespace (Lab 0, Abschnitt 3), Image (Schritt 1.3) und Deployment (Schritt 2.3) erneut einrichten. Der NodePort-Service findet die Pods nur über das Label `app: hallo`. Ohne laufendes Deployment hat er keine Endpunkte und `curl` bekommt keine Antwort. Ohne `127.0.0.1:` ist der Port aus dem ganzen Netzwerk erreichbar. Aufräumen: `kubectl delete -f lab02-hallo-app/extra/nodeport.yaml`.
+Erwartet: Nach einigen Sekunden antworten abwechselnd beide Pods, anders als bei `port-forward`. Für einen bestehenden Cluster heißt das `minikube delete` und neu anlegen. Danach Namespace (Lab 0, Abschnitt 3), Image (Schritt 1.3) und Deployment (Schritt 2.2) erneut einrichten. Der NodePort-Service findet die Pods nur über das Label `app: hallo`. Ohne laufendes Deployment hat er keine Endpunkte und `curl` bekommt keine Antwort. Ohne `127.0.0.1:` ist der Port aus dem ganzen Netzwerk erreichbar. Aufräumen: `kubectl delete -f lab02-hallo-app/extra/nodeport.yaml`.
 
 ## 3. Selbstheilung und Skalierung
 
 Öffnet ein weiteres Terminal und lasst dort laufen:
 
 ```bash
+# Pods beobachten: jede Aenderung erscheint als neue Zeile. Beenden mit Strg+C
 kubectl get pods -w
 ```
 
 `-w` zeigt jede Änderung an Pods als neue Zeile. So seht ihr live, was die folgenden Befehle auslösen.
 
-### 3.1 Aufgabe: Einen Pod löschen
+### 3.1 Einen Pod löschen
 
-Löscht einen der beiden Pods. Den Namen liefert `kubectl get pods`. Den Befehl zum Löschen findet ihr in `kubectl --help`.
+```bash
+# Aktuelle Pods mit Status anzeigen
+kubectl get pods
 
-Im Beobachtungs-Terminal seht ihr den alten Pod in `Terminating` gehen und fast gleichzeitig einen neuen mit anderem Namen entstehen.
+# Einen Pod loeschen. Das Deployment legt sofort einen neuen an
+kubectl delete pod POD_NAME
+
+# Neuer Pod mit neuem Namen, Node und IP
+kubectl get pods -o wide
+```
+
+Ersetzt `POD_NAME` durch einen Namen aus der Liste. Im Beobachtungs-Terminal seht ihr den alten Pod in `Terminating` gehen und fast gleichzeitig einen neuen mit anderem Namen entstehen.
 
 Warum? Das Deployment verlangt zwei Pods. Ein Controller im Cluster vergleicht ständig Soll und Ist. Fehlt ein Pod, legt er einen neuen an. Ihr habt keinen Pod neu gestartet, ihr habt nur den Ist-Zustand verändert. Das ist der Kern von Kubernetes: **Ihr beschreibt den Sollzustand, der Cluster stellt ihn her.**
 
 Lief euer Port-Forward über den gelöschten Pod, ist er jetzt abgebrochen. Startet ihn neu.
 
-### 3.2 Aufgabe: Skalieren
+### 3.2 Skalieren
 
-1. Bringt das Deployment `hallo` auf vier Pods, ohne die Datei zu ändern. Sucht in `kubectl --help` nach einem passenden Befehl und lest dessen `--help`.
-2. Wartet mit `kubectl rollout status deployment/hallo --timeout=180s`, bis alle bereit sind. Erwartet: vier Pods `Running`.
-3. Setzt das Deployment wieder auf zwei Pods.
+```bash
+# Sollzustand im Cluster auf vier Pods setzen. Die Datei bleibt unveraendert
+kubectl scale deployment hallo --replicas=4
 
-Der Service nimmt neue Pods automatisch auf, weil sie dasselbe Label tragen. Beim Herunterskalieren beendet Kubernetes die überzähligen Pods.
+# Warten, bis alle Pods des Deployments bereit sind, hoechstens 180 Sekunden
+kubectl rollout status deployment/hallo --timeout=180s
 
-Achtung: Dieser Befehl ändert nur den Cluster, nicht eure Datei. Ein erneutes `kubectl apply -f lab02-hallo-app/k8s/` setzt die Anzahl wieder auf den Wert aus der Datei. Die Datei ist die Wahrheit, der Cluster folgt ihr.
+# Aktuelle Pods mit Status anzeigen
+kubectl get pods
+```
+
+`scale` ändert die gewünschte Anzahl direkt im Cluster. Erwartet: vier Pods `Running`. Der Service nimmt die neuen Pods automatisch auf, weil sie dasselbe Label tragen.
+
+```bash
+# Zurueck auf zwei Pods. Kubernetes beendet die ueberzaehligen
+kubectl scale deployment hallo --replicas=2
+
+# Warten, bis alle Pods des Deployments bereit sind, hoechstens 180 Sekunden
+kubectl rollout status deployment/hallo --timeout=180s
+```
+
+Zurück auf zwei. Kubernetes beendet zwei der vier Pods.
+
+Achtung: `scale` ändert nur den Cluster, nicht eure Datei. Ein erneutes `kubectl apply -f lab02-hallo-app/k8s/` setzt die Anzahl wieder auf den Wert aus der Datei. Die Datei ist die Wahrheit, der Cluster folgt ihr.
 
 ### 3.3 In einen Pod hineinschauen
 
 ```bash
+# Befehl in einem laufenden Container ausfuehren: Variable HOSTNAME ausgeben.
+# Einfache Anfuehrungszeichen, damit eure Shell $HOSTNAME nicht vorher ersetzt.
 kubectl exec deployment/hallo -- sh -c 'echo "$HOSTNAME"'
 ```
 
-`exec` führt einen Befehl in einem laufenden Container aus. `deployment/hallo` wählt einen seiner Pods. Alles nach `--` läuft im Container. Erwartet: ein Pod-Name.
+`exec` führt einen Befehl in einem laufenden Container aus. `deployment/hallo` wählt einen seiner Pods. Alles nach `--` läuft im Container. Erwartet: ein Pod-Name. Das zeigt, dass `HOSTNAME` aus dem Manifest im Container angekommen ist. `exec` ist bei der Fehlersuche nützlich, ändert aber nichts dauerhaft: Ein neuer Pod beginnt wieder mit dem Stand des Images.
 
-**Aufgabe:** Gebt mit `exec` die Variable `APP_VERSION` aus. Welcher Wert erscheint, und wo wurde er gesetzt? Das zeigt, dass `HOSTNAME` aus dem Manifest im Container angekommen ist. `exec` ist bei der Fehlersuche nützlich, ändert aber nichts dauerhaft: Ein neuer Pod beginnt wieder mit dem Stand des Images.
+### 3.4 Logs aller Pods
 
-### 3.4 Aufgabe: Logs aller Pods
+```bash
+# Logs aller Pods mit app=hallo, Pod-Name vor jeder Zeile, letzte 20 Zeilen je Pod
+kubectl logs -l app=hallo --prefix --tail=20
+```
 
-Zeigt mit einem einzigen Befehl die letzten 20 Logzeilen beider Pods an. Vor jeder Zeile soll stehen, aus welchem Pod sie stammt. Den Label-Filter kennt ihr aus Lab 1, die übrigen Optionen zeigt `kubectl logs --help`.
-
-Erwartet: die Spring-Boot-Startmeldungen, etwa `Started HalloApplication`, mit dem Pod-Namen davor.
+`-l app=hallo` holt die Logs aller Pods mit diesem Label, also beider Kopien. `--prefix` schreibt vor jede Zeile, aus welchem Pod sie stammt. Erwartet: die Spring-Boot-Startmeldungen, etwa `Started HalloApplication`.
 
 ### 3.5 Im Dashboard vergleichen
 

@@ -52,6 +52,8 @@ bash lab00-check/check.sh cloud                    # prueft Zugang und Namespace
 
 Erwartet: ein Kontext `gke_...` mit eurem Namespace, und `check.sh cloud` ohne Fehler.
 
+> **Hintergrund:** `get-credentials` legt nur die Verbindung an. Ob ihr etwas tun dürft, entscheiden IAM (dürft ihr zum Cluster) und RBAC (was dürft ihr im Namespace). Das vertieft Tag 3.
+
 **Gut zu wissen:** `--dns-endpoint` verbindet über einen DNS-Namen mit Google-Anmeldung statt über eine IP-Adresse. Auf unserem Cluster ist nur dieser Weg offen.
 
 ### 2. Image bauen und hochladen
@@ -69,7 +71,13 @@ docker push "$IMAGE"                                    # hochladen
 
 Erwartet: Der Push endet mit einer Zeile `digest: sha256:...`.
 
-**Aufgabe: Push prüfen.** Zeigt mit `gcloud` alle Images im Repository `$REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY` an und findet euer eigenes mit Tag und Digest. Startet bei `gcloud artifacts --help` und folgt den Unterbefehlen bis zu den Docker-Images. Mit `--include-tags` seht ihr die Tags. Findet danach dasselbe Image in der Konsole unter Artifact Registry.
+Prüft den Push: Listet alle Images im Repository und findet eures mit Tag und Digest. Findet es danach in der Konsole unter Artifact Registry.
+
+```bash
+gcloud artifacts docker images list "$REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY" --include-tags
+```
+
+> **Hintergrund:** Push und Pull sind getrennte Rechte. Euer Konto lädt hoch, die Identität der Nodes lädt herunter.
 
 **Gut zu wissen:** `--platform linux/amd64` baut für die Prozessorarchitektur der GKE-Nodes. Auf einem Mac mit Apple-Chip wäre das Image sonst ARM und liefe auf den Nodes nicht.
 
@@ -133,6 +141,8 @@ kubeconfig
   +-- gke_lookbeyond-gke-workshop_..._workshop -> GKE
         (Kontext = Cluster + Benutzer + Standard-Namespace)
 ```
+
+> **Hintergrund:** Ein Kontext ist ein Verbindungsprofil, kein Recht. Wer den falschen Kontext aktiv hat, ändert den falschen Cluster. Deshalb vor jedem `apply` und `delete`: `kubectl config current-context`.
 
 ## Checkpoint
 
@@ -210,7 +220,7 @@ curl -> GATEWAY_IP/workshop-person01/ -> Gateway (Load Balancer von Google)
      -> HTTPRoute in eurem Namespace -> Service hallo:80 -> Pods :8080
 ```
 
-[gateway/httproute.yaml](gateway/httproute.yaml) ist unvollständig. Ergänzt die `TODO`-Stellen: Der Pfad ist euer Namespace, das Ziel ist euer Service `hallo` mit seinem Port. Aufbau und Felder: die [Dokumentation zu HTTPRoute](https://gateway-api.sigs.k8s.io/api-types/httproute/). Dann setzt ihr euren Namespace ein und rollt die Route aus:
+[gateway/httproute.yaml](gateway/httproute.yaml) verbindet Pfad und Service. Setzt euren Namespace ein und rollt die Route aus:
 
 ```bash
 export GATEWAY_IP=ADRESSE_VOM_TRAINER
@@ -234,6 +244,39 @@ kubectl config current-context    # erwartet: gke_...
 kubectl delete -f out/lab04/
 ```
 
-Den Namespace und die Registry verwaltet der Trainer. Für Tag 3 könnt ihr das Deployment nach Absprache stehen lassen. Vor Lab 5 wird es entfernt.
+Den Namespace und die Registry verwaltet der Trainer. Für Tag 3 könnt ihr das Deployment nach Absprache stehen lassen. Vor Lab 6 wird es entfernt.
 
 Ohne Cloud: Der Trainer zeigt Konsole und Registry. Ihr setzt Kontext und Namespace auf `minikube`/`workshop`, verwendet `IMAGE=hallo-app:2.0` und ladet das Image mit `minikube image load hallo-app:2.0`. Dann rendert ihr in einen neuen Ausgabeordner und übt Deployment, Checkpoint und Fehlersuche lokal. Cloud Logging, Monitoring und Cloud-Rechte bleiben eine Demo.
+
+## Für den Trainer
+
+**So erklärt ihr es:**
+
+- Artifact Registry ist für GKE, was `minikube image load` lokal war: der Ort, von dem der Cluster das Image holt.
+- Dieselben Manifeste wie lokal. Wer Lab 2 verstanden hat, versteht Lab 4. Neu sind nur Anmeldung, Registry und Konsole.
+- Kontext wie ein Lesezeichen im Browser: Es führt zu einem Cluster, gibt aber keine Rechte.
+- Google betreibt die Control Plane. Ihr seht sie nicht als Pods, ihr sprecht nur mit dem API-Server.
+
+**Häufige Fragen:**
+
+- *Ist ein Kontext ein Recht?* Nein. Er wählt Cluster, Benutzer und Namespace. Was ihr dürft, entscheiden IAM und RBAC.
+- *Wechsle ich mit dem Namespace den Node?* Nein. Nodes gehören zu keinem Namespace. Pods aus verschiedenen Namespaces teilen sich die Nodes.
+- *Läuft der Traffic meiner Nutzer über kubectl?* Nein. `kubectl` und `port-forward` sind nur für euch. Nutzer kommen über Load Balancer oder Ingress zum Service.
+- *Warum GKE statt Cloud Run?* GKE gibt mehr Kontrolle über Nodes, Netz und komplexe Anwendungen, dafür mehr Betrieb. Für eine einfache zustandslose API ist Cloud Run oft einfacher.
+- *Füllt der Scheduler erst Node 1, dann Node 2?* Nein, das ist nicht garantiert. Verteilen erzwingt man mit `topologySpreadConstraints`, siehe Extra 3.
+
+**Nur nennen, nicht erklären:** DNS-Endpunkt, Auth-Plugin, `--platform`, was `render.py` intern tut, Autopilot-Details, die Rollen hinter `get-credentials`.
+
+**Wenn es hakt:**
+
+- `ImagePullBackOff`: Image-Pfad in `out/lab04/deployment.yaml` mit `echo "$IMAGE"` vergleichen, Push wirklich mit Digest beendet, Architektur `amd64`.
+- `Forbidden` oder falsche Pods: falscher Kontext oder Namespace. `kubectl config get-contexts` zeigt beides.
+- `render.py` meldet, dass Dateien existieren: neuen Ausgabeordner wählen, etwa `out/lab04-2`.
+
+**Kapazität für Extra 3:** Das Deployment `hallo-spread` fordert je Pod nur `10m` CPU und `384Mi` Speicher an. 15 Personen mit je drei Pods passen rechnerisch neben Lab 4 auf drei `e2-standard-4`, aber ohne viel Reserve. Lasst es trotzdem nicht stehen.
+
+**Vorbereitung Extra 4:** Gateway API im Cluster aktiv, [trainer/gateway.yaml](../trainer/gateway.yaml) angewendet, RBAC mit `httproutes`. Die Adresse steht in `kubectl -n workshop-gateway get gateway workshop`. Nur Namespaces mit dem Label `workshop=gke-einfuehrung` dürfen Routen anhängen. Das Gateway braucht beim Anlegen 5 bis 10 Minuten bis zur ersten Antwort, also vor dem Lab anlegen. Eine neue Route braucht etwa vier Minuten. Das Gateway am Abend löschen.
+
+**Lösung Extra 4:** Die Route bleibt nach dem Löschen des Service bestehen, meldet aber `ResolvedRefs: False` mit Grund `BackendNotFound`, und `curl` liefert nach einigen Minuten `500`. Gateway, Route und Service sind getrennte Objekte, verbunden nur über Namen.
+
+**Lösung Extra 2:** `yes` für Deployments und Secrets im eigenen Namespace, `no` für `kube-system` und für Nodes. Die Role `workshop-entwickler` gilt nur im eigenen Namespace und enthält keine clusterweiten Objekte.

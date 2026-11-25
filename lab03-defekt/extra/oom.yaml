@@ -1,13 +1,16 @@
-# Extra: Ein Container, dem das Speicherlimit nicht reicht.
-# Eigene Namen und Labels, damit nichts mit den fuenf Faellen kollidiert.
+# Extra: Der Container braucht mehr Speicher als erlaubt. Ergebnis: OOMKilled.
+# Eigene Namen (oom), damit nichts mit hallo kollidiert. Auch fuer Demo 2.3g.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  # FREI.
   name: oom
+  # FREI: nur zum Filtern.
   labels:
     app: oom
 spec:
   replicas: 1
+  # PASST ZU: template.metadata.labels.
   selector:
     matchLabels:
       app: oom
@@ -17,19 +20,21 @@ spec:
         app: oom
     spec:
       containers:
+        # FREI.
         - name: oom
+          # PASST ZU: geladenem Image hallo-app:1.0.
           image: hallo-app:1.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:
-            # Die JVM belegt beim Start sofort 200 MiB Heap.
+            # FEST: Die JVM belegt beim Start sofort 200 MiB.
             - name: JAVA_TOOL_OPTIONS
               value: "-Xms200m -XX:+AlwaysPreTouch"
           resources:
             requests:
               cpu: 250m
               memory: 128Mi
-            # Wer das Limit ueberschreitet, wird vom Kernel beendet: OOMKilled.
+            # Absichtlich zu klein: 128Mi < 200 MiB.
             limits:
               memory: 128Mi

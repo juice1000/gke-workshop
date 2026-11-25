@@ -12,8 +12,10 @@ WORKDIR /app
 COPY --from=build /build/target/hallo-app.jar ./app.jar
 ARG APP_VERSION=1.0
 ENV APP_VERSION=${APP_VERSION}
-ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=65.0"
 # Numerische UID funktioniert auch ohne Eintrag in /etc/passwd.
 USER 10001:10001
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+# Heap nach dem Speicherlimit des Containers. Als Startargument statt als
+# JAVA_TOOL_OPTIONS: sonst meldet die JVM bei jedem Start eine Zeile auf stderr,
+# die im Logs Explorer als ERROR erscheint.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=65.0", "-jar", "/app/app.jar"]

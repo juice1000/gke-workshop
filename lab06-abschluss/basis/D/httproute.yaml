@@ -1,0 +1,30 @@
+# Oeffentlicher Zugang ueber das gemeinsame Gateway des Trainers
+# (trainer/gateway.yaml). Jede Person hat einen eigenen Pfad:
+#   http://GATEWAY_IP/workshop-person01/ui.html  -> Service hallo:80
+# basis.sh setzt eure Nummer ein. Eine neue Route braucht einige Minuten,
+# danach bleibt sie den ganzen Tag stehen.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hallo
+  labels:
+    workshop-lab: "06"
+spec:
+  parentRefs:
+    - name: workshop
+      namespace: workshop-gateway
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /workshop-WORKSHOP_PERSON
+      filters:
+        # Der Pfad-Anfang faellt weg: die Anwendung sieht "/" und "/ui.html".
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: hallo
+          port: 80

@@ -1,6 +1,6 @@
 # Route vom gemeinsamen Gateway zu eurem Service hallo (Lab 4, Extra 4).
-# Aufgabe: die TODO-Stellen ergaenzen. Kein Image-Platzhalter, also kein
-# render.py. Vor dem Anwenden euren Namespace einsetzen:
+# Kein Image-Platzhalter, also kein render.py. Vor dem Anwenden euren
+# Namespace einsetzen:
 #   sed "s/workshop-person01/$WORKSHOP_NAMESPACE/g" lab04-gke/gateway/httproute.yaml > out/lab04-route.yaml
 #
 #   Internet -> Gateway workshop -> Pfad /workshop-person01/... -> Service hallo:80 -> Pods :8080
@@ -16,12 +16,11 @@ spec:
       namespace: workshop-gateway
   rules:
     - matches:
-        # Alle teilen sich eine Adresse. Der Pfad unterscheidet die Personen.
+        # FREI, aber eindeutig: alle teilen sich eine Adresse. Der Pfad
+        # unterscheidet die Personen. PASST ZU: curl http://GATEWAY_IP/workshop-person01/
         - path:
             type: PathPrefix
-            # TODO: euer Pfad. Muster: Schraegstrich plus Namespace, hier mit
-            # workshop-person01 schreiben, sed ersetzt ihn oben.
-            value: /TODO
+            value: /workshop-person01
       filters:
         # Die Anwendung kennt nur "/". Das Gateway schneidet den Praefix ab:
         # /workshop-person01/fehler kommt als /fehler beim Pod an.
@@ -31,7 +30,6 @@ spec:
               type: ReplacePrefixMatch
               replacePrefixMatch: /
       backendRefs:
-        # TODO: Name und Port eures Service. PASST ZU: metadata.name und
-        # ports[].port in lab04-gke/k8s/service.yaml. Port 1 ist nur ein Platzhalter.
-        - name: TODO
-          port: 1
+        # PASST ZU: metadata.name und ports[].port in lab04-gke/k8s/service.yaml.
+        - name: hallo
+          port: 80

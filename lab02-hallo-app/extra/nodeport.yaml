@@ -1,24 +1,22 @@
-# Uebung: zusaetzlicher Service vom Typ NodePort. Die Anwendung von aussen
-# aufrufen, wie ein Nutzer eine API aufruft, ohne kubectl und ohne Tunnel.
-# Laeuft neben dem Service hallo, der bleibt ClusterIP.
-# Mit dem Docker-Treiber unter macOS und Windows nur erreichbar, wenn der
-# Cluster mit --ports=127.0.0.1:30080:30080 angelegt wurde (README, 2.5).
-# Aufbau: kubectl explain service.spec
+# Extra: Service vom Typ NodePort. Von aussen erreichbar, ohne Tunnel.
+# Mit Docker-Treiber nur, wenn minikube mit --ports=127.0.0.1:30080:30080
+# gestartet wurde (README, 2.4). Der Service hallo bleibt ClusterIP.
+
+# FEST
 apiVersion: v1
 kind: Service
 metadata:
+  # FREI, aber nicht hallo.
   name: hallo-nodeport
 spec:
-  # NodePort oeffnet denselben Port auf jedem Node des Clusters.
+  # FEST: oeffnet denselben Port auf jedem Node.
   type: NodePort
-  # TODO: Selektor wie in k8s/service.yaml, damit dieser Service
-  # dieselben Pods findet.
+  # PASST ZU: template.metadata.labels in deployment.yaml.
   selector:
-    TODO: TODO
+    app: hallo
   ports:
-    # TODO: port und targetPort wie in k8s/service.yaml.
-    # nodePort: fester Port im Bereich 30000 bis 32767, passend zu
-    # "minikube start --ports". Ohne Angabe waehlt Kubernetes einen zufaelligen.
-    - port: 0
-      targetPort: 0
+    # port: FREI. targetPort: PASST ZU containerPort.
+    # nodePort: 30000 bis 32767, PASST ZU minikube start --ports.
+    - port: 80
+      targetPort: 8080
       nodePort: 30080

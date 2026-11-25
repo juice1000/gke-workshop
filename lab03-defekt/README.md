@@ -86,7 +86,13 @@ kubectl rollout status deployment/fallN --timeout=180s   # erwartet: successfull
 kubectl get pods -l app=fallN                            # erwartet: Running, 1/1
 ```
 
-Für Fall 2 gehört zur Reparatur das Anlegen der fehlenden ConfigMap. **Aufgabe:** Legt sie per Befehl an, ohne Datei. Den Namen und den erwarteten Schlüssel nennen euch die Events, als Wert genügt ein beliebiger Text. Tipp: `kubectl create --help`.
+Für Fall 2 gehört zur Reparatur das Anlegen der fehlenden ConfigMap:
+
+```bash
+kubectl create configmap fall2-config --from-literal=GREETING=Hallo   # Name und Schluessel aus den Events
+```
+
+> **Hintergrund:** Kubernetes versucht es immer weiter, repariert aber keine falsche Konfiguration. Deshalb bleibt ein Fall so lange kaputt, bis die Datei stimmt.
 
 ### 6. Aufräumen je Fall
 
@@ -113,7 +119,22 @@ Für jeden Fall: `kubectl rollout status deployment/fallN` meldet `successfully 
 
 </details>
 
-Kommt ihr bei einem Fall nicht weiter, holt euch einen Hinweis oben oder fragt den Trainer. Die Auflösung besprechen wir gemeinsam nach dem Lab. Wendet immer nur eine Datei an, nicht den ganzen Ordner.
+<details>
+<summary>Lösungen und erwartete Symptome</summary>
+
+| Fall | Symptom | Ursache und Reparatur |
+| --- | --- | --- |
+| 1 | `ErrImagePull`, später `ImagePullBackOff` | Buchstabe `O` statt Ziffer `0` im Tag. `hallo-app:1.0` verwenden. |
+| 2 | `CreateContainerConfigError` | `fall2-config` fehlt. ConfigMap mit Schlüssel `GREETING` anlegen. |
+| 3 | Wiederholter Exit 1, später `CrashLoopBackOff` | Der überschriebene Startbefehl beendet sich absichtlich. `command` entfernen. |
+| 4 | `Pending`, `FailedScheduling` | 100 CPU angefordert. Request auf `250m` senken. |
+| 5 | `Running`, `READY 0/1`, Probe meldet 404 | Readiness prüft `/bereit-aber-falsch`. Auf `/actuator/health/readiness` ändern. |
+
+Fertige Lösungen: [Fall 1](loesungen/fall1.yaml), [Fall 2](loesungen/fall2.yaml), [Fall 3](loesungen/fall3.yaml), [Fall 4](loesungen/fall4.yaml), [Fall 5](loesungen/fall5.yaml).
+
+Bei Bedarf `kubectl apply -f lab03-defekt/loesungen/fallN.yaml`. Mit derselben Lösungsdatei könnt ihr danach alle Ressourcen dieses Falls entfernen. Netzwerk- und Registryfehler können den genauen Eventtext von Fall 1 verändern. Wendet nie den ganzen Ordner rekursiv an, sonst würden auch Lösungen ausgerollt.
+
+</details>
 
 ## Extra zum Ausprobieren
 
@@ -121,17 +142,13 @@ Für alle, die mit den fünf Fällen fertig sind. Jedes Extra steht für sich un
 
 ### Extra 1: Ein eigenes Diagnose-Skript
 
-Bei jeder Störung tippt ihr dieselben Befehle. Im Betrieb packt man so etwas in ein Skript. [extra/diagnose.sh](extra/diagnose.sh) ist ein Gerüst dafür: Es nimmt ein Label wie `fall1` und führt nacheinander die Schritte aus den Kern-Abschnitten 2 bis 4 aus. Abschnitt 1 ist fertig, Abschnitte 2 bis 5 ergänzt ihr an den `TODO`-Stellen.
-
-- Jeder `kubectl`-Aufruf nutzt das Array `"${K[@]}"`. Es setzt Kontext und Namespace ausdrücklich, so trifft das Skript nie versehentlich einen anderen Cluster
-- Filtert immer mit dem Label `app=$APP`, nie mit einem Pod-Namen. Pod-Namen ändern sich bei jedem Neustart
-- Abschnitt 4 darf scheitern, wenn es keinen Neustart gab. Das Skript soll dann weiterlaufen. Tipp: `|| true` oder eine eigene Meldung mit `||`
+Bei jeder Störung tippt ihr dieselben Befehle. Im Betrieb packt man so etwas in ein Skript. [extra/diagnose.sh](extra/diagnose.sh) nimmt ein Label wie `fall1` und führt alle Schritte aus den Kern-Abschnitten 2 bis 4 nacheinander aus.
 
 ```bash
 bash lab03-defekt/extra/diagnose.sh fall1
 ```
 
-Ohne Pods meldet Abschnitt 1 `No resources found`. Das ist richtig. Wichtig ist, dass das Skript bis Abschnitt 5 durchläuft.
+Lest das Skript: Jeder Aufruf nutzt `"${K[@]}"`, ein Array mit ausdrücklichem Kontext und Namespace. So trifft es nie versehentlich einen anderen Cluster. Es filtert immer per Label, nie per Pod-Namen, weil Pod-Namen sich bei jedem Neustart ändern.
 
 ### Extra 2: OOMKilled
 
@@ -160,3 +177,28 @@ kubectl get endpointslices -l kubernetes.io/service-name=fall5 -o yaml | grep -A
 Die Pod-Adresse steht in der EndpointSlice, aber mit `ready: false`. Repariert Fall 5 und schaut erneut. Eine Adresse in der Liste heißt also noch nicht, dass der Service Traffic dorthin schickt.
 
 Aufräumen: `kubectl delete service fall5` und `kubectl delete -f lab03-defekt/fall5.yaml`.
+
+## Für den Trainer
+
+**So erklärt ihr es:**
+
+- Wie beim Arzt: erst Symptome (Status), dann Untersuchung (`describe`, Events), dann Vorgeschichte (Logs, `--previous`), erst dann die Behandlung.
+- Das Bild oben ist die ganze Theorie. Jeder Fall trifft genau eine Zeile davon.
+- Events sagen, was der Cluster mit dem Pod gemacht hat. Logs sagen, was die Anwendung gemacht hat.
+
+**Häufige Fragen:**
+
+- *Was passiert, wenn der Sollzustand nie erreicht wird?* Kubernetes versucht es weiter, repariert aber nichts. Man sieht es am Status: `Pending`, `0/1`, `CrashLoopBackOff`, bei Updates `ProgressDeadlineExceeded`.
+- *Warum liefert `logs` bei Fall 1 und 2 nichts?* Der Container wurde nie gestartet. Die Ursache steht in den Events.
+- *Container-Neustart oder neuer Pod?* Bei einem Absturz startet das kubelet den Container im selben Pod neu, `RESTARTS` steigt. Einen neuen Pod mit neuem Namen legt erst der Controller an, wenn ein Pod fehlt.
+- *Warum ist Fall 5 `Running`, aber nicht in Ordnung?* `Running` heißt, der Prozess läuft. `0/1` heißt, die Readiness schlägt fehl und der Pod bekommt keinen Traffic.
+
+**Nur nennen, nicht erklären:** EndpointSlices, `kubectl debug`, wie der Scheduler Nodes bewertet. Dafür ist Extra 3 da.
+
+**Wenn es hakt:**
+
+- Fall 4 bleibt nach der Reparatur `Pending`: Der alte Pod hängt noch. `rollout status` abwarten oder den Fall löschen und neu anwenden.
+- Jemand wendet `lab03-defekt/` als Ordner an: Alle Fälle laufen gleichzeitig. `kubectl delete -f lab03-defekt/` räumt die fünf Fälle wieder ab.
+- Fall 2 bleibt kaputt: ConfigMap im falschen Namespace oder mit falschem Schlüssel. `kubectl get configmap fall2-config -o yaml`.
+
+**Lösung Extra 2:** `Reason: OOMKilled`, `Exit Code: 137`. Die JVM soll sofort 200 MiB Heap belegen (`-Xms200m` in `JAVA_TOOL_OPTIONS`), das Limit erlaubt nur 128 MiB. Der Kernel beendet den Prozess von außen, die Anwendung kann nichts mehr schreiben. Reparatur: `JAVA_TOOL_OPTIONS` entfernen und Limit und Request auf 512 MiB setzen, wie in Lab 2.

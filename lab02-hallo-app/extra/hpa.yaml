@@ -1,22 +1,26 @@
-# Extra: HorizontalPodAutoscaler fuer das Deployment hallo.
-# Er passt die Zahl der Pods an die CPU-Last an, zwischen 2 und 4.
-# Nodes fuegt er nie hinzu. Das waere Aufgabe des Cluster Autoscalers.
-# Braucht Messwerte: lokal "minikube addons enable metrics-server".
+# Extra: passt die Zahl der Pods an die CPU-Last an (2 bis 4).
+# Braucht lokal: minikube addons enable metrics-server.
+#
+#   ../betrieb/deployment.yaml name hallo --> scaleTargetRef.name
+#   requests.cpu 250m ----------------------> Basis der 50 Prozent
+
+# FEST
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  # FREI.
   name: hallo
 spec:
-  # Welches Objekt skaliert wird.
+  # PASST ZU: apiVersion, kind und name des Deployments.
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
     name: hallo
+  # FREI.
   minReplicas: 2
   maxReplicas: 4
+  # Ziel: 50 Prozent der CPU-Requests. Ohne Requests: <unknown>.
   metrics:
-    # Ziel: im Mittel 50 Prozent der angeforderten CPU (requests.cpu: 250m),
-    # also etwa 125m pro Pod. Liegt der Wert darueber, kommen Pods dazu.
     - type: Resource
       resource:
         name: cpu

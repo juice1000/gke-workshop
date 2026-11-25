@@ -1,0 +1,66 @@
+# Lab 3, Loesung Fall 3. Bezuege wie in lab02-hallo-app/betrieb/deployment.yaml.
+# Der entscheidende Bezug: Ohne command startet der Container mit dem ENTRYPOINT aus dem Dockerfile
+# (java -jar /app/app.jar). command ersetzt ihn, wenn es gesetzt ist.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fall3
+  labels:
+    app: fall3
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  minReadySeconds: 3
+  progressDeadlineSeconds: 180
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: fall3
+  template:
+    metadata:
+      labels:
+        app: fall3
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: fall3
+          image: hallo-app:1.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3

@@ -1,27 +1,34 @@
-# Extra: Konfiguration auf zwei weitere Arten in einen Container bringen.
-# Ein einzelner Pod zum Ausprobieren, kein Deployment. Das Label app: hallo-extra
-# sorgt dafuer, dass der Service hallo ihn nicht auswaehlt.
+# Extra: Konfiguration als Variablen (envFrom) und als Datei (Volume).
+# Einzelner Pod zum Ausprobieren.
+#
+#   ../betrieb/configmap.yaml hallo-config --> configMapRef.name, configMap.name
+#   volumes[].name config -------------------> volumeMounts[].name
+
+# FEST
 apiVersion: v1
 kind: Pod
 metadata:
+  # FREI.
   name: hallo-config-extra
+  # FREI, aber nicht app: hallo, sonst schickt der Service Anfragen hierher.
   labels:
     app: hallo-extra
 spec:
   containers:
+    # FREI.
     - name: hallo
+      # PASST ZU: geladenem Image hallo-app:2.0.
       image: hallo-app:2.0
       imagePullPolicy: IfNotPresent
-      # envFrom: jeder Schluessel der ConfigMap wird zu einer Umgebungsvariable.
-      # Wie bei env gilt: gesetzt beim Containerstart, danach nicht mehr.
+      # Jeder Schluessel der ConfigMap wird eine Variable. Nur beim Start.
       envFrom:
         - configMapRef:
+            # PASST ZU: metadata.name in configmap.yaml.
             name: hallo-config
-      # Volume: jeder Schluessel wird zu einer Datei unter /config.
-      # Aendert sich die ConfigMap, aktualisiert Kubernetes die Datei
-      # nach einiger Zeit, ohne Neustart.
       volumeMounts:
+        # PASST ZU: volumes[].name unten.
         - name: config
+          # FREI: Jeder Schluessel wird eine Datei, z. B. /config/GREETING.
           mountPath: /config
           readOnly: true
       resources:
@@ -31,6 +38,8 @@ spec:
         limits:
           memory: 512Mi
   volumes:
+    # FREI. PASST ZU volumeMounts[].name.
     - name: config
       configMap:
+        # PASST ZU: metadata.name in configmap.yaml. Datei aktualisiert sich.
         name: hallo-config

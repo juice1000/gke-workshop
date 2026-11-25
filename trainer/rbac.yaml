@@ -1,9 +1,14 @@
-# Vor dem Anwenden Namespace und Konto ersetzen. Nur fuer den Trainer.
+# Rechte pro Person. Nur fuer den Trainer. Namespace und Konto ersetzen.
+# Role sagt WAS, RoleBinding sagt WER. Erst beides gibt ein Recht.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  # PASST ZU: roleRef.name unten.
   name: workshop-entwickler
+  # PASST ZU: namespace.yaml. Rechte gelten nur hier.
   namespace: workshop-person01
+# FEST: Namen aus der Kubernetes-API. "" ist die Kerngruppe.
+# Was fehlt, ist verboten.
 rules:
   - apiGroups: [""]
     resources: ["pods", "services", "configmaps", "secrets"]
@@ -26,20 +31,35 @@ rules:
   - apiGroups: ["events.k8s.io"]
     resources: ["events"]
     verbs: ["get", "list", "watch"]
-  # Lab 4 Extra 4: eigene Route am gemeinsamen Gateway (trainer/gateway.yaml).
+  # Lab 4 Extra 4: eigene Route am Gateway.
   - apiGroups: ["gateway.networking.k8s.io"]
     resources: ["httproutes"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Kontingent lesen (Lab 4 Extra 2), aendern nur der Trainer.
+  - apiGroups: [""]
+    resources: ["resourcequotas", "limitranges"]
+    verbs: ["get", "list", "watch"]
+  # Lab 6 Etappe D: Secret Manager ueber eigenes Dienstkonto und CSI-Treiber.
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["secrets-store.csi.x-k8s.io"]
+    resources: ["secretproviderclasses"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  # FREI.
   name: workshop-entwickler
+  # PASST ZU: namespace der Role.
   namespace: workshop-person01
+# PASST ZU: Google-Konto der Person.
 subjects:
   - kind: User
     name: TEILNEHMER_KONTO_ERSETZEN
     apiGroup: rbac.authorization.k8s.io
+# PASST ZU: Role oben. Nicht aenderbar.
 roleRef:
   kind: Role
   name: workshop-entwickler
