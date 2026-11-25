@@ -46,7 +46,7 @@ spec:
             - containerPort: 8080
           # TODO: GREETING aus hallo-config, Schluessel GREETING.
           # TODO: DB_PASSWORT aus hallo-secret, Schluessel DB_PASSWORT.
-          # TODO: requests cpu 250m, memory 512Mi; limits memory 512Mi.
+          # TODO: requests cpu 100m, memory 512Mi; limits memory 512Mi.
           # TODO: startupProbe: /actuator/health/liveness, Port 8080,
           #       periodSeconds 5, failureThreshold 30, timeoutSeconds 2.
           # TODO: readinessProbe: /actuator/health/readiness, Port 8080,

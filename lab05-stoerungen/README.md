@@ -253,7 +253,7 @@ kubectl --context "$GKE_CONTEXT" drain NODE_NAME --ignore-daemonsets --delete-em
 kubectl --context "$GKE_CONTEXT" uncordon NODE_NAME
 ```
 
-Rechnerisch fordern 16 Personen mit je zwei `hallo`-Pods (250m CPU) und `verkehr` etwa 8,2 CPU an. Zwei Nodes haben zusammen 7,8 CPU. Nach dem Drain bleiben also einige Pods `Pending` mit `FailedScheduling`. Das ist der Lerneffekt, aber kündigt an, dass ihr den Node wieder freigebt. Nicht vergessen: `uncordon`.
+Rechnerisch fordern 17 Namespaces mit je zwei `hallo`-Pods (100m CPU) und `verkehr` etwa 3,6 CPU an, dazu etwa 1,6 CPU Systempods. Zwei Nodes haben zusammen 7,8 CPU. Nach dem Drain passen also alle Pods auf die übrigen Nodes: Die Gruppe sieht Shutdown-Zeilen, neue Pod-Namen und kurze Lücken im Verkehr, aber keine `Pending`-Pods. Kündigt an, dass ihr den Node wieder freigebt. Nicht vergessen: `uncordon`.
 
 **Wenn es hakt:**
 
