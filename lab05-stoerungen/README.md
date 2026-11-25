@@ -239,7 +239,7 @@ Schreibt für jede gefundene Störung eine Logs-Explorer-Abfrage, die sie früh 
 
 ### Extra 2: Selbst eine Störung bauen
 
-Baut im eigenen Namespace eine eigene Störung mit `kubectl patch`, `kubectl set env` oder `kubectl delete`. Euer Partner sucht sie an eurem Bildschirm. Regeln: nur im eigenen Namespace, keine Änderung an Nodes, danach `start`.
+Baut im eigenen Namespace eine eigene Störung mit `kubectl patch`, `kubectl set env` oder `kubectl delete`. Notiert vorher, was ihr ändert. Sucht sie danach mit der Tabelle aus Abschnitt 2, als wüsstet ihr nichts: Welche Spur hätte euch zuerst hingeführt? Regeln: nur im eigenen Namespace, keine Änderung an Nodes, danach `start`.
 
 ### Extra 3: Wer hat das geändert? (GKE)
 

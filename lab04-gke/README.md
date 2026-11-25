@@ -233,7 +233,7 @@ curl -i "http://$GATEWAY_IP/$WORKSHOP_NAMESPACE/fehler"
 
 Erwartet: `Hallo von GKE von Pod ...`. Mehrmals aufrufen: Der Pod-Name wechselt. Bis der Load Balancer eure Route kennt, dauert es einige Minuten (im Test etwa vier). Bis dahin kommt `404`. Wartet und wiederholt den Aufruf.
 
-Fragt eure Nachbarn nach ihrem Pfad und ruft deren Anwendung auf. Was passiert mit eurer Route, wenn ihr den Service `hallo` löscht?
+Ruft auch die Anwendung einer anderen Person auf, etwa `http://$GATEWAY_IP/workshop-person02/`. Was passiert mit eurer Route, wenn ihr den Service `hallo` löscht?
 
 Aufräumen: `kubectl delete -f out/lab04-route.yaml`. Die Adresse ist öffentlich, die Route bleibt nicht über Nacht stehen.
 

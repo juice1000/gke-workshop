@@ -62,6 +62,6 @@ Den gemeinsamen Rundgang findet ihr in [RUNDGANG.md](RUNDGANG.md). Er erklärt d
 | Zu wenig Speicher | Andere Anwendungen schließen, Docker-Ressourcen mit der IT prüfen |
 | Pull oder Download scheitert | Genaue Registry/URL und Proxy-Einstellungen mit der IT prüfen |
 | kubectl zeigt Cloud-Pods | `kubectl config use-context minikube`, Kontext erneut prüfen |
-| Lokaler Cluster nicht möglich | In Paaren am funktionierenden Rechner arbeiten; Trainer zeigt die Demo |
+| Lokaler Cluster nicht möglich | Trainer zeigt die Demo per Bildschirmfreigabe; für den Cloud-Teil die Cloud Shell nutzen |
 
 Den Cluster für die nächsten Labs laufen lassen. Nach dem Kurs: `minikube stop`. Ein vollständiges Entfernen des lokalen Übungsclusters erfolgt mit `minikube delete -p minikube`.
