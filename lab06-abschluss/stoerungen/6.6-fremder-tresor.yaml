@@ -46,6 +46,12 @@ spec:
         - name: hallo
           image: WORKSHOP_IMAGE
           imagePullPolicy: IfNotPresent
+          # Vor dem Stoppen 10 s warten: So nimmt der Load Balancer des Gateways
+          # den Pod erst aus dem Verkehr. Ohne das gibt es beim Rollout 503.
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 10
           ports:
             - containerPort: 8080
           env:

@@ -39,13 +39,13 @@ Jeder für sich, zwei Störungen: 5.1 und 5.4. Die Langfassung darunter bleibt f
 ```bash
 export WORKSHOP_NAMESPACE=workshop-person01
 export WORKSHOP_CONTEXT=gke_lookbeyond-gke-workshop_europe-west3-b_workshop
-export IMAGE=europe-west3-docker.pkg.dev/lookbeyond-gke-workshop/workshop/hallo-app:2.2
+export IMAGE=europe-west3-docker.pkg.dev/lookbeyond-gke-workshop/workshop/hallo-app:2.4
 export GATEWAY_IP=ADRESSE_VOM_TRAINER
 kubectl config use-context "$WORKSHOP_CONTEXT"
 kubectl config set-context "$WORKSHOP_CONTEXT" --namespace="$WORKSHOP_NAMESPACE"
 ```
 
-`hallo-app:2.2` ist dieselbe Anwendung wie eure, vom Trainer gebaut, mit einer Browser-Oberfläche. So muss niemand vor dem Lab neu bauen.
+`hallo-app:2.4` ist dieselbe Anwendung wie eure, vom Trainer gebaut, mit einer Browser-Oberfläche. So muss niemand vor dem Lab neu bauen.
 
 **1. Ausgangslage** (dauert 1 bis 2 Minuten):
 
@@ -166,7 +166,7 @@ resource.labels.namespace_name="workshop-person01"
 
 Schaut auf das Histogramm über den Treffern. Wann beginnt die Störung, wann endet sie? Gebt der Übertragung eine Minute.
 
-**Gut zu wissen:** Die Zeilen `ERROR ... FEHLER` der Anwendung kommen im Logs Explorer mit Schweregrad `INFO` an. Spring Boot schreibt alles auf die Standardausgabe, und GKE stuft das als `INFO` ein. Ein Filter auf `severity>=ERROR` findet sie nicht, sucht nach dem Text: `textPayload:"FEHLER"`.
+**Gut zu wissen:** GKE vergibt den Schweregrad nach dem Ausgabekanal: stderr wird `ERROR`, stdout wird `INFO`. Die Anwendung schreibt ihre `ERROR`-Zeilen auf stderr (`lab02-hallo-app/src/main/resources/logback-spring.xml`). Deshalb findet `severity>=ERROR` die Zeilen `FEHLER`. Eine Anwendung, die alles auf stdout schreibt, landet komplett bei `INFO`. Dann hilft nur die Textsuche, etwa `textPayload:"FEHLER"`.
 
 ### 5. Alarm: Die Störung meldet sich selbst (GKE, 20 Minuten)
 
