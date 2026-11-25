@@ -77,7 +77,7 @@ spec:
             failureThreshold: 30
           readinessProbe:
             httpGet:
-              path: /bereit-aber-falsch
+              path: /actuator/health/readiness
               port: 8080
             periodSeconds: 5
             timeoutSeconds: 2
