@@ -3,7 +3,7 @@
 **Folie:** Tag 3, 3.4 „Merge auf main: dieselbe Pipeline in GitHub Actions“  
 **Dauer:** etwa 8 Minuten  
 **Ändert den Cluster:** ja, rollt `cicd-demo/` nach `workshop-trainer` aus  
-**Voraussetzung:** [trainer/github-actions.sh](../../../trainer/github-actions.sh) einmal ausgeführt, `hallo-secret` in `workshop-trainer` vorhanden (`bash scripts/basis.sh lab06` legt es an), im Browser bei GitHub angemeldet. Kein Skript: Die Demo läuft im Browser.
+**Voraussetzung:** [trainer/einrichtung/github-actions.sh](../../../trainer/einrichtung/github-actions.sh) einmal ausgeführt, `hallo-secret` in `workshop-trainer` vorhanden (`bash scripts/basis.sh lab06` legt es an), im Browser bei GitHub angemeldet. Kein Skript: Die Demo läuft im Browser.
 
 GitHub Actions ist das Beispiel, das wir zeigen können. Beim Kunden heißt das Werkzeug TeamCity. Die Stufen sind dieselben, das sagt auch die Folie.
 
@@ -44,7 +44,7 @@ Mergt den grünen Lauf schon zu Beginn von 3.4, dann ist er fertig, wenn die Fol
 
 - **Lauf startet nicht:** Der Workflow reagiert nur auf Änderungen in `cicd-demo/` auf `main`. Notfalls unter Actions, „Deploy-Demo“, „Run workflow“ (Branch `main`).
 - **`auth` scheitert mit `unauthorized` oder `attribute condition`:** Lauf kam nicht von `main` in `juice1000/gke-workshop`. Genau das soll der Provider verhindern.
-- **Pipeline GESTOPPT, Cluster nicht erreichbar:** RBAC fehlt. `bash trainer/github-actions.sh` erneut ausführen.
+- **Pipeline GESTOPPT, Cluster nicht erreichbar:** RBAC fehlt. `bash trainer/einrichtung/github-actions.sh` erneut ausführen.
 - **Gate rot ohne Absicht:** `hallo-secret` fehlt in `workshop-trainer`. `bash scripts/basis.sh lab06` mit Trainer-Umgebung.
 - **Hängt länger als 15 Minuten:** Der Job bricht von selbst ab (`timeout-minutes: 15`). Dann zeigt 3.4 nur die CI-Hälfte aus Schritt 1.
 

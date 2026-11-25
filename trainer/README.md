@@ -6,7 +6,7 @@ Diese Schritte gehören zur Vorbereitung durch den Trainer. Teilnehmende erstell
 
 Projekt `lookbeyond-gke-workshop`, Standard-Cluster `workshop` in `europe-west3-b`, Artifact-Registry-Repository `workshop` in `europe-west3`. Einstieg auf dem vorbereiteten Rechner: `source scripts/workshop-env.sh`, danach `workshop_gke` oder `workshop_local`.
 
-Der Cluster nutzt den Node-Pool `kurs` mit `e2-standard-4`, 50 GB Balanced-Persistent-Disk. Bis zum Cloud-Teil läuft ein Node, während des Kurses drei. Die Rechnung dazu steht im [Runbook](RUNBOOK.md#kurs-node-pool-umgesetzt-am-21112026). Die Anwendung liegt im Namespace `workshop-trainer`. Die Namespaces `workshop-person01` und `workshop-person02` enthalten Entwicklerrollen mit isolierten Kubernetes-Testidentitäten. Teilnehmerkonten werden am Abend von Tag 1 mit [teilnehmer-anlegen.sh](teilnehmer-anlegen.sh) aus der Kontoliste gebunden. Der Laufzeitnachweis und seine Grenzen stehen im [Teststatus](../docs/07-teststatus.md).
+Der Cluster nutzt den Node-Pool `kurs` mit `e2-standard-4`, 50 GB Balanced-Persistent-Disk. Bis zum Cloud-Teil läuft ein Node, während des Kurses drei. Die Rechnung dazu steht im [Runbook](RUNBOOK.md#kurs-node-pool-umgesetzt-am-21112026). Die Anwendung liegt im Namespace `workshop-trainer`. Die Namespaces `workshop-person01` und `workshop-person02` enthalten Entwicklerrollen mit isolierten Kubernetes-Testidentitäten. Teilnehmerkonten werden am Abend von Tag 1 mit [teilnehmer-anlegen.sh](einrichtung/teilnehmer-anlegen.sh) aus der Kontoliste gebunden. Der Laufzeitnachweis und seine Grenzen stehen im [Teststatus](../docs/07-teststatus.md).
 
 Der Node verwendet ein eigenes IAM-Servicekonto mit der GKE-Node-Rolle und Leserecht am Workshop-Repository. Workload Identity Federation ist aktiviert. API-Zugriffe erfolgen über den DNS-Endpunkt; IP-basierter API-Zugriff ist deaktiviert. Die Anwendung bleibt als `ClusterIP` erreichbar und wird zum Testen per Port-Forward geöffnet.
 
@@ -30,7 +30,7 @@ Der Node verwendet ein eigenes IAM-Servicekonto mit der GKE-Node-Rolle und Leser
 | Teilnehmerkonto oder Trainerdemo | Logs Explorer | `roles/logging.viewer` im Übungsprojekt |
 | Teilnehmerkonto oder Trainerdemo | Monitoring ansehen | `roles/monitoring.viewer` im Übungsprojekt |
 | Teilnehmerkonto | Alarm-Übung in Lab 5 | `roles/monitoring.alertPolicyEditor` im Übungsprojekt, projektweit, Namensregel `workshop-personNN: ...` |
-| Trainer | E-Mail-Kanal pro Person für die Alarm-Übung | `bash trainer/alarm-kanaele.sh`, legt `workshop-personNN E-Mail` an das Konto aus `out/trainer/teilnehmer.tsv` an. Teilnehmende lesen Kanäle über `monitoring.viewer` |
+| Trainer | E-Mail-Kanal pro Person für die Alarm-Übung | `bash trainer/einrichtung/alarm-kanaele.sh`, legt `workshop-personNN E-Mail` an das Konto aus `out/trainer/teilnehmer.tsv` an. Teilnehmende lesen Kanäle über `monitoring.viewer` |
 | Anwendungs-Pod | Antworten und Health liefern | Kein Zugriff auf Cloud-APIs nötig |
 
 Die genauen Freigaben richten sich nach den Organisationsrichtlinien. Logging- und Monitoring-Viewer sind keine Namespace-Rollen. Falls projektweite Sicht nicht vorgesehen ist, zeigt der Trainer diese Bereiche als Demo. Auch die Workload-Ansicht der Konsole kann zusätzliche Leserechte erwarten. Prüft den Rundgang mit einem Teilnehmerkonto und dokumentiert jede Abweichung.
@@ -39,7 +39,9 @@ Gebt keine projektweiten Rollen wie Owner, Editor oder Kubernetes Engine Develop
 
 ## Namespace und RBAC-Vorlagen
 
-[namespace.yaml](namespace.yaml) und [rbac.yaml](rbac.yaml) sind Kopiervorlagen für einen Teilnehmer. Kopiert sie nach `out/trainer/person01/`, ersetzt `workshop-person01` in allen Dateien und `TEILNEHMER_KONTO_ERSETZEN` durch die angemeldete Google-Konto-Adresse. Vor dem Anwenden die Arbeitskopien lesen.
+`einrichtung/` enthält alles, was der Trainer einmal pro Kurs ausführt: Teilnehmende anlegen, Kontingent, Secret Manager, Alarmkanäle, GitHub Actions. Nichts davon wird im Kurs gezeigt. Im Ordner `trainer/` bleiben nur [gateway.yaml](gateway.yaml) (jeden Kurstag anlegen und löschen), [rbac.yaml](rbac.yaml) (Vorlage, Demo 3.3a zeigt sie) und dieses Handbuch mit [RUNBOOK](RUNBOOK.md).
+
+[namespace.yaml](einrichtung/namespace.yaml) und [rbac.yaml](rbac.yaml) sind Kopiervorlagen für einen Teilnehmer. Kopiert sie nach `out/trainer/person01/`, ersetzt `workshop-person01` in allen Dateien und `TEILNEHMER_KONTO_ERSETZEN` durch die angemeldete Google-Konto-Adresse. Vor dem Anwenden die Arbeitskopien lesen.
 
 Mit dem ausdrücklich festgelegten Trainer-Kontext:
 

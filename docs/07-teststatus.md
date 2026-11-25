@@ -241,14 +241,14 @@ Nicht geprüft: Abfragen in der Konsole und im Monitoring mit Teilnehmerrechten,
 - [ ] Noch offene Kursdetails aus [Lernumgebung](04-lernumgebung-und-offene-punkte.md) mit dem Kunden klären.
 - [x] Notion-Differenzen aus [Lab-Zuordnung](06-labs-und-trainer.md) in die Kursunterlagen übernehmen (21.11.2026).
 - [x] Node-Pool für 15 Personen bemessen und angelegt (`kurs`, siehe [Runbook](../trainer/RUNBOOK.md#kurs-node-pool-umgesetzt-am-21112026)). Am Morgen von Tag 2 auf drei Nodes skalieren.
-- [x] `trainer/teilnehmer-anlegen.sh` mit Testliste im Planmodus und unter Bash 3.2 geprüft. Das Anwenden mit echten Konten steht aus.
+- [x] `trainer/einrichtung/teilnehmer-anlegen.sh` mit Testliste im Planmodus und unter Bash 3.2 geprüft. Das Anwenden mit echten Konten steht aus.
 - [ ] Installationsbefehle aus [VORBEREITUNG.md](../VORBEREITUNG.md) auf Windows/WSL2 und Linux: bewusst nicht vorab getestet (Entscheidung 21.11.2026). Die Befehle folgen den Herstelleranleitungen. Probleme fängt Lab 0 am ersten Morgen ab, Ausweg Paararbeit und Cloud Shell.
 
 Die GKE-Ergebnisse beziehen sich auf Standard mit Trainerrechten. Autopilot, Kundennetz, Konsolennavigation und tatsächliche Teilnehmerkonten brauchen getrennte Prüfungen.
 
 ## Kontingent pro Namespace (25.11.2026, GKE)
 
-- `trainer/kontingent.yaml` in `workshop-trainer` getestet: `scale --replicas=8` mit dem ersten Entwurf (1500m) endete bei 6 Pods mit `FailedCreate ... exceeded quota`, `create service loadbalancer` abgelehnt, `rollout restart` gruen, Pod ohne `resources` bekam 100m/256Mi als Request.
+- `trainer/einrichtung/kontingent.yaml` in `workshop-trainer` getestet: `scale --replicas=8` mit dem ersten Entwurf (1500m) endete bei 6 Pods mit `FailedCreate ... exceeded quota`, `create service loadbalancer` abgelehnt, `rollout restart` gruen, Pod ohne `resources` bekam 100m/256Mi als Request.
 - Danach angehoben auf 4 CPU, 8 GiB, 20 Pods, damit keine Uebung daran scheitert. Angewendet auf `workshop-trainer` und `workshop-person01` bis `16`. Laufende Pods unveraendert. `workshop-person12` hatte schon einen eigenen `LoadBalancer`, der bleibt.
 - Audit-Log-Abfrage aus Lab 5 Extra 3 mit dem Trainerkonto geprueft. Mit Teilnehmerrechten (`roles/logging.viewer`) nicht geprueft.
 - Live-Beobachtung in Lab 4 (Konsole), Lab 6 (`get pods -w`) und Lab 7 (`get pods -w`) ergaenzt, nicht im Kurs erprobt.
@@ -265,9 +265,9 @@ Die GKE-Ergebnisse beziehen sich auf Standard mit Trainerrechten. Autopilot, Kun
 - Kapazitaet Lab 5: `stoerung.sh start` gleichzeitig in `workshop-test1` und `workshop-test2`, dazu ein laufender Test in `workshop-trainer`. Fertig nach 34 und 28 s, `pruefen` gruen nach 43 und 37 s, kein Pod `Pending`. Mit 100m CPU pro `hallo`-Pod.
 - Logs Explorer, Lab 5 Kurzfassung: Stoerung 5.4 um 06:14:49 UTC eingebaut, `textPayload:"FEHLER"` (Container `hallo`, Schweregrad `INFO`) und `-> 500` (Container `verkehr`) sichtbar ab 06:15:05. Stoerung 5.1 zur selben Zeit, `Liveness probe failed` in `log_id("events")` mit Zeitstempel 06:15:18, gefunden um 06:15:39. Beide unter einer Minute.
 - Reihenfolge Lab 5 -> Lab 6: Aus `workshop-test1` mit aktiver Stoerung 5.1 Etappe A mit der Loesung als Starter ueber `pipeline.sh`: GRUEN in 38 s, Gate prueft `hallo` und `verkehr`, `pruefen.py abschluss` gruen. `kubectl create secret` meldet `already exists`, Hinweis im README ergaenzt.
-- Secret-Manager-Add-on am 25.11. um 05:57 UTC eingeschaltet, fertig nach 8 Minuten. Nodes nicht neu erstellt, alle Pods liefen weiter. Rotation 120 s. `trainer/secret-manager.sh` fuer alle 17 Namespaces: je Secret `hallo-db-*`, Leserecht fuer `sa/hallo`, erweiterte Role.
+- Secret-Manager-Add-on am 25.11. um 05:57 UTC eingeschaltet, fertig nach 8 Minuten. Nodes nicht neu erstellt, alle Pods liefen weiter. Rotation 120 s. `trainer/einrichtung/secret-manager.sh` fuer alle 17 Namespaces: je Secret `hallo-db-*`, Leserecht fuer `sa/hallo`, erweiterte Role.
 - Rechte (Teilnehmerkonto 03): `create secretproviderclasses` und `serviceaccounts` im eigenen Namespace yes, in `workshop-person04` no. `get resourcequotas` yes, `create resourcequotas` no.
-- GitHub Actions: `trainer/github-actions.sh` angewendet. `gh-deployer` darf in `workshop-trainer` ausrollen, in `workshop-person01` nicht (`can-i` no). `actionlint` ohne Befund.
+- GitHub Actions: `trainer/einrichtung/github-actions.sh` angewendet. `gh-deployer` darf in `workshop-trainer` ausrollen, in `workshop-person01` nicht (`can-i` no). `actionlint` ohne Befund.
 - Image `hallo-app:2.1` (amd64) mit Startzeile `Konfiguration: ...` gebaut, 4 Tests gruen, nach Artifact Registry geschoben.
 - `basis.sh` auf GKE (`workshop-trainer`), Laufzeiten 102 bis 182 s: gruen aus Lab-5-Stoerungen 5.1 und 5.5 (5.5 erst nach dem eingebauten `rollout restart`), Lab 5 -> Lab 6, nach 6.1, nach Etappe D. Stoerungen 6.1, 6.4, 6.6 ROT mit Rollback, Befunde `FailedMount ... not found` und `PermissionDenied ... secretmanager.versions.access`. Startzeile in D: `DB_PASSWORT aus Datei /var/secrets`.
 - Zwei Fehler gefunden und behoben: (1) 6.5 wurde GRUEN, weil das veraltete Feld `serviceAccount` im Deployment stehen blieb. 6.5 und der Grundstand setzen `serviceAccountName` jetzt ausdruecklich. (2) D -> Grundstand wurde ROT, weil `basis.sh` Altlasten vor dem Rollout loeschte und das Rollback dann ohne ServiceAccount dastand. Altlasten werden jetzt erst nach gruener Pipeline geloescht. Nachtest: 6.5 ROT mit `PermissionDenied`, D -> Grundstand GRUEN (159 s), danach Lab 5.

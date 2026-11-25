@@ -83,10 +83,10 @@ Die bisher global aktive gcloud-Konfiguration wurde erhalten. Das Workshop-Skrip
 
 ## Nächste Schritte
 
-Kursstart 23.11.2026, etwa 15 Teilnehmende, jede Person mit eigenem Namespace. Am 21.11. erledigt: Node-Pool `kurs`, Notion an die Labs angeglichen, [VORBEREITUNG.md](../VORBEREITUNG.md) und [teilnehmer-anlegen.sh](../trainer/teilnehmer-anlegen.sh) erstellt.
+Kursstart 23.11.2026, etwa 15 Teilnehmende, jede Person mit eigenem Namespace. Am 21.11. erledigt: Node-Pool `kurs`, Notion an die Labs angeglichen, [VORBEREITUNG.md](../VORBEREITUNG.md) und [teilnehmer-anlegen.sh](../trainer/einrichtung/teilnehmer-anlegen.sh) erstellt.
 
 1. Vorbereitungsseite an die Teilnehmenden senden. Lizenz für Docker Desktop mit der Kunden-IT klären.
-2. Tag 1 morgens Google-Konten einsammeln. Abends `bash trainer/teilnehmer-anlegen.sh out/konten.txt`, lesen, dann `--apply`. Zwei Konten mit `kubectl auth can-i` und Lab 4 prüfen.
+2. Tag 1 morgens Google-Konten einsammeln. Abends `bash trainer/einrichtung/teilnehmer-anlegen.sh out/konten.txt`, lesen, dann `--apply`. Zwei Konten mit `kubectl auth can-i` und Lab 4 prüfen.
 3. Tag 2 morgens Pool `kurs` auf drei Nodes skalieren (Runbook). Nach dem Kurs Namespaces, IAM-Bindungen, Images und Cluster entfernen.
 4. Konsolenrundgang und Logs Explorer mit einem Teilnehmerkonto prüfen.
 5. Folien und Diagramme. GitHub-Actions-Ergebnis prüfen.

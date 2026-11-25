@@ -109,7 +109,7 @@ Rules for fault files:
 
 ## Fixed limits for the whole workshop (decided 25 Nov)
 
-One fixed quota per namespace for the whole course; labs are built around it. Source: `trainer/kontingent.yaml`, applied by `trainer/teilnehmer-anlegen.sh`, live in `workshop-trainer` and `workshop-person01` to `16`.
+One fixed quota per namespace for the whole course; labs are built around it. Source: `trainer/einrichtung/kontingent.yaml`, applied by `trainer/einrichtung/teilnehmer-anlegen.sh`, live in `workshop-trainer` and `workshop-person01` to `16`.
 
 | Limit | Value | Largest normal need |
 | --- | --- | --- |
@@ -177,7 +177,7 @@ Verified against the [Secret Manager add-on docs](https://docs.cloud.google.com/
 - Access: `roles/secretmanager.secretAccessor` on the secret for `principal://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/PROJECT_ID.svc.id.goog/subject/ns/NAMESPACE/sa/KSA_NAME`
 - Not supported by the add-on: open source "Sync as Kubernetes Secret". Mount as file only
 
-### Trainer setup (`trainer/secret-manager.sh`, idempotent, trainer only)
+### Trainer setup (`trainer/einrichtung/secret-manager.sh`, idempotent, trainer only)
 
 1. Enable the API `secretmanager.googleapis.com`
 2. Enable the add-on (command above), wait until the cluster is `RUNNING`
@@ -265,7 +265,7 @@ Timing in 3.4 (40 min, unchanged): 10 talk, 5 Demo 3.4c, 8 Demo 3.4d, 12 their T
 - Demo flow, red: PR that sets the readiness path to the one from 6.3, merge, deploy-demo goes ROT, rolls back, evidence as artifact, the job is red in the Actions list. Then revert via PR
 - Add `demos/tag3/3.4d-github-actions/README.md` in the demo pattern (no script needed, it is a browser demo): URLs, what to click, what to say, what to do if the run hangs
 
-### Trainer setup: `trainer/github-actions.sh` (idempotent, trainer only)
+### Trainer setup: `trainer/einrichtung/github-actions.sh` (idempotent, trainer only)
 
 - Workload Identity pool `github` and OIDC provider `github-oidc` (issuer `https://token.actions.githubusercontent.com`), attribute mapping `google.subject=assertion.sub`, `attribute.repository=assertion.repository`, `attribute.ref=assertion.ref`, attribute condition `assertion.repository=='juice1000/gke-workshop' && assertion.ref=='refs/heads/main'`
 - Service account `gh-deployer`, `roles/iam.workloadIdentityUser` for `principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/juice1000/gke-workshop`

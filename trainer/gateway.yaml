@@ -7,7 +7,7 @@
 #   kubectl --context "$GKE_CONTEXT" delete -f trainer/gateway.yaml
 #
 #   Gateway workshop/workshop-gateway <-- parentRefs in jeder HTTPRoute
-#   Label workshop=gke-einfuehrung    <-- trainer/namespace.yaml (Teilnehmer)
+#   Label workshop=gke-einfuehrung    <-- trainer/einrichtung/namespace.yaml (Teilnehmer)
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -35,5 +35,5 @@ spec:
           from: Selector
           selector:
             matchLabels:
-              # PASST ZU: labels in trainer/namespace.yaml.
+              # PASST ZU: labels in trainer/einrichtung/namespace.yaml.
               workshop: gke-einfuehrung

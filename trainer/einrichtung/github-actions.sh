@@ -3,7 +3,7 @@
 # Nur fuer den Trainer. Mehrfach ausfuehrbar, legt nur Fehlendes an.
 #
 # Aufruf aus dem Repository-Hauptordner nach source scripts/workshop-env.sh:
-#   bash trainer/github-actions.sh
+#   bash trainer/einrichtung/github-actions.sh
 #
 # Was entsteht:
 #   Workload-Identity-Pool "github" mit OIDC-Provider "github-oidc". Er nimmt nur

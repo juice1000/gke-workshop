@@ -280,7 +280,7 @@ Nicht vor Lab 6: Lab 6 übernimmt Service, Secret und Route. Am Ende des Tages r
 
 Alarm (Abschnitt 5): Getestet am 25.11.2026 in `workshop-trainer`. Störung 5.1 um 05:23:02 UTC, Vorfall offen um 05:27:04, ohne Benachrichtigungskanal. Repariert um 05:28:21, Vorfall geschlossen um 05:31:00. Verzögerung: `restart_count` wird alle 60 Sekunden gemessen und erscheint bis zu 3 Minuten später, dazu das Ausrichtungsfenster. Der Alarm meldet nur Störung 5.1 sicher. Störung 5.3 startet einen Pod nicht, statt ihn neu zu starten. Störungen 5.2, 5.4 und 5.5 haben keine Neustarts. Für 5.2 bräuchte es einen Alarm auf Nutzersicht, etwa eine logbasierte Metrik auf `curl-Fehler` in `verkehr` oder einen Uptime-Check über das Gateway. Das ist dieselbe Lehre wie beim Pipeline-Gate: Ein Alarm prüft, was ihr ihm gesagt habt.
 
-Teilnehmende haben dafür `roles/monitoring.alertPolicyEditor` am Projekt (`trainer/teilnehmer-anlegen.sh`). Die Rolle gilt projektweit, eine Person kann fremde Richtlinien ändern. Deshalb die Namensregel. Nach dem Kurs alle Richtlinien löschen, siehe [Aufräumen](../docs/11-nach-dem-kurs-aufraeumen.md).
+Teilnehmende haben dafür `roles/monitoring.alertPolicyEditor` am Projekt (`trainer/einrichtung/teilnehmer-anlegen.sh`). Die Rolle gilt projektweit, eine Person kann fremde Richtlinien ändern. Deshalb die Namensregel. Nach dem Kurs alle Richtlinien löschen, siehe [Aufräumen](../docs/11-nach-dem-kurs-aufraeumen.md).
 
 Störung 5.4 zeigt: Der Server loggt den Fehler, aber nicht, wer ihn auslöst. Die Spur zum Verursacher liegt beim Client. Störung 5.5 hat keine Fehlermeldung, nur einen Widerspruch in den Antworten.
 

@@ -1,7 +1,7 @@
 # Demo 3.4d: Ein Merge auf main fuehrt dieselbe Pipeline aus wie Lab 6
 # (scripts/pipeline.sh) und rollt nach GKE aus, Namespace workshop-trainer.
 # Anmeldung ohne Schluessel: Workload Identity Federation, Einrichtung in
-# trainer/github-actions.sh. Laeuft nur bei Aenderungen in cicd-demo/.
+# trainer/einrichtung/github-actions.sh. Laeuft nur bei Aenderungen in cicd-demo/.
 name: Deploy-Demo
 
 on:

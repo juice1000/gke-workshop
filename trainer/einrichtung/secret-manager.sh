@@ -3,8 +3,8 @@
 # Nur fuer den Trainer. Mehrfach ausfuehrbar, legt nur Fehlendes an.
 #
 # Aufruf aus dem Repository-Hauptordner nach source scripts/workshop-env.sh:
-#   bash trainer/secret-manager.sh                 alle Kurs-Namespaces
-#   bash trainer/secret-manager.sh workshop-trainer nur diesen Namespace
+#   bash trainer/einrichtung/secret-manager.sh                 alle Kurs-Namespaces
+#   bash trainer/einrichtung/secret-manager.sh workshop-trainer nur diesen Namespace
 #
 # Pro Namespace workshop-X: Secret hallo-db-X mit eigenem Wert, Leserecht
 # (secretAccessor) nur fuer das Kubernetes-Dienstkonto "hallo" in diesem

@@ -3,7 +3,7 @@
 # Nur fuer den Trainer. Mehrfach ausfuehrbar, legt nur Fehlendes an.
 #
 # Aufruf aus dem Repository-Hauptordner nach source scripts/workshop-env.sh:
-#   bash trainer/alarm-kanaele.sh
+#   bash trainer/einrichtung/alarm-kanaele.sh
 #
 # Liest out/trainer/teilnehmer.tsv (nummer, namespace, konto). Pro Zeile ein
 # Kanal "workshop-personNN E-Mail" an das Konto der Person. E-Mail-Kanaele
@@ -16,7 +16,7 @@ if [ -z "${PROJECT_ID:-}" ]; then
   exit 2
 fi
 LISTE="out/trainer/teilnehmer.tsv"
-[ -f "$LISTE" ] || { printf '%s fehlt. Zuerst trainer/teilnehmer-anlegen.sh\n' "$LISTE" >&2; exit 2; }
+[ -f "$LISTE" ] || { printf '%s fehlt. Zuerst trainer/einrichtung/teilnehmer-anlegen.sh\n' "$LISTE" >&2; exit 2; }
 
 API="https://monitoring.googleapis.com/v3/projects/${PROJECT_ID}/notificationChannels"
 TOKEN="$(gcloud auth print-access-token)"

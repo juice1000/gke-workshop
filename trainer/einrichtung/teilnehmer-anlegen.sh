@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # Legt fuer jede Google-Konto-Adresse einen Namespace, die Namespace-Rolle, das
-# Kontingent (trainer/kontingent.yaml) und die Projekt-IAM-Rollen an. Nur fuer den Trainer.
+# Kontingent (trainer/einrichtung/kontingent.yaml) und die Projekt-IAM-Rollen an. Nur fuer den Trainer.
 #
 # Aufruf aus dem Repository-Hauptordner nach source scripts/workshop-env.sh:
-#   bash trainer/teilnehmer-anlegen.sh KONTOLISTE            # nur rendern und anzeigen
-#   bash trainer/teilnehmer-anlegen.sh KONTOLISTE --apply    # zusaetzlich anwenden
+#   bash trainer/einrichtung/teilnehmer-anlegen.sh KONTOLISTE            # nur rendern und anzeigen
+#   bash trainer/einrichtung/teilnehmer-anlegen.sh KONTOLISTE --apply    # zusaetzlich anwenden
 #
 # KONTOLISTE: eine Adresse pro Zeile, Reihenfolge ergibt die Nummer (01, 02, ...).
 # Leere Zeilen und Zeilen mit # werden uebersprungen.
 set -euo pipefail
 
 if [ $# -lt 1 ] || [ ! -f "$1" ]; then
-  printf 'Aufruf: bash trainer/teilnehmer-anlegen.sh KONTOLISTE [--apply]\n' >&2
+  printf 'Aufruf: bash trainer/einrichtung/teilnehmer-anlegen.sh KONTOLISTE [--apply]\n' >&2
   exit 2
 fi
 LISTE="$1"
@@ -42,10 +42,10 @@ while IFS= read -r zeile || [ -n "$zeile" ]; do
   ns="workshop-person${nn}"
   dir="$OUT/person${nn}"
   mkdir -p "$dir"
-  sed "s/workshop-person01/${ns}/g" trainer/namespace.yaml > "$dir/namespace.yaml"
+  sed "s/workshop-person01/${ns}/g" trainer/einrichtung/namespace.yaml > "$dir/namespace.yaml"
   sed -e "s/workshop-person01/${ns}/g" -e "s/TEILNEHMER_KONTO_ERSETZEN/${konto}/g" \
     trainer/rbac.yaml > "$dir/rbac.yaml"
-  sed "s/workshop-person01/${ns}/g" trainer/kontingent.yaml > "$dir/kontingent.yaml"
+  sed "s/workshop-person01/${ns}/g" trainer/einrichtung/kontingent.yaml > "$dir/kontingent.yaml"
   printf '%s\t%s\t%s\n' "$nn" "$ns" "$konto" >> "$TABELLE"
 
   if [ "$APPLY" != "--apply" ]; then

@@ -140,7 +140,7 @@ Fuer 15 Teilnehmende wurde `default-pool` durch den Pool `kurs` ersetzt. Grundla
 
 Am 25.11.2026 lehnte Google Antraege auf 20 und 16 vCPU automatisch ab (junges Rechnungskonto). Deshalb fordern die Tag-3-Labs (Lab 5 und Lab 6) nur 100m CPU pro `hallo`-Pod an. Es gibt kein CPU-Limit, die Pods nutzen freie CPU weiter. Spitzenbedarf mit 17 Namespaces bei gleichzeitigen Rollouts: etwa 3 x 100m + 10m pro Namespace, rund 5,3 vCPU plus Systempods, statt 13,6 vCPU mit 250m. Lab 2 bis 4 und die Tag-2-Demos behalten 250m.
 
-Seit 25.11.2026 hat jeder Kurs-Namespace ein Kontingent ([kontingent.yaml](kontingent.yaml), `teilnehmer-anlegen.sh` wendet es an): hoechstens 4 CPU und 8 GiB Speicher als Requests, 20 Pods, kein eigener `LoadBalancer`. Das ist ein Sicherheitsnetz gegen Versehen wie `kubectl scale --replicas=50`, keine Uebung kommt in die Naehe (die groesste braucht etwa 1 CPU). Keine Uebung darf am Kontingent scheitern; eine neue Uebung mit mehr Bedarf hebt die Grenze an, und externe Adressen (`IN_USE_ADDRESSES`, 8 in `europe-west3`) bleiben frei. Ein Pod ohne `resources` bekommt 100m CPU und 256 MiB als Request, aber kein Limit. Ueberschreitungen erscheinen als Event `FailedCreate ... exceeded quota` am ReplicaSet, nicht als `Pending`. Pruefen: `kubectl -n workshop-personNN describe resourcequota kurs`.
+Seit 25.11.2026 hat jeder Kurs-Namespace ein Kontingent ([kontingent.yaml](einrichtung/kontingent.yaml), `teilnehmer-anlegen.sh` wendet es an): hoechstens 4 CPU und 8 GiB Speicher als Requests, 20 Pods, kein eigener `LoadBalancer`. Das ist ein Sicherheitsnetz gegen Versehen wie `kubectl scale --replicas=50`, keine Uebung kommt in die Naehe (die groesste braucht etwa 1 CPU). Keine Uebung darf am Kontingent scheitern; eine neue Uebung mit mehr Bedarf hebt die Grenze an, und externe Adressen (`IN_USE_ADDRESSES`, 8 in `europe-west3`) bleiben frei. Ein Pod ohne `resources` bekommt 100m CPU und 256 MiB als Request, aber kein Limit. Ueberschreitungen erscheinen als Event `FailedCreate ... exceeded quota` am ReplicaSet, nicht als `Pending`. Pruefen: `kubectl -n workshop-personNN describe resourcequota kurs`.
 
 ```bash
 gcloud container node-pools create kurs \
@@ -188,8 +188,8 @@ Pruefen: Image mit `docker build --platform linux/amd64 --build-arg APP_VERSION=
 Fuer den Kurs alle Konten in einem Schritt: Adressen in eine Datei schreiben, eine pro Zeile. Die Reihenfolge ergibt die Nummer. Erst ohne `--apply` laufen lassen und die Arbeitskopien in `out/trainer/` lesen:
 
 ```bash
-bash trainer/teilnehmer-anlegen.sh out/konten.txt
-bash trainer/teilnehmer-anlegen.sh out/konten.txt --apply
+bash trainer/einrichtung/teilnehmer-anlegen.sh out/konten.txt
+bash trainer/einrichtung/teilnehmer-anlegen.sh out/konten.txt --apply
 ```
 
 Das Skript legt Namespace und RoleBinding an und vergibt `container.clusterViewer`, `logging.viewer`, `monitoring.viewer` am Projekt und `artifactregistry.writer` am Repository. `out/trainer/teilnehmer.tsv` ordnet Nummer, Namespace und Konto zu. Die Kontoliste und die Tabelle enthalten personenbezogene Daten und bleiben unter `out/` (nicht in Git).
@@ -200,7 +200,7 @@ Die Einzelschritte je Person oder Paar `NN` und Google-Konto:
 NN=01
 ACCOUNT="person01@example.com"
 mkdir -p "out/trainer/person${NN}"
-sed "s/workshop-person01/workshop-person${NN}/g" trainer/namespace.yaml > "out/trainer/person${NN}/namespace.yaml"
+sed "s/workshop-person01/workshop-person${NN}/g" trainer/einrichtung/namespace.yaml > "out/trainer/person${NN}/namespace.yaml"
 sed -e "s/workshop-person01/workshop-person${NN}/g" -e "s/TEILNEHMER_KONTO_ERSETZEN/${ACCOUNT}/g" \
   trainer/rbac.yaml > "out/trainer/person${NN}/rbac.yaml"
 cat "out/trainer/person${NN}/"*.yaml     # vor dem Anwenden lesen
