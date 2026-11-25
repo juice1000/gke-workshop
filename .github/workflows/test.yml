@@ -2,10 +2,7 @@ name: Workshop labs
 on:
   push:
     branches: [main]
-    # Aenderungen nur in cicd-demo/ loesen allein Demo 3.4d aus.
-    paths-ignore: ["cicd-demo/**"]
   pull_request:
-    paths-ignore: ["cicd-demo/**"]
   workflow_dispatch:
 
 permissions:

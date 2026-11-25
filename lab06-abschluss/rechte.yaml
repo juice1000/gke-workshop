@@ -1,0 +1,40 @@
+---
+# Lab 6 Etappe C: eine enge Rolle fuer einen erfundenen Benutzer "tester".
+# Role sagt WAS, RoleBinding sagt WER. Erst beides gibt ein Recht.
+# Anwenden: kubectl apply -f lab06-abschluss/rechte.yaml
+# Pruefen:  kubectl auth can-i create deployments.apps --as=tester
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  # PASST ZU: roleRef.name unten.
+  name: entwickler
+  # Rechte gelten nur in diesem Namespace.
+  namespace: workshop
+# FEST: Namen aus der Kubernetes-API. "" ist die Kerngruppe.
+# Was fehlt, ist verboten.
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/log", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: entwickler-tester
+  # PASST ZU: namespace der Role.
+  namespace: workshop
+# Im echten Betrieb steht hier ein Google-Konto oder eine Gruppe.
+subjects:
+  - kind: User
+    name: tester
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: entwickler
+  apiGroup: rbac.authorization.k8s.io

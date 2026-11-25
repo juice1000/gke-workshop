@@ -1,3 +1,4 @@
+---
 # Service fuer Lab 6. Fertig, keine Aufgabe. ClusterIP, Zugriff per port-forward.
 apiVersion: v1
 kind: Service

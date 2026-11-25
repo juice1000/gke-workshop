@@ -1,9 +1,0 @@
-# Namespace pro Person. Nur fuer den Trainer. Vor dem Anwenden NN ersetzen.
-apiVersion: v1
-kind: Namespace
-metadata:
-  # PASST ZU: namespace in rbac.yaml und im Kontext der Person.
-  name: workshop-person01
-  # FREI: zum Filtern aller Kurs-Namespaces, z. B. beim Aufraeumen.
-  labels:
-    workshop: gke-einfuehrung

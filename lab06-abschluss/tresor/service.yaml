@@ -1,9 +1,12 @@
-# Demo 3.4d: Service wie in Lab 6.
+---
+# Service fuer Lab 6. Fertig, keine Aufgabe. ClusterIP, Zugriff per port-forward.
 apiVersion: v1
 kind: Service
 metadata:
   # PASST ZU: port-forward service/hallo.
   name: hallo
+  labels:
+    workshop-lab: "06"
 spec:
   # PASST ZU: Pod-Labels im Deployment und in allen Releases.
   selector:

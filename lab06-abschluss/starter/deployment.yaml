@@ -1,9 +1,9 @@
+---
 # Lab 6, Starter: TODO-Zeilen ergaenzen. Muster: lab02-hallo-app/betrieb/deployment.yaml.
 #
 #   configmap.yaml hallo-config, Schluessel GREETING --> env GREETING
 #   Secret hallo-secret, Schluessel DB_PASSWORT -------> env DB_PASSWORT
 #   service.yaml selector app=hallo ------------------> template-Labels
-#   $IMAGE aus docker push ----------------------------> image
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -35,7 +35,7 @@ spec:
       containers:
         - name: hallo
           # PASST ZU: $IMAGE.
-          image: TODO_IMAGE  # TODO: Registry-Pfad mit Version 2.0
+          image: WORKSHOP_IMAGE  # sed setzt $IMAGE ein
           imagePullPolicy: IfNotPresent
           env:
             - name: HOSTNAME

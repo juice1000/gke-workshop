@@ -2,6 +2,8 @@
 
 Übungsmaterial für den dreitägigen Workshop der S-Management Services GmbH. Durchführung: Look Beyond. Die Labs begleiten die vorhandenen Notion-Kapitel. Sie beginnen lokal und führen dieselbe Spring-Boot-Anwendung auf GKE weiter.
 
+**Nach dem Kurs:** Labs 4 bis 6 laufen in eurem eigenen Google-Cloud-Projekt. Einrichtung und Kosten: [SELBST-WEITERMACHEN.md](SELBST-WEITERMACHEN.md). Der Stand, mit dem der Kurs durchgeführt wurde, liegt im Branch `workshop-master`.
+
 ## Ablauf
 
 | Lab | Wann | Ziel | Dauer |
@@ -11,8 +13,8 @@
 | [2: hallo-app](lab02-hallo-app/README.md) | Tag 1 und Tag 2 | Image bauen, deployen, konfigurieren, Probes und Updates | 60 Min. plus Tag-2-Übungen |
 | [3: Fehlersuche](lab03-defekt/README.md) | Tag 2 | Fünf defekte Deployments untersuchen und reparieren | 35 Min. |
 | [4: Auf GKE](lab04-gke/README.md) | Tag 2 | Artifact Registry, Kontextwechsel, Konsole | 60 Min. |
-| [5: Störungssuche](lab05-stoerungen/README.md) | Tag 3, 3.2 (Kurzfassung 30 Min.) | Störungen über Logs, Events, Logs Explorer und einen Alarm finden | 30 bis 80 Min. |
-| [6: Abschluss](lab06-abschluss/README.md) | Tag 3, 3.5 | Manifest vervollständigen, Störungen 6.1 bis 6.3 über die Pipeline reparieren | 90 Min. |
+| [5: Störungssuche](lab05-stoerungen/README.md) | Tag 3, 3.2 | Störungen über Logs, Events, Logs Explorer und einen Alarm finden | 60 bis 80 Min. |
+| [6: Abschluss](lab06-abschluss/README.md) | Tag 3, 3.5 | Manifest vervollständigen, Störungen über die Pipeline reparieren, Secret Manager | 120 Min. |
 | [7: Betrieb](lab07-betrieb/README.md) | Tag 3, 3.6, parallel zu Lab 6 | Cluster lesen, lokal cordon/uncordon und PDB untersuchen | 90 Min. |
 
 ## Voraussetzungen
@@ -21,7 +23,7 @@ Installationsanleitung für Windows mit WSL2, macOS und Linux: [VORBEREITUNG.md]
 
 Docker mit laufendem Daemon, Buildx, minikube, kubectl, Git, curl und Python 3.9 oder neuer. Java und Maven laufen im Docker-Build und müssen nicht lokal installiert sein. Unter Windows arbeitet ihr in Bash unter WSL2 mit Docker-Integration. Legt den Klon im Linux-Home ab.
 
-Plant für den lokalen Cluster 2 CPUs und 4 GiB freien Arbeitsspeicher ein, zusätzlich zu Docker und euren anderen Anwendungen. Downloads brauchen Zugriff auf GitHub, Maven Central, Docker Hub und die Kubernetes-Registries. Für GKE kommen gcloud, das GKE-Auth-Plugin und ein vom Trainer vorbereiteter Zugang hinzu.
+Plant für den lokalen Cluster 2 CPUs und 4 GiB freien Arbeitsspeicher ein, zusätzlich zu Docker und euren anderen Anwendungen. Downloads brauchen Zugriff auf GitHub, Maven Central, Docker Hub und die Kubernetes-Registries. Für GKE kommen gcloud, das GKE-Auth-Plugin und ein eigenes Google-Cloud-Projekt hinzu.
 
 ## Einstieg
 
@@ -46,19 +48,14 @@ Dockerfile -> hallo-app:1.0 -> minikube
 
 `/` nennt Begrüßung, Pod und Version. Actuator liefert Health-Endpunkte. `/fehler` erzeugt einen absichtlichen HTTP-500-Fehler und eine Logzeile mit `FEHLER`. Das Übungs-Secret enthält keine echten Zugangsdaten. Es gibt keine Datenbank.
 
-Die Anwendung ist textbasiert. So bleiben Kubernetes und die Fehlersuche im Mittelpunkt. Services sind vom Typ `ClusterIP`; der Zugriff erfolgt per `port-forward`.
+Die Anwendung ist textbasiert. So bleiben Kubernetes und die Fehlersuche im Mittelpunkt. Services sind vom Typ `ClusterIP`; der Zugriff erfolgt per `port-forward`. Ab Lab 5 kommt ein `LoadBalancer` mit öffentlicher IP für die Browser-Oberfläche `/ui.html` dazu.
 
-## Für den Trainer
+## Für Trainer und Mitwirkende
 
-- Auf diesem vorbereiteten Rechner: `source scripts/workshop-env.sh`. Das lädt die Werkzeuge aus `.cache/bin`, die eigene Workshop-kubeconfig und die gcloud-Konfiguration `gke-workshop`. Mit `workshop_local` und `workshop_gke` zwischen den Umgebungen wechseln. Details stehen im [Runbook](trainer/RUNBOOK.md).
-- [Lab-Zuordnung, Lösungen und Kürzungen](docs/06-labs-und-trainer.md)
-- [Demonstrationen für die Folien „Lokal ausprobieren“](demos/README.md)
-- [Teststatus und noch nötige Prüfungen](docs/07-teststatus.md)
-- [Sitzungsübergabe und Wiedereinstieg](docs/09-uebergabe.md)
-- [Cloud-Vorbereitung, Zugriffe und Aufräumen](trainer/README.md)
-- [Nach dem Kurs: Cloud-Ressourcen entfernen](docs/11-nach-dem-kurs-aufraeumen.md)
-- [Pipeline-Einordnung und Cheat-Sheet](docs/08-pipeline-und-cheatsheet.md)
-- [Kundenkontext](docs/01-kontext.md), [Lernziele](docs/02-bedarf-und-lernziele.md), [Curriculum](docs/03-curriculum-entscheidungen.md), [offene Umgebungspunkte](docs/04-lernumgebung-und-offene-punkte.md)
+- [Demonstrationen für die Folien „Lokal ausprobieren“](demos/README.md), lokal mit minikube. `source scripts/workshop-env.sh` lädt deren Umgebung.
+- [Lab-Zuordnung und Kürzungen](docs/06-labs-und-trainer.md), [Teststatus](docs/07-teststatus.md), [Pipeline-Einordnung und Cheat-Sheet](docs/08-pipeline-und-cheatsheet.md)
+- [Kundenkontext](docs/01-kontext.md), [Lernziele](docs/02-bedarf-und-lernziele.md), [Curriculum](docs/03-curriculum-entscheidungen.md)
+- Gemeinsamer Kurscluster, Teilnehmerzugänge, Gateway, Runbook und GitHub-Actions-Demo: Branch `workshop-master`, Ordner `trainer/`.
 
 ```bash
 bash scripts/validate.sh   # ShellCheck, Dateiverweise, Kubernetes-Schemas

@@ -1,0 +1,20 @@
+---
+# Lab 5: Oeffentlicher Zugang fuer die Browser-Oberflaeche.
+# GKE legt dafuer einen Load Balancer mit eigener IP an (1 bis 2 Minuten).
+#   kubectl get service hallo-extern   -> EXTERNAL-IP
+#   http://EXTERNAL-IP/ui.html
+# Kostet Geld, solange er steht. Lab 6 Aufraeumen loescht ihn.
+apiVersion: v1
+kind: Service
+metadata:
+  name: hallo-extern
+  labels:
+    workshop-lab: "05"
+spec:
+  type: LoadBalancer
+  # PASST ZU: template.metadata.labels in deployment.yaml.
+  selector:
+    app: hallo
+  ports:
+    - port: 80
+      targetPort: 8080

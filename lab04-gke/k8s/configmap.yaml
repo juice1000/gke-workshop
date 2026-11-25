@@ -1,3 +1,4 @@
+---
 # ConfigMap fuer GKE. Eigener Text: So seht ihr, welcher Cluster antwortet.
 apiVersion: v1
 kind: ConfigMap

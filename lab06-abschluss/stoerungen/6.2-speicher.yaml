@@ -1,8 +1,9 @@
+---
 # Lab 6, Stoerung 6.2: absichtlich mit einem Fehler.
 # Bewusst ohne Feldkommentare, damit die Datei den Fehler nicht verraet.
 # Gleicher Name hallo und gleiche Labels wie ../loesung/deployment.yaml:
 # "apply" aendert das laufende Deployment per Rolling Update.
-# Korrigierte Fassung fuer den Trainer: ../repariert/6.2-speicher.yaml.
+# Korrigierte Fassung: ../repariert/6.2-speicher.yaml.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

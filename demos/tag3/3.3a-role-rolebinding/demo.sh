@@ -26,5 +26,5 @@ run "kubectl auth can-i get secrets --as $PERSON"
 say "Alle Rechte der Person in diesem Namespace auf einen Blick:"
 run "kubectl auth can-i --list --as $PERSON | head -n 8"
 say "Auf GKE kommt IAM davor: ohne IAM-Zugang zum Cluster hilft kein RoleBinding."
-say "Vollstaendiges Beispiel: trainer/rbac.yaml."
+say "Vollstaendiges Beispiel: lab06-abschluss/rechte.yaml."
 finish

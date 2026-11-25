@@ -103,7 +103,6 @@ Tag 3 läuft auf GKE. Die Demonstrationen zeigen dieselben Mechanismen lokal, be
 | [3.4a](tag3/3.4a-rollout-exitcode/README.md) | 3.4 Anbindung an den Build-Prozess | Exit-Code 1 bei falschem Tag, 0 nach undo | ja |
 | [3.4b](tag3/3.4b-imageid-pullpolicy/README.md) | 3.4 Anbindung an den Build-Prozess | Tag gegen imageID, imagePullPolicy | nein |
 | [3.4c](tag3/3.4c-pipeline/README.md) | 3.4 Unsere Pipeline | `scripts/pipeline.sh` grün, dann rot mit Belegen und Rollback | ja |
-| [3.4d](tag3/3.4d-github-actions/README.md) | 3.4 Merge auf main | Merge auf `main` startet dieselbe Pipeline in GitHub Actions, Anmeldung ohne Schlüssel | ja, `workshop-trainer` |
 | [3.6a](tag3/3.6a-cordon-pending/README.md) | 3.6 Lab 7: Vertiefung Betrieb | cordon, Ersatz-Pod Pending, uncordon | ja |
 | [3.6b](tag3/3.6b-pdb-drain/README.md) | 3.6 Lab 7: Vertiefung Betrieb | PDB `minAvailable: 2` blockiert drain | ja |
 

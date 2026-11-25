@@ -1,3 +1,4 @@
+---
 # Lab 6, Stoerung 6.3 repariert. Bezuege wie in ../loesung/deployment.yaml.
 # Der entscheidende Bezug: readinessProbe.path ist FEST, von Spring Boot Actuator vorgegeben:
 # /actuator/health/readiness.

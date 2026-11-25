@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Nur lesen: Werkzeuge und optional den zugewiesenen Cloud-Zugang pruefen.
+# Nur lesen: Werkzeuge und optional den Zugang zum eigenen GKE-Cluster pruefen.
 set -uo pipefail
 fehlend=0
 ok=0
@@ -44,14 +44,10 @@ case "${1:-lokal}" in
     for tool in gcloud gke-gcloud-auth-plugin kubectl; do
       check "Werkzeug $tool installiert" command -v "$tool"
     done
-    if [ -z "${WORKSHOP_CONTEXT:-}" ] || [ -z "${WORKSHOP_NAMESPACE:-}" ]; then
-      printf 'FEHLT: WORKSHOP_CONTEXT und WORKSHOP_NAMESPACE laut Lab 4 setzen.\n'
-      fehlend=$((fehlend + 1))
-    else
-      printf 'INFO: Kontext %s, Namespace %s\n' "$WORKSHOP_CONTEXT" "$WORKSHOP_NAMESPACE"
-      check 'Pods im eigenen Namespace lesbar' kubectl --context "$WORKSHOP_CONTEXT" -n "$WORKSHOP_NAMESPACE" --request-timeout=10s get pods
-      check 'Deployments im eigenen Namespace erlaubt' kubectl --context "$WORKSHOP_CONTEXT" -n "$WORKSHOP_NAMESPACE" --request-timeout=10s auth can-i create deployments.apps --quiet
-    fi
+    printf 'INFO: Kontext %s, Namespace %s\n' "$(kubectl config current-context 2>/dev/null)" \
+      "$(kubectl config view --minify -o jsonpath='{..namespace}' 2>/dev/null)"
+    check 'Cluster erreichbar, Pods lesbar' kubectl --request-timeout=10s get pods
+    check 'Deployments im Namespace erlaubt' kubectl --request-timeout=10s auth can-i create deployments.apps --quiet
     ;;
   *) printf 'Aufruf: bash lab00-check/check.sh [lokal|cloud]\n' >&2; exit 2 ;;
 esac

@@ -1,10 +1,11 @@
-# Lab 6, Ausgangsloesung: So sieht out/lab06/starter/deployment.yaml nach
+---
+# Lab 6, Ausgangsloesung: So sieht starter/deployment.yaml nach
 # den TODOs aus. Stoerungen 6.1 bis 6.3 heissen auch hallo: apply aktualisiert es.
 #
 #   service.yaml selector app=hallo --> template.metadata.labels
 #   configmap.yaml hallo-config ------> env GREETING
 #   Secret hallo-secret --------------> env DB_PASSWORT
-#   render.py --image "$IMAGE" -------> image: WORKSHOP_IMAGE
+#   sed setzt $IMAGE ein -------------> image: WORKSHOP_IMAGE
 
 # FEST
 apiVersion: apps/v1
@@ -42,7 +43,7 @@ spec:
       containers:
         # PASST ZU: "kubectl set image deployment/hallo hallo=...".
         - name: hallo
-          # PASST ZU: render.py ersetzt dies durch $IMAGE.
+          # PASST ZU: sed ersetzt dies durch $IMAGE aus Lab 4.
           image: WORKSHOP_IMAGE
           imagePullPolicy: IfNotPresent
           # Vor dem Stoppen 10 s warten: So nimmt der Load Balancer des Gateways

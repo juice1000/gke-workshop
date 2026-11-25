@@ -1,10 +1,10 @@
 {
-  "displayName": "workshop-person01: hallo startet neu",
+  "displayName": "workshop: hallo startet neu",
   "combiner": "OR",
   "conditions": [{
-    "displayName": "Neustarts von hallo in workshop-person01",
+    "displayName": "Neustarts von hallo in workshop",
     "conditionThreshold": {
-      "filter": "resource.type = \"k8s_container\" AND resource.labels.namespace_name = \"workshop-person01\" AND resource.labels.container_name = \"hallo\" AND metric.type = \"kubernetes.io/container/restart_count\"",
+      "filter": "resource.type = \"k8s_container\" AND resource.labels.namespace_name = \"workshop\" AND resource.labels.container_name = \"hallo\" AND metric.type = \"kubernetes.io/container/restart_count\"",
       "aggregations": [{"alignmentPeriod": "60s", "perSeriesAligner": "ALIGN_DELTA", "crossSeriesReducer": "REDUCE_SUM"}],
       "comparison": "COMPARISON_GT",
       "thresholdValue": 0,

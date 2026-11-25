@@ -1,6 +1,6 @@
 # Lab 5: Störungssuche mit Logs
 
-**Ziel:** Ihr findet Störungen, die `kubectl get pods` nicht oder nur halb zeigt. Ihr lest dazu Logs, Events und auf GKE Logs Explorer und Monitoring. Auf GKE legt ihr einen Alarm an, der eine Störung selbst meldet. Dauer: 60 Minuten, mit Alarm 80 Minuten, jeder für sich. **Voraussetzung:** Kontext, Namespace und `IMAGE` aus [Lab 4](../lab04-gke/README.md). Eine laufende Anwendung aus Lab 4 oder Lab 6 ersetzt dieses Lab.
+**Ziel:** Ihr findet Störungen, die `kubectl get pods` nicht oder nur halb zeigt. Ihr lest dazu Logs, Events, den Logs Explorer und Monitoring. Zum Schluss legt ihr einen Alarm an, der eine Störung selbst meldet. Dauer: 60 Minuten, mit Alarm 80 Minuten. **Voraussetzung:** Cluster, Namespace `workshop` und `IMAGE` aus [Lab 4](../lab04-gke/README.md).
 
 Alle Befehle aus dem Repository-Hauptordner. Lest `stoerung.sh` erst nach dem Lab, es verrät die Ursachen.
 
@@ -21,7 +21,7 @@ Alle Befehle aus dem Repository-Hauptordner. Lest `stoerung.sh` erst nach dem La
                       Events: was Kubernetes tut (Neustarts, Probes, Fehler beim Start)
 ```
 
-`verkehr` ist ein kleiner Client im eigenen Namespace. Er ruft jede Sekunde die Anwendung auf und schreibt das Ergebnis als Logzeile:
+`verkehr` ist ein kleiner Client im selben Namespace. Er ruft jede Sekunde die Anwendung auf und schreibt das Ergebnis als Logzeile:
 
 ```text
 18:27:35 GET / -> 200 Hallo aus dem Betrieb von Pod hallo-7cff9c99cf-bkrds, Version 2.0
@@ -30,28 +30,15 @@ Alle Befehle aus dem Repository-Hauptordner. Lest `stoerung.sh` erst nach dem La
 
 Die Uhrzeit im Container ist UTC.
 
-## Kurzfassung (30 Minuten, Tag 3)
+## Kern
 
-Jeder für sich, zwei Störungen: 5.1 und 5.4. Die Langfassung darunter bleibt für später und als Nachschlagewerk.
+### 1. Ausgangslage herstellen
 
-**0. Neues Terminal? Umgebung aus Lab 4 setzen** (eure Nummer einsetzen):
-
-```bash
-export WORKSHOP_NAMESPACE=workshop-person01
-export WORKSHOP_CONTEXT=gke_lookbeyond-gke-workshop_europe-west3-b_workshop
-export IMAGE=europe-west3-docker.pkg.dev/lookbeyond-gke-workshop/workshop/hallo-app:2.5
-export GATEWAY_IP=ADRESSE_VOM_TRAINER
-kubectl config use-context "$WORKSHOP_CONTEXT"
-kubectl config set-context "$WORKSHOP_CONTEXT" --namespace="$WORKSHOP_NAMESPACE"
-```
-
-`hallo-app:2.5` ist dieselbe Anwendung wie eure, vom Trainer gebaut, mit einer Browser-Oberfläche. So muss niemand vor dem Lab neu bauen.
-
-**1. Ausgangslage** (dauert 1 bis 2 Minuten):
+Neues Terminal? Erst die Umgebung aus Lab 4 setzen (`PROJECT_ID`, `REGION`, `ZONE`, `IMAGE`).
 
 ```bash
 bash lab05-stoerungen/stoerung.sh start
-bash lab05-stoerungen/stoerung.sh pruefen       # erwartet: 0 Pruefung(en) fehlgeschlagen
+kubectl get pods                          # erwartet: hallo 2x und verkehr, alle 1/1, 0 Neustarts
 ```
 
 Zweites Terminal, läuft die ganze Zeit mit:
@@ -60,82 +47,41 @@ Zweites Terminal, läuft die ganze Zeit mit:
 kubectl logs deployment/verkehr -f
 ```
 
-Im Browser, läuft ebenfalls mit: `http://GATEWAY_IP/workshop-person01/ui.html` (eure Nummer). Die Seite fragt jede Sekunde über das öffentliche Gateway an und zeigt, welcher Pod antwortet. Beim ersten `start` braucht eine neue Route einige Minuten. Danach bleibt sie stehen, auch über `start` und Lab 6 hinweg.
+Im Browser, läuft ebenfalls mit: `http://EXTERNAL-IP/ui.html`. Die Adresse zeigt `kubectl get service hallo-extern`, beim ersten Start nach ein bis zwei Minuten. Die Seite fragt jede Sekunde an und zeigt, welcher Pod antwortet.
 
-**2. Runde 5.1**
-
-```bash
-bash lab05-stoerungen/stoerung.sh 1
-```
-
-Beobachtet zuerst den Verkehr. Sucht dann mit der Tabelle in Abschnitt 2 den Fundort. Repariert mit `kubectl`, nicht mit `start`. Dann:
-
-```bash
-bash lab05-stoerungen/stoerung.sh pruefen
-bash lab05-stoerungen/stoerung.sh aufloesen
-bash lab05-stoerungen/stoerung.sh start         # gesund für Runde 5.4
-```
-
-**3. Runde 5.4:** dasselbe mit `bash lab05-stoerungen/stoerung.sh 4`.
-
-**Abgabe, in den Chat:** pro Störung eine Zeile: Symptom beim Nutzer, Fundort (Befehl und Zeile), Ursache, Reparatur. Eine der beiden Zeilen belegt ihr mit einer Abfrage im Logs Explorer (Abschnitt 4).
-
-Früher fertig? Weitere Störungen mit `zufall` (Abschnitt 3) oder der Alarm (Abschnitt 5).
-
-## Kern
-
-### 1. Ausgangslage herstellen
-
-```bash
-bash lab05-stoerungen/stoerung.sh start
-bash lab05-stoerungen/stoerung.sh pruefen
-```
-
-Erwartet: `Ergebnis: 0 Pruefung(en) fehlgeschlagen`. Öffnet ein zweites Terminal und lasst den Verkehr mitlaufen:
-
-```bash
-kubectl logs deployment/verkehr -f
-```
-
-`start` löscht ein vorhandenes Deployment `hallo` aus Lab 4 oder Lab 6 und legt alles neu an. Es setzt auch jede Störung zurück.
+`start` legt alles neu an und setzt jede Störung zurück.
 
 ### 2. Wo ihr nachschaut
 
-| Sicht | Befehl | Auf GKE zusätzlich |
+| Sicht | Befehl | In der Konsole |
 | --- | --- | --- |
 | Nutzer | `kubectl logs deployment/verkehr --tail=20` | Logs Explorer, Container `verkehr` |
 | Server | `kubectl logs -l app=hallo --prefix --tail=50` | Logs Explorer, Container `hallo` |
 | Server vor dem Neustart | `kubectl logs POD --previous` | Logs Explorer, Zeitfenster vor dem Neustart |
 | Kubernetes | `kubectl get events --field-selector type=Warning --sort-by=.lastTimestamp` | Logs Explorer, Kubernetes-Events |
 | Zustand | `kubectl get pods`, `kubectl describe pod POD` | Workloads |
-| Netz | `kubectl get service hallo -o wide`, `kubectl get endpointslices -l kubernetes.io/service-name=hallo` | Gateways, Services & Ingress |
+| Netz | `kubectl get service hallo -o wide`, `kubectl get endpointslices -l kubernetes.io/service-name=hallo` | Services & Ingress |
 | Neustarts über Zeit | `kubectl get pods` (Spalte RESTARTS) | Monitoring, `kubernetes.io/container/restart_count` |
 
 curl-Fehler im Verkehr: `6` Name nicht auflösbar, `7` Verbindung abgelehnt, `28` Zeitüberschreitung.
 
-**Gut zu wissen:** `Startup probe failed: ... connection refused` in den ersten Sekunden nach einem Start ist normal. Spring Boot fährt noch hoch. Das ist Rauschen, kein Befund.
-
-Hängt an eurem Service eine Route aus Lab 4 Extra 4, meldet GKE nach `start` Warnungen wie `EnterDegradedMode` oder `SyncNetworkEndpointGroupFailed` für den Service. `start` legt den Service neu an. Auch das ist Rauschen.
+**Gut zu wissen:** `Startup probe failed: ... connection refused` in den ersten Sekunden nach einem Start ist normal. Spring Boot fährt noch hoch.
 
 ### 3. Störungen suchen
 
-Pro Runde:
+Es gibt fünf Störungen, 5.1 bis 5.5. Pro Runde:
 
 ```bash
-bash lab05-stoerungen/stoerung.sh zufall      # baut eine unbekannte Störung ein
+bash lab05-stoerungen/stoerung.sh zufall      # eine unbekannte Störung
+bash lab05-stoerungen/stoerung.sh 1           # oder gezielt 5.1 bis 5.5
 ```
 
 1. Beobachtet zuerst den Verkehr. Was merkt der Nutzer?
 2. Sucht den Fundort mit der Tabelle oben. Welcher Befehl, welche Zeile zeigt es?
 3. Benennt die Ursache.
-4. Repariert mit `kubectl`. Nicht mit `start`: Das wäre Zurücksetzen, keine Reparatur. Die Dateien in `out/lab05/` sind der gesunde Stand.
-5. Prüft:
-
-```bash
-bash lab05-stoerungen/stoerung.sh pruefen
-bash lab05-stoerungen/stoerung.sh aufloesen   # welche Störung war es?
-bash lab05-stoerungen/stoerung.sh start       # gesund für die nächste Runde
-```
+4. Repariert mit `kubectl`. Nicht mit `start`: Das wäre Zurücksetzen, keine Reparatur. Die Dateien in [basis/](basis/) sind der gesunde Stand.
+5. Prüft: `kubectl get pods` ohne neue Neustarts, und die letzten Zeilen von `verkehr` zeigen nur `-> 200` mit derselben Begrüßung.
+6. `bash lab05-stoerungen/stoerung.sh start` für die nächste Runde.
 
 Notiert pro Runde:
 
@@ -143,17 +89,13 @@ Notiert pro Runde:
 | --- | --- | --- | --- | --- |
 | 1 | | | | |
 
-Es gibt fünf Störungen, 5.1 bis 5.5. Kommt ihr dreimal auf dieselbe, baut gezielt eine andere ein: `bash lab05-stoerungen/stoerung.sh 1` bis `5` (für 5.1 bis 5.5).
+### 4. Dieselbe Spur in der Konsole
 
-### 4. Auf GKE: dieselbe Spur in der Konsole
-
-Sucht für mindestens eine Störung denselben Befund im Logs Explorer. Setzt euren Namespace ein:
+Sucht für mindestens eine Störung denselben Befund im Logs Explorer:
 
 ```text
 resource.type="k8s_container"
-resource.labels.project_id="lookbeyond-gke-workshop"
-resource.labels.cluster_name="workshop"
-resource.labels.namespace_name="workshop-person01"
+resource.labels.namespace_name="workshop"
 resource.labels.container_name=("hallo" OR "verkehr")
 ```
 
@@ -161,27 +103,27 @@ Kubernetes-Events derselben Pods:
 
 ```text
 log_id("events")
-resource.labels.namespace_name="workshop-person01"
+resource.labels.namespace_name="workshop"
 ```
 
 Schaut auf das Histogramm über den Treffern. Wann beginnt die Störung, wann endet sie? Gebt der Übertragung eine Minute.
 
 **Gut zu wissen:** GKE vergibt den Schweregrad nach dem Ausgabekanal: stderr wird `ERROR`, stdout wird `INFO`. Die Anwendung schreibt ihre `ERROR`-Zeilen auf stderr (`lab02-hallo-app/src/main/resources/logback-spring.xml`). Deshalb findet `severity>=ERROR` die Zeilen `FEHLER`. Eine Anwendung, die alles auf stdout schreibt, landet komplett bei `INFO`. Dann hilft nur die Textsuche, etwa `textPayload:"FEHLER"`.
 
-### 5. Alarm: Die Störung meldet sich selbst (GKE, 20 Minuten)
+### 5. Alarm: Die Störung meldet sich selbst (20 Minuten)
 
-Bisher habt ihr Störungen gesucht. Im Betrieb meldet sich eine Störung über einen Alarm. Ihr legt eine Alarmrichtlinie an, die bei Neustarts von `hallo` in eurem Namespace auslöst. Dann baut ihr Störung 5.1 ein (`stoerung.sh 1`) und wartet, bis der Alarm kommt.
+Ihr legt eine Alarmrichtlinie an, die bei Neustarts von `hallo` auslöst. Dann baut ihr Störung 5.1 ein und wartet, bis der Alarm kommt.
 
-Regeln: Alarmrichtlinien gelten im ganzen Projekt, alle sehen alle. Beginnt den Namen mit eurem Namespace und ändert nur eure eigene. Der Trainer hat für jede Person einen E-Mail-Kanal angelegt: `workshop-person01 E-Mail` geht an euer Kurskonto. Wählt nur euren eigenen. Der Alarm kommt dann als E-Mail und als Vorfall (Incident) in der Konsole.
+Zuerst ein Kanal für die Benachrichtigung: Monitoring, Alerting, `Edit notification channels`, bei `Email` auf `Add new`, eure Adresse, Name `Meine E-Mail`.
 
 **Weg A, Konsole** (Bezeichnungen der englischen Konsole):
 
 1. Monitoring, Alerting, `Create policy`.
 2. Metrik `Kubernetes Container`, `Container`, `Restart count` (`kubernetes.io/container/restart_count`).
-3. Filter: `namespace_name` gleich eurem Namespace, `container_name` gleich `hallo`.
+3. Filter: `namespace_name` gleich `workshop`, `container_name` gleich `hallo`.
 4. Daten umformen: `Rolling window` 1 Minute, `Rolling window function` `delta`. Über alle Zeitreihen: `sum`.
 5. Auslöser: `Threshold`, `Above threshold`, Wert `0`.
-6. Benachrichtigung: `Notification channels`, euren Kanal `workshop-person01 E-Mail` (eure Nummer). Name: `workshop-person01: hallo startet neu` mit eurer Nummer. Unter `Documentation` schreibt ihr die erste Handlung für den Bereitschaftsdienst, etwa aus eurem Alarmvorschlag in [Lab 7](../lab07-betrieb/README.md).
+6. Benachrichtigung: euren Kanal `Meine E-Mail`. Name: `workshop: hallo startet neu`. Unter `Documentation` schreibt ihr die erste Handlung für den Bereitschaftsdienst.
 7. Speichern.
 
 **Weg B, dieselbe Richtlinie als Datei** ([alarm.json](alarm.json)) über die Monitoring-API:
@@ -189,16 +131,15 @@ Regeln: Alarmrichtlinien gelten im ganzen Projekt, alle sehen alle. Beginnt den 
 ```bash
 TOKEN=$(gcloud auth print-access-token)
 KANAL=$(curl -s -G -H "Authorization: Bearer $TOKEN" \
-  "https://monitoring.googleapis.com/v3/projects/lookbeyond-gke-workshop/notificationChannels" \
-  --data-urlencode "filter=display_name=\"$WORKSHOP_NAMESPACE E-Mail\"" | sed -n 's/^ *"name": "\(.*\)",*$/\1/p' | head -1)
-echo "$KANAL"      # erwartet: projects/lookbeyond-gke-workshop/notificationChannels/NUMMER
-sed -e "s/workshop-person01/$WORKSHOP_NAMESPACE/g" -e "s#KANAL#$KANAL#" lab05-stoerungen/alarm.json > out/alarm.json
-curl -s -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" -d @out/alarm.json \
-  "https://monitoring.googleapis.com/v3/projects/lookbeyond-gke-workshop/alertPolicies" | grep -m1 '"name"'
+  "https://monitoring.googleapis.com/v3/projects/$PROJECT_ID/notificationChannels" \
+  --data-urlencode 'filter=display_name="Meine E-Mail"' | sed -n 's/^ *"name": "\(.*\)",*$/\1/p' | head -1)
+echo "$KANAL"      # erwartet: projects/.../notificationChannels/NUMMER
+sed "s#KANAL#$KANAL#" lab05-stoerungen/alarm.json | curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" -d @- \
+  "https://monitoring.googleapis.com/v3/projects/$PROJECT_ID/alertPolicies" | grep -m1 '"name"'
 ```
 
-Notiert den ausgegebenen `name` (`projects/.../alertPolicies/NUMMER`), ihr braucht ihn zum Löschen. Vergleicht die Datei mit den Feldern aus Weg A: Jede Einstellung der Konsole steht dort als Feld.
+Vergleicht die Datei mit den Feldern aus Weg A: Jede Einstellung der Konsole steht dort als Feld.
 
 Auslösen:
 
@@ -207,96 +148,80 @@ bash lab05-stoerungen/stoerung.sh start
 bash lab05-stoerungen/stoerung.sh 1
 ```
 
-Nach etwa vier Minuten steht unter Monitoring, Alerting ein offener Vorfall, und eine E-Mail von Google Cloud Alerting kommt an euer Kurskonto (auch im Spam-Ordner nachsehen). Öffnet ihn: Welche Zeitreihe hat ausgelöst, mit welchem Wert? Folgt dann eurer eigenen `Documentation`. Führt sie euch zur Ursache? Repariert und beobachtet, wann der Vorfall schließt.
-
-Fragen dazu:
+Nach etwa vier Minuten steht unter Monitoring, Alerting ein offener Vorfall, und eine E-Mail kommt an (auch im Spam-Ordner nachsehen). Welche Zeitreihe hat ausgelöst, mit welchem Wert? Repariert und beobachtet, wann der Vorfall schließt.
 
 - Warum kommt der Alarm erst nach Minuten, die Neustarts aber nach Sekunden?
 - Welche der fünf Störungen meldet dieser Alarm, welche nicht? Was für einen Alarm bräuchte Störung 5.2?
 
-Aufräumen: Richtlinie in der Konsole löschen, oder mit dem notierten Namen:
-
-```bash
-curl -s -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-  "https://monitoring.googleapis.com/v3/NAME_AUS_WEG_B"
-```
+Aufräumen: Richtlinie und Kanal in der Konsole löschen.
 
 ## Checkpoint
 
+Nach der letzten Reparatur:
+
 ```bash
-bash lab05-stoerungen/stoerung.sh pruefen
+kubectl get pods                               # alle 1/1, keine neuen Neustarts
+kubectl logs deployment/verkehr --tail=6       # nur "-> 200", überall dieselbe Begrüßung
 ```
-
-Erwartet nach der letzten Reparatur: `Ergebnis: 0 Pruefung(en) fehlgeschlagen`.
-
-**Abgabe, in den Chat:** Die Tabelle für mindestens drei verschiedene Störungen, davon eine mit Fundort im Logs Explorer. Auf GKE dazu: Öffnungs- und Schließzeit eures Vorfalls und die Antworten auf die beiden Fragen aus Abschnitt 5.
 
 ## Extra zum Ausprobieren
 
 ### Extra 1: Eine Abfrage pro Störung
 
-Schreibt für jede gefundene Störung eine Logs-Explorer-Abfrage, die sie früh zeigt. Welche taugt als Alarm, welche würde zu oft auslösen? Vergleicht mit dem Alarmvorschlag aus [Lab 7](../lab07-betrieb/README.md).
+Schreibt für jede gefundene Störung eine Logs-Explorer-Abfrage, die sie früh zeigt. Welche taugt als Alarm, welche würde zu oft auslösen?
 
 ### Extra 2: Selbst eine Störung bauen
 
-Baut im eigenen Namespace eine eigene Störung mit `kubectl patch`, `kubectl set env` oder `kubectl delete`. Notiert vorher, was ihr ändert. Sucht sie danach mit der Tabelle aus Abschnitt 2, als wüsstet ihr nichts: Welche Spur hätte euch zuerst hingeführt? Regeln: nur im eigenen Namespace, keine Änderung an Nodes, danach `start`.
+Baut eine eigene Störung mit `kubectl patch`, `kubectl set env` oder `kubectl delete`. Notiert vorher, was ihr ändert. Sucht sie danach mit der Tabelle aus Abschnitt 2, als wüsstet ihr nichts: Welche Spur hätte euch zuerst hingeführt? Danach `start`.
 
-### Extra 3: Wer hat das geändert? (GKE)
+### Extra 3: Wer hat das geändert?
 
 Jede Änderung über die Kubernetes-API landet im Audit-Log, mit Zeit, Methode und Konto. Baut eine Störung ein und sucht sie im Logs Explorer:
 
 ```text
 log_id("cloudaudit.googleapis.com/activity")
 resource.type="k8s_cluster"
-protoPayload.resourceName:"namespaces/workshop-person01/"
+protoPayload.resourceName:"namespaces/workshop/"
 NOT protoPayload.methodName:"status"
 ```
 
-`NOT ... status` blendet die Statusmeldungen der Controller aus.
+Ihr seht etwa `io.k8s.apps.v1.deployments.patch` mit eurem Konto. Im Betrieb ist das oft die schnellste Frage: Was hat sich kurz vor der Störung geändert?
 
-Ihr seht etwa `io.k8s.apps.v1.deployments.patch` mit eurem eigenen Konto. Im Betrieb ist das oft die schnellste Frage: Was hat sich kurz vor der Störung geändert? Warum findet ihr Störung 5.4 hier, aber keinen Hinweis darauf, was der Client falsch macht?
+### Extra 4: Einen Node leeren
+
+Es ist euer Cluster, ihr dürft auch Nodes warten:
+
+```bash
+kubectl get pods -o wide                   # welcher Pod läuft auf welchem Node
+kubectl drain NODE_NAME --ignore-daemonsets --delete-emptydir-data
+kubectl get pods -o wide                   # neue Pod-Namen auf dem anderen Node
+kubectl uncordon NODE_NAME
+```
+
+Was zeigt der Verkehr während des Drain? Was bräuchte es, damit Nutzer nichts merken? Hinweis: `PodDisruptionBudget` in [Lab 7](../lab07-betrieb/README.md).
 
 ## Aufräumen
 
-Nicht vor Lab 6: Lab 6 übernimmt Service, Secret und Route. Am Ende des Tages räumt Lab 6 alles ab.
+Nicht vor Lab 6: Lab 6 übernimmt Service und Secret. Lab 6 räumt am Ende alles ab.
 
-## Für den Trainer
-
-**So erklärt ihr es:**
-
-- Lab 3 und Lab 6 hatten Fehler, die `get pods` zeigt. Hier zeigt `get pods` oft nichts. Die Logs des Clients sind die Sicht des Nutzers.
-- Drei Sichten: Client, Server, Kubernetes. Jede Störung hinterlässt in mindestens einer eine Spur, keine in allen.
-- Fehlende Logs sind ein Befund: Kommt beim Server nichts an, liegt das Problem davor.
-
-**Lösungen:**
+<details>
+<summary>Lösungen</summary>
 
 | Störung | Nutzer (`verkehr`) | Server (`hallo`) | Kubernetes | Ursache | Reparatur |
 | --- | --- | --- | --- | --- | --- |
-| 5.1 Neustarts im Betrieb | weiter `200`, zeitweise antwortet nur ein Pod | `Started HalloApplication` wiederholt; `--previous` zeigt den Shutdown | `Liveness probe failed: HTTP probe failed with statuscode: 404`, RESTARTS steigt | Liveness prüft `/actuator/health/live` | `kubectl apply -f out/lab05/deployment.yaml` oder Pfad per `patch` auf `/actuator/health/liveness` |
-| 5.2 Stiller Service | nur `curl-Fehler 7` | keine neuen Zeilen | keine Warnung; EndpointSlice zeigt Port `8081` | `targetPort: 8081` im Service | `kubectl apply -f out/lab05/service.yaml` |
+| 5.1 Neustarts im Betrieb | weiter `200`, zeitweise antwortet nur ein Pod | `Started HalloApplication` wiederholt; `--previous` zeigt den Shutdown | `Liveness probe failed: HTTP probe failed with statuscode: 404`, RESTARTS steigt | Liveness prüft `/actuator/health/live` | Pfad per `kubectl edit` auf `/actuator/health/liveness` oder `kubectl rollout undo deployment/hallo` |
+| 5.2 Stiller Service | nur `curl-Fehler 7` | keine neuen Zeilen | keine Warnung; EndpointSlice zeigt Port `8081` | `targetPort: 8081` im Service | `kubectl apply -f lab05-stoerungen/basis/service.yaml` |
 | 5.3 Fehlendes Secret | weiter `200`, aber nur von einem Pod | ein Pod ohne Logs | `Error: secret "hallo-secret" not found`, `CreateContainerConfigError` | Secret gelöscht, ein Pod neu gestartet | Secret neu anlegen, der Pod startet von selbst |
-| 5.4 Fehlerflut | zwei von drei Anfragen `GET /fehler -> 500` | `ERROR ... FEHLER` in Serie | nichts | Client `verkehr` ruft `/fehler` auf (`PFADE`) | `kubectl set env deployment/verkehr PFADE=/` |
-| 5.5 Gemischte Antworten | zwei verschiedene Begrüßungen im Wechsel | nichts Auffälliges | nichts | ConfigMap geändert, nur ein Pod neu gestartet | richtigen Wert festlegen, `kubectl apply -f out/lab05/configmap.yaml`, `kubectl rollout restart deployment/hallo` |
+| 5.4 Fehlerflut | zwei von drei Anfragen `GET /fehler -> 500` | `ERROR ... FEHLER` in Serie | nichts | Client `verkehr` ruft `/fehler` auf (`PFADE`) | `kubectl set env deployment/verkehr PFADE-` |
+| 5.5 Gemischte Antworten | zwei verschiedene Begrüßungen im Wechsel | nichts Auffälliges | nichts | ConfigMap geändert, nur ein Pod neu gestartet | richtigen Wert festlegen, `kubectl apply -f lab05-stoerungen/basis/configmap.yaml`, `kubectl rollout restart deployment/hallo` |
 
-Alarm (Abschnitt 5): Getestet am 25.11.2026 in `workshop-trainer`. Störung 5.1 um 05:23:02 UTC, Vorfall offen um 05:27:04, ohne Benachrichtigungskanal. Repariert um 05:28:21, Vorfall geschlossen um 05:31:00. Verzögerung: `restart_count` wird alle 60 Sekunden gemessen und erscheint bis zu 3 Minuten später, dazu das Ausrichtungsfenster. Der Alarm meldet nur Störung 5.1 sicher. Störung 5.3 startet einen Pod nicht, statt ihn neu zu starten. Störungen 5.2, 5.4 und 5.5 haben keine Neustarts. Für 5.2 bräuchte es einen Alarm auf Nutzersicht, etwa eine logbasierte Metrik auf `curl-Fehler` in `verkehr` oder einen Uptime-Check über das Gateway. Das ist dieselbe Lehre wie beim Pipeline-Gate: Ein Alarm prüft, was ihr ihm gesagt habt.
-
-Teilnehmende haben dafür `roles/monitoring.alertPolicyEditor` am Projekt (`trainer/einrichtung/teilnehmer-anlegen.sh`). Die Rolle gilt projektweit, eine Person kann fremde Richtlinien ändern. Deshalb die Namensregel. Nach dem Kurs alle Richtlinien löschen, siehe [Aufräumen](../docs/11-nach-dem-kurs-aufraeumen.md).
+Alarm: `restart_count` wird alle 60 Sekunden gemessen und erscheint bis zu 3 Minuten später, dazu kommt das Zeitfenster. Der Alarm meldet nur Störung 5.1 sicher. Störung 5.3 startet einen Pod nicht, statt ihn neu zu starten. 5.2, 5.4 und 5.5 haben keine Neustarts. Für 5.2 bräuchte es einen Alarm auf Nutzersicht, etwa eine logbasierte Metrik auf `curl-Fehler` in `verkehr` oder einen Uptime-Check auf `hallo-extern`. Ein Alarm prüft nur, was ihr ihm gesagt habt.
 
 Störung 5.4 zeigt: Der Server loggt den Fehler, aber nicht, wer ihn auslöst. Die Spur zum Verursacher liegt beim Client. Störung 5.5 hat keine Fehlermeldung, nur einen Widerspruch in den Antworten.
 
-**Optional: eine Störung für alle (nicht vorab geprüft).** Während die Gruppe sucht, leert ihr einen der drei Nodes:
-
-```bash
-kubectl --context "$GKE_CONTEXT" get pods -A -o wide | grep NODE_NAME | head   # wer betroffen ist
-kubectl --context "$GKE_CONTEXT" drain NODE_NAME --ignore-daemonsets --delete-emptydir-data
-# Gruppe beobachtet: Shutdown-Zeilen, neue Pod-Namen im Verkehr, Events Killing und Scheduled
-kubectl --context "$GKE_CONTEXT" uncordon NODE_NAME
-```
-
-Rechnerisch fordern 17 Namespaces mit je zwei `hallo`-Pods (100m CPU) und `verkehr` etwa 3,6 CPU an, dazu etwa 1,6 CPU Systempods. Zwei Nodes haben zusammen 7,8 CPU. Nach dem Drain passen also alle Pods auf die übrigen Nodes: Die Gruppe sieht Shutdown-Zeilen, neue Pod-Namen und kurze Lücken im Verkehr, aber keine `Pending`-Pods. Kündigt an, dass ihr den Node wieder freigebt. Nicht vergessen: `uncordon`.
+</details>
 
 **Wenn es hakt:**
 
-- `start` hängt bei `rollout status`: Image-Pfad in `IMAGE` prüfen, wie in Lab 4.
-- `pruefen` meldet Neustarts direkt nach einer Reparatur: Alte Pods mit Neustarts laufen noch. Rollout abwarten und erneut prüfen.
+- `start` hängt bei `rollout status`: `IMAGE` prüfen, wie in Lab 4.
 - Der Verkehr zeigt nach einer Reparatur weiter Fehler: Bei Störung 5.4 startet `verkehr` neu, die ersten Zeilen kommen nach einigen Sekunden.

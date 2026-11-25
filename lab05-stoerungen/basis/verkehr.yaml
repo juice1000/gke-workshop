@@ -1,3 +1,4 @@
+---
 # Lab 5: Verkehrsgenerator. Ruft jede Sekunde http://hallo auf und schreibt
 # eine Logzeile pro Anfrage. So sehen die Logs aus, was Nutzer erleben.
 # Gleiches Image wie hallo, darin ist curl enthalten.
@@ -27,7 +28,7 @@ spec:
       terminationGracePeriodSeconds: 1
       containers:
         - name: verkehr
-          # PASST ZU: render.py ersetzt dies durch $IMAGE.
+          # PASST ZU: sed ersetzt dies durch $IMAGE aus Lab 4.
           image: WORKSHOP_IMAGE
           imagePullPolicy: IfNotPresent
           env:

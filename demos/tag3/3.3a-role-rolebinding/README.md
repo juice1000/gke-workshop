@@ -43,7 +43,7 @@ bash demos/tag3/3.3a-role-rolebinding/demo.sh --trocken  # nur Befehle zeigen
 - **Darf ich `--as` immer benutzen?** Nur mit dem Recht `impersonate`. Lokal seid ihr Admin, auf GKE als Teilnehmende nicht.
 - **Was ist mit IAM auf GKE?** IAM kommt davor: Ohne IAM-Zugang zum Cluster hilft kein RoleBinding. IAM sagt, wer an den Cluster darf, RBAC, was im Namespace.
 - **Role oder ClusterRole?** Eine Role gilt in einem Namespace. Eine ClusterRole im ganzen Cluster oder als Vorlage für viele Namespaces.
-- **Wo ist das vollständige Beispiel?** `trainer/rbac.yaml`, so sind die Teilnehmenden-Namespaces eingerichtet.
+- **Wo ist das vollständige Beispiel?** `lab06-abschluss/rechte.yaml`, eine enge Rolle für einen erfundenen Benutzer `tester`.
 
 ## Wenn es hakt
 

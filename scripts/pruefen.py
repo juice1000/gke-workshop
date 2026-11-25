@@ -14,12 +14,14 @@ import urllib.request
 
 # Wo die Manifeste je Etappe liegen. Fuer Hinweise bei fehlenden Objekten.
 FOLDERS = {"lab02": "lab02-hallo-app/k8s/", "betrieb": "lab02-hallo-app/betrieb/",
-           "gke": "out/lab04/", "abschluss": "out/lab06/starter/"}
+           "gke": "lab04-gke/k8s/", "abschluss": "lab06-abschluss/starter/"}
 
 
 class Checkpoint:
-    def __init__(self, context, namespace):
-        self.command = ["kubectl", "--context", context, "--namespace", namespace]
+    def __init__(self, context=None, namespace=None):
+        # Ohne Angabe gilt der aktuelle Kontext mit seinem Namespace.
+        self.command = ["kubectl"] + (["--context", context] if context else []) \
+            + (["--namespace", namespace] if namespace else [])
         self.failures = 0
 
     def check(self, condition, message, hint):
@@ -228,9 +230,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("stage", choices=["dns", "lab02", "betrieb", "gke", "abschluss"])
     args = parser.parse_args()
-    context = os.environ.get("WORKSHOP_CONTEXT", "minikube")
-    namespace = os.environ.get("WORKSHOP_NAMESPACE", "workshop")
-    print(f"INFO: Kontext {context}, Namespace {namespace}")
+    context = os.environ.get("WORKSHOP_CONTEXT")
+    namespace = os.environ.get("WORKSHOP_NAMESPACE")
+    aktuell = subprocess.run(["kubectl", "config", "current-context"], capture_output=True, text=True).stdout.strip()
+    print(f"INFO: Kontext {context or aktuell}, Namespace {namespace or 'aus dem Kontext'}")
     checkpoint = Checkpoint(context, namespace)
     try:
         if args.stage == "dns":

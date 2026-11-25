@@ -49,7 +49,7 @@ Die Cloud-kubeconfig bindet den Auth-Plugin-Aufruf ausdrücklich an die Workshop
 
 Der RBAC-Nachweis verwendet Kubernetes-Testidentitäten. Er ersetzt nicht den noch ausstehenden Test mit zwei echten Google-Teilnehmerkonten und deren IAM-Rollen. Cloud-Logging- und Monitoring-Abfragen liefen mit Trainerrechten. Die Konsole wurde dabei nicht per UI geprüft. Autopilot wurde nicht angelegt oder getestet.
 
-Der Cluster ist für Vorbereitung und Probelauf dimensioniert. Vor dem Kurs sind Teilnehmerkonten und Kapazität an die tatsächlich gleichzeitig arbeitenden Gruppen anzupassen. Der Node bleibt laufend; Anhalten bzw. Löschen ist im [Runbook](../trainer/RUNBOOK.md) beschrieben.
+Der Cluster ist für Vorbereitung und Probelauf dimensioniert. Vor dem Kurs sind Teilnehmerkonten und Kapazität an die tatsächlich gleichzeitig arbeitenden Gruppen anzupassen. Der Node bleibt laufend; Anhalten bzw. Löschen ist im Runbook (Branch `workshop-master`) beschrieben.
 
 ## GKE vor Tag 2, 24.11.2026
 
@@ -84,7 +84,7 @@ Nach dem Kurstag den Pool wieder auf einen Node setzen: `gcloud container cluste
 | Browser und HTTP | Headless Chrome mit Standardprofil blockierte `http://` zur IP (`ERR_BLOCKED_BY_CLIENT`), erst ohne HTTPS-Upgrade geladen. Normale Browser der Teilnehmenden nicht geprüft |
 | Nicht geprüft | Route mit echtem Teilnehmerkonto; die `practice`-Fassung mit TODOs auf dem Cluster |
 
-Das Gateway läuft bis zum Abend und kostet bis dahin Geld. Abbau steht in [Nach dem Kurs](11-nach-dem-kurs-aufraeumen.md).
+Das Gateway läuft bis zum Abend und kostet bis dahin Geld. Abbau steht in Nach dem Kurs (Branch `workshop-master`).
 
 ## Lokale Prüfungen
 
@@ -240,7 +240,7 @@ Nicht geprüft: Abfragen in der Konsole und im Monitoring mit Teilnehmerrechten,
 - [ ] Frischen Windows-/WSL-Rechner testen: bewusst ausgelassen, siehe unten.
 - [ ] Noch offene Kursdetails aus [Lernumgebung](04-lernumgebung-und-offene-punkte.md) mit dem Kunden klären.
 - [x] Notion-Differenzen aus [Lab-Zuordnung](06-labs-und-trainer.md) in die Kursunterlagen übernehmen (21.11.2026).
-- [x] Node-Pool für 15 Personen bemessen und angelegt (`kurs`, siehe [Runbook](../trainer/RUNBOOK.md#kurs-node-pool-umgesetzt-am-21112026)). Am Morgen von Tag 2 auf drei Nodes skalieren.
+- [x] Node-Pool für 15 Personen bemessen und angelegt (`kurs`, siehe Runbook (Branch `workshop-master`)). Am Morgen von Tag 2 auf drei Nodes skalieren.
 - [x] `trainer/einrichtung/teilnehmer-anlegen.sh` mit Testliste im Planmodus und unter Bash 3.2 geprüft. Das Anwenden mit echten Konten steht aus.
 - [ ] Installationsbefehle aus [VORBEREITUNG.md](../VORBEREITUNG.md) auf Windows/WSL2 und Linux: bewusst nicht vorab getestet (Entscheidung 21.11.2026). Die Befehle folgen den Herstelleranleitungen. Probleme fängt Lab 0 am ersten Morgen ab, Ausweg Paararbeit und Cloud Shell.
 
@@ -276,3 +276,16 @@ Die GKE-Ergebnisse beziehen sich auf Standard mit Trainerrechten. Autopilot, Kun
 - Nicht getestet: `basis.sh` auf minikube, Ablauf mit echten Teilnehmerkonten, Kurzfassung Lab 5 im Browser bei 16 gleichzeitigen Routen.
 - Image `hallo-app:2.5` (25.11.2026): `ERROR`-Zeilen auf stderr (logback-spring.xml), Heap-Option als Startargument statt `JAVA_TOOL_OPTIONS`. GKE: `/fehler` ueber das Gateway erscheint im Logs Explorer mit `severity=ERROR`, ein Pod-Start erzeugt keine ERROR-Zeile. Lab-3-Extra-2 lokal mit 128 MiB ohne Swap: alt und neu `OOMKilled`, Exit 137.
 - `preStop` mit `sleep: 10` in den Tag-3-Deployments: Waehrend `rollout restart` 90 Anfragen ueber das Gateway in 45 s, alle HTTP 200. Vorher sichtbar: mehrere 503 `upstream connect error` pro Rollout.
+
+## 26.11.2026: Branch main fuer das Selbststudium (GKE, Namespace `workshop`)
+
+Getestet auf dem Kurscluster als "eigener Cluster" mit Owner-Rechten, Namespace `workshop`, eigene kubeconfig. Image `hallo-app-selbst:2.0`, aus `main` gebaut (amd64) und gepusht wie in Lab 4.
+
+- Lab 0 `check.sh cloud`: 5 OK mit aktuellem Kontext.
+- Lab 4: `sed ... lab04-gke/k8s/*.yaml | kubectl apply -f -` mit `---` am Dateianfang, Rollout gruen.
+- Lab 5: `stoerung.sh start` in 32 s, `hallo-extern` bekam eine externe IP. Stoerungen 5.1 bis 5.5 je mit erwartetem Bild (Neustarts, curl-Fehler 7, CreateContainerConfigError, 500er im Verkehr, zwei Begruessungen), `start` danach jeweils gruen.
+- Lab 6 A und B: Loesung per sed, `pruefen.py abschluss` gruen. Pipeline: gut 0, 6.1/6.2/6.3 je 1 mit Beleg in `describe.txt` (GRUSS, OOMKilled, Readiness 404), repariert 0. Ungefuellter Starter laeuft gruen durch, deshalb prueft Etappe A zusaetzlich mit `pruefen.py`.
+- Lab 6 C: `--as=tester` yes im Namespace, no in `kube-system`; eigenes Owner-Konto yes ueberall.
+- Lab 6 D: Secret `hallo-db` mit Bindung an `ns/workshop/sa/hallo`, Pipeline mit `tresor/` gruen, beide neuen Pods "DB_PASSWORT aus Datei /var/secrets". 6.4, 6.5, 6.6 je rot mit `PermissionDenied` (6.4 "or it may not exist" fuer `hallo-db-neu`).
+- Aufraeumen: `kubectl delete namespace workshop` in 67 s, Load Balancer danach weg.
+- Nicht getestet: Einrichtung eines neuen Projekts und Clusters nach SELBST-WEITERMACHEN.md (Befehle aus dem Kurs-Runbook abgeleitet), `pipeline.sh --build`, Alarm Weg B mit eigenem Kanal, Lab 7.

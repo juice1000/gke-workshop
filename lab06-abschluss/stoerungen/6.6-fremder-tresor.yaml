@@ -1,3 +1,4 @@
+---
 # Lab 6, Stoerung 6.6: absichtlich mit einem Fehler. Nur fuer Etappe D.
 # Bewusst ohne Feldkommentare, damit die Datei den Fehler nicht verraet.
 apiVersion: secrets-store.csi.x-k8s.io/v1
@@ -10,7 +11,7 @@ spec:
   provider: gke
   parameters:
     secrets: |
-      - resourceName: "projects/lookbeyond-gke-workshop/secrets/hallo-db-fremd/versions/latest"
+      - resourceName: "projects/WORKSHOP_PROJECT/secrets/hallo-db-fremd/versions/latest"
         path: "DB_PASSWORT"
 ---
 apiVersion: apps/v1

@@ -1,3 +1,4 @@
+---
 # Service fuer GKE: ClusterIP, keine oeffentliche Adresse. Zugriff per port-forward.
 apiVersion: v1
 kind: Service

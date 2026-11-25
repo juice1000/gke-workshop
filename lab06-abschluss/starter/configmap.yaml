@@ -1,3 +1,4 @@
+---
 # ConfigMap fuer Lab 6. Fertig, keine Aufgabe.
 apiVersion: v1
 kind: ConfigMap

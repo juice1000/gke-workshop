@@ -1,77 +1,74 @@
 # Lab 6: Abschlussübung
 
-**Ziel:** Ihr schreibt ein vollständiges Deployment und untersucht die Störungen 6.1 bis 6.3. Pflicht sind 6.1 und 6.2. Dauer: 110 Minuten, jeder für sich. Alle Befehle aus dem Repository-Hauptordner.
+**Ziel:** Ihr schreibt ein vollständiges Deployment, liefert Störungen über eine Pipeline aus und holt das Passwort aus Google Secret Manager. Dauer: etwa 2 Stunden. Alle Befehle aus dem Repository-Hauptordner.
 
-Voraussetzung: Zielkontext und eigener Namespace aus Lab 4, erreichbares Image der Version 2.0. Die Anwendung aus Lab 4 oder Lab 5 läuft weiter, `apply` ersetzt sie.
+**Voraussetzung:** Cluster, Namespace `workshop`, `PROJECT_ID` und `IMAGE` aus [Lab 4](../lab04-gke/README.md). Die Anwendung aus Lab 4 oder Lab 5 darf weiterlaufen, `apply` ersetzt sie.
 
-**Festgefahren?** Wer länger als 10 Minuten nicht weiterkommt, setzt den Namespace auf einen bekannten guten Stand und macht mit dem nächsten Schritt weiter. Das Skript sichert eure Arbeitskopie `out/lab06/` vorher unter neuem Namen, rollt die fertige Lösung über die Pipeline aus und prüft sie:
+**Ihr arbeitet direkt in den Dateien dieses Ordners.** `git diff lab06-abschluss/` zeigt, was ihr geändert habt, `git restore lab06-abschluss/` setzt alles zurück.
+
+**Festgefahren?** Die fertige Lösung ausrollen und mit dem nächsten Schritt weitermachen:
 
 ```bash
-bash scripts/basis.sh lab06              # gesunder Stand, danach z. B. weiter mit Etappe B
-bash scripts/basis.sh lab06 --pruefen    # nur prüfen, nichts ändern
+bash scripts/pipeline.sh lab06-abschluss/loesung/
 ```
 
-Jeder Pipeline-Lauf steht mit Zeit und Ergebnis in `out/pipeline/verlauf.txt`. Den braucht ihr für die Abgabe.
+| Ordner | Inhalt |
+| --- | --- |
+| [starter/](starter/) | Etappe A: Deployment mit TODOs, ConfigMap und Service fertig |
+| [loesung/](loesung/) | fertiger Starter, der bekannte gute Stand |
+| [stoerungen/](stoerungen/) | Etappen B und D: je ein Release mit genau einem Fehler |
+| [repariert/](repariert/) | korrigierte Fassungen von 6.1 bis 6.3 |
+| [tresor/](tresor/) | Etappe D: guter Stand mit Passwort aus Secret Manager |
+| [rechte.yaml](rechte.yaml) | Etappe C: eine enge Rolle |
 
 ## Etappe A: Selbst deployen (25 Minuten)
 
-1. Prüft `kubectl config get-contexts`. Aktueller Kontext, `WORKSHOP_CONTEXT` und Namespace müssen zusammenpassen.
-2. Setzt `IMAGE` wie in Lab 4 auf euer bereits hochgeladenes Image. Erstellt eine Arbeitskopie:
+1. Secret anlegen. Nach Lab 5 gibt es das schon, `already exists` ist dann in Ordnung:
 
 ```bash
-python3 scripts/render.py lab06-abschluss --image "$IMAGE" --output out/lab06
 kubectl create secret generic hallo-secret --from-literal=DB_PASSWORT=uebung123
 ```
 
-Nach Lab 5 gibt es das Secret schon. Die Meldung `already exists` ist dann in Ordnung.
-
-3. Ergänzt `out/lab06/starter/deployment.yaml`. Ersetzt `TODO_IMAGE` durch den Wert von `IMAGE`. Schreibt die beiden Umgebungsvariablen, Ressourcen und drei Probes gemäß den TODO-Kommentaren. ConfigMap und Service sind fertig. Muster findet ihr in [Lab 2](../lab02-hallo-app/betrieb/deployment.yaml).
-4. Wendet nur `starter/` an:
+2. Ergänzt [starter/deployment.yaml](starter/deployment.yaml): die beiden Umgebungsvariablen, Ressourcen und drei Probes gemäß den TODO-Kommentaren. `WORKSHOP_IMAGE` bleibt stehen, `sed` setzt euer Image ein. Muster findet ihr in [Lab 2](../lab02-hallo-app/betrieb/deployment.yaml).
+3. Ausrollen und prüfen:
 
 ```bash
-kubectl apply -f out/lab06/starter/
+sed "s#WORKSHOP_IMAGE#$IMAGE#" lab06-abschluss/starter/*.yaml | kubectl apply -f -
 kubectl rollout status deployment/hallo --timeout=600s
 python3 scripts/pruefen.py abschluss
-kubectl port-forward service/hallo 8080:80
 ```
 
-Im zweiten Terminal `curl http://127.0.0.1:8080/`. Erwartet: `Hallo zum Abschluss von Pod ..., Version 2.0`.
+Erwartet: `Ergebnis: 0 Pruefung(en) fehlgeschlagen`.
 
-5. Rollt denselben Stand einmal über die Pipeline aus. Sie verwendet `WORKSHOP_CONTEXT` und `WORKSHOP_NAMESPACE` aus Lab 4:
+4. Denselben Stand einmal über die Pipeline ausrollen:
 
 ```bash
-bash scripts/pipeline.sh out/lab06/starter/
+bash scripts/pipeline.sh lab06-abschluss/starter/
 echo "Exit-Code: $?"
 ```
 
-Erwartet: fünf Stufen, am Ende `Pipeline GRUEN: ... laeuft in ...` und `Exit-Code: 0`. Die Pipeline führt dieselben Befehle aus wie ihr eben von Hand. Neu ist das Gate: `rollout status` mit Zeitgrenze entscheidet über grün oder rot. Lest den Kopf von [scripts/pipeline.sh](../scripts/pipeline.sh): Jede Stufe entspricht einem Build-Schritt in TeamCity.
-
-**Abgabe A, in den Chat:** Zwei bereite Pods, Antwort, grüner Checkpoint und grüner Pipeline-Lauf. `DB_PASSWORT` wird nur als Umgebungsvariable eingebunden. Verwendet keine echten Zugangsdaten.
+Erwartet: fünf Stufen, am Ende `Pipeline GRUEN` und `Exit-Code: 0`. Die Pipeline führt dieselben Befehle aus wie ihr eben von Hand. Neu ist das Gate: `rollout status` mit Zeitgrenze entscheidet über grün oder rot. Lest [scripts/pipeline.sh](../scripts/pipeline.sh), es sind etwa 70 Zeilen. Jede Stufe entspricht einem Build-Schritt in einem CI-Werkzeug wie TeamCity oder GitHub Actions.
 
 ## Etappe B: Störungen 6.1 bis 6.3 über die Pipeline (45 Minuten)
 
-Die Dateien enthalten komplette Deployments. Sie verwenden denselben Anwendungscode der Version 2.0, ändern aber die Betriebsbeschreibung. Ihr liefert sie über die Pipeline aus, immer nur ein Release. Nicht den gesamten Ordner `out/lab06` übergeben.
-
-Öffnet vorher ein zweites Terminal und lasst es die ganze Etappe mitlaufen. Dort seht ihr live, was die Pipeline im Cluster auslöst:
+Jede Datei in `stoerungen/` ist ein komplettes Deployment mit genau einem Fehler. Zweites Terminal, läuft die ganze Etappe mit:
 
 ```bash
 kubectl get pods -w                       # neuer Pod kommt, scheitert, verschwindet beim Rollback
 ```
 
-Läuft `verkehr` aus Lab 5 noch, öffnet ein drittes Terminal mit `kubectl logs deployment/verkehr -f`. Achtet darauf, ob Nutzer während eines roten Release Fehler sehen.
-
-Ihr arbeitet die Störungen nacheinander ab. Pflicht sind 6.1 und 6.2, 6.3 wenn Zeit bleibt. Für 6.1:
+Für 6.1:
 
 1. Bekannten guten Stand herstellen. Erwartet: grün.
 
 ```bash
-bash scripts/pipeline.sh out/lab06/starter/
+bash scripts/pipeline.sh lab06-abschluss/starter/
 ```
 
 2. Störung ausliefern. Erwartet: rot, Exit-Code 1, Release zurückgerollt.
 
 ```bash
-bash scripts/pipeline.sh out/lab06/stoerungen/6.1-konfiguration.yaml
+bash scripts/pipeline.sh lab06-abschluss/stoerungen/6.1-konfiguration.yaml
 echo "Exit-Code: $?"
 ```
 
@@ -82,17 +79,13 @@ ls out/pipeline/                       # ein Ordner pro rotem Lauf, nach Zeit be
 less out/pipeline/ZEIT/describe.txt    # ZEIT durch den neuesten Ordner ersetzen
 ```
 
-`pods.txt`, `describe.txt`, `events.txt` und `logs.txt` zeigen den Zustand im Moment des Fehlers. Auf GKE sucht ihr zusätzlich im Logs Explorer. Notiert Symptom, Ursache und die Belegdatei, die die Ursache zeigt.
+`pods.txt`, `describe.txt`, `events.txt` und `logs.txt` zeigen den Zustand im Moment des Fehlers. Sucht zusätzlich im Logs Explorer.
 
-4. Korrigiert eure Arbeitskopie `out/lab06/stoerungen/6.1-konfiguration.yaml` und startet die Pipeline erneut. Erwartet: grün.
+4. Korrigiert `lab06-abschluss/stoerungen/6.1-konfiguration.yaml` und startet die Pipeline erneut. Erwartet: grün.
 
-Wiederholt die Schritte 1 bis 4 für `6.2-speicher.yaml` und `6.3-bereitschaft.yaml`. Schritt 1 ist dabei wichtig: Er setzt Cluster und `apply` auf einen bekannten Stand zurück.
+Wiederholt das für `6.2-speicher.yaml` und `6.3-bereitschaft.yaml`. Schritt 1 ist dabei wichtig: Er setzt Cluster und `apply` auf einen bekannten Stand zurück.
 
-Die Stufe Rollback macht genau das, was ihr in 2.4 von Hand gemacht habt: `kubectl rollout undo`. Die Warnung dabei bedeutet: Der Cluster läuft jetzt wieder mit dem alten Stand, eure Datei nennt aber noch den neuen.
-
-Warum antworten die alten Pods weiter, während das Release scheitert? Sucht die beiden Einstellungen unter `strategy.rollingUpdate`. Das funktioniert, solange die alten Pods selbst gesund bleiben und genug Kapazität für den zusätzlichen Pod vorhanden ist.
-
-**Abgabe B, in den Chat:** Pro Störung Symptom, Ursache, Belegdatei, Reparatur und die Exit-Codes des roten und des grünen Laufs.
+Die Stufe Rollback macht, was ihr in Lab 2 von Hand gemacht habt: `kubectl rollout undo`. Warum antworten die alten Pods weiter, während das Release scheitert? Sucht die beiden Einstellungen unter `strategy.rollingUpdate`.
 
 <details>
 <summary>Hinweise</summary>
@@ -112,102 +105,115 @@ Warum antworten die alten Pods weiter, während das Release scheitert? Sucht die
 | 6.2 | Container wird mit `OOMKilled` beendet | 512 MiB fest vorbelegter Heap plus JVM-Nebenspeicher passen nicht ins 512-MiB-Limit | `describe.txt`, `Last State: Terminated`, `Reason: OOMKilled`, Exit Code 137 | Limit auf `1Gi` erhöhen oder Heap verkleinern |
 | 6.3 | Neuer Pod läuft, bleibt aber `0/1` | Readiness prüft einen nicht vorhandenen Pfad | `describe.txt`, Events: `Readiness probe failed: HTTP probe failed with statuscode: 404` | `/actuator/health/readiness` eintragen |
 
-Exit-Codes: rot `1`, grün `0`. Bei 6.1 und 6.3 ist der grüne Lauf nach der Reparatur sofort fertig: Der Rollback hat genau diesen Stand schon wiederhergestellt, `apply` ändert nichts mehr.
+Korrigierte Fassungen: [6.1](repariert/6.1-konfiguration.yaml), [6.2](repariert/6.2-speicher.yaml), [6.3](repariert/6.3-bereitschaft.yaml).
 
-Warum vor jeder Störung der Starter? `rollout undo` ändert den Cluster, aber nicht die Notiz von `kubectl apply` über die zuletzt angewendete Datei. Ein Feld, das nur im zurückgerollten Stand steht, entfernt das nächste `apply` dann nicht. Beispiel: 6.2 mit `JAVA_TOOL_OPTIONS` und `1Gi` repariert, danach direkt 6.3 ausgeliefert und repariert. Dann bleiben die Heap-Optionen stehen, das Limit sinkt auf 512 MiB, und 6.3 wird mit dem Fehlerbild von 6.2 rot. Der Starter dazwischen setzt diese Notiz zurück.
-
-Störung 6.2 nutzt `-Xms512m -Xmx512m -XX:+AlwaysPreTouch`. Das erzeugt die Speicherknappheit gezielt. Die hohe feste Heap-Vorgabe gehört nur zu diesem Fehlerfall. GKE-Admission und Clusterregeln können Manifeste ändern oder ablehnen; der Trainer prüft das Verhalten vorab im echten Cluster.
-
-Die vollständige Ausgangslösung liegt in `out/lab06/loesung/`, korrigierte Fassungen in `out/lab06/repariert/`. Die Vorlagen im Repository: [Deployment](loesung/deployment.yaml), [6.1](repariert/6.1-konfiguration.yaml), [6.2](repariert/6.2-speicher.yaml), [6.3](repariert/6.3-bereitschaft.yaml). Vorlagen mit `WORKSHOP_IMAGE` erst rendern.
+Warum vor jeder Störung der Starter? `rollout undo` ändert den Cluster, aber nicht die Notiz von `kubectl apply` über die zuletzt angewendete Datei. Ein Feld, das nur im zurückgerollten Stand steht, entfernt das nächste `apply` dann nicht. Der Starter dazwischen setzt diese Notiz zurück.
 
 </details>
 
-## Extra zum Ausprobieren: Die Pipeline baut selbst
+### Extra: Die Pipeline baut selbst
 
 Mit `--build` baut die Pipeline zuerst ein neues Image. Der Tag enthält den Git-Commit, so wie ein Build-Server jede Version eindeutig benennt.
 
 ```bash
-bash scripts/pipeline.sh out/lab06/starter/ --build
+bash scripts/pipeline.sh lab06-abschluss/starter/ --build
 kubectl get deploy hallo -o wide        # Spalte IMAGES
 git log -1 --oneline                    # derselbe Commit im Tag
 ```
 
-Die Pipeline ändert eure Datei nicht. Sie schreibt eine Kopie mit dem neuen Image nach `out/pipeline/build-ZEIT/`. Die Antwort der Anwendung zeigt jetzt `Version 2.0-COMMIT`. Uncommittete Änderungen stecken zwar im Image, aber nicht im Tag. Ein echter Build-Server baut deshalb nur aus Commits.
+Uncommittete Änderungen stecken zwar im Image, aber nicht im Tag. Ein echter Build-Server baut deshalb nur aus Commits.
 
-## Etappe D: Das Passwort kommt aus Google Secret Manager (20 Minuten, nur GKE)
+## Etappe C: Rechte prüfen (10 Minuten)
 
-Bisher kam `DB_PASSWORT` aus `kubectl create secret`. Jetzt liegt es in Secret Manager, dem Tresor von Google Cloud. Der Pod holt es beim Start als Datei. Er meldet sich dabei mit seinem eigenen Kubernetes-Dienstkonto `hallo` an (Workload Identity, Block 3.3). Kein Schlüssel, kein `kubectl create secret`.
+In eurem Projekt seid ihr Owner. Deshalb antwortet `kubectl auth can-i` für euch fast immer mit `yes`. Wie es für jemanden mit wenigen Rechten aussieht, zeigt ein erfundener Benutzer `tester`:
+
+```bash
+kubectl apply -f lab06-abschluss/rechte.yaml
+kubectl auth can-i create deployments.apps --as=tester
+kubectl auth can-i get secrets --as=tester
+kubectl auth can-i create deployments.apps -n kube-system --as=tester
+kubectl auth can-i list nodes --as=tester
+kubectl auth can-i --list --as=tester
+```
+
+Erwartet: `yes` für Deployments und Secrets im Namespace `workshop`, `no` für `kube-system` und für Nodes. Lest dazu [rechte.yaml](rechte.yaml): Die Role sagt was, das RoleBinding sagt wer.
+
+Auf GKE gibt es zwei Schichten: IAM im Google-Projekt (wer darf an den Cluster) und RBAC im Cluster (was darf man dort). `can-i` zeigt das Ergebnis, nicht die Quelle. Eure eigenen Rechte kommen aus IAM: Konsole, IAM & Admin, IAM.
+
+## Etappe D: Das Passwort kommt aus Google Secret Manager (30 Minuten)
+
+Bisher kam `DB_PASSWORT` aus `kubectl create secret`. Jetzt liegt es in Secret Manager, dem Tresor von Google Cloud. Der Pod holt es beim Start als Datei. Er meldet sich dabei mit seinem eigenen Kubernetes-Dienstkonto `hallo` an (Workload Identity). Kein Schlüssel im Cluster.
 
 ```text
-Secret Manager: hallo-db-person01
-   ^ Leserecht nur für ns/workshop-person01/sa/hallo (vom Trainer vergeben)
+Secret Manager: hallo-db
+   ^ Leserecht nur für ns/workshop/sa/hallo
 Pod hallo, serviceAccountName: hallo
    CSI-Treiber liest beim Start --> Datei /var/secrets/DB_PASSWORT
    Startzeile im Log: "Konfiguration: ... DB_PASSWORT aus Datei /var/secrets"
 ```
 
-1. Gesunden Stand für Etappe D herstellen. Das Image `2.5` hat der Trainer gebaut, es schreibt die Startzeile:
+1. Tresor anlegen und genau einem Dienstkonto das Leserecht geben. Der Cluster braucht dafür Workload Identity und das Secret-Manager-Add-on, siehe [SELBST-WEITERMACHEN.md](../SELBST-WEITERMACHEN.md).
 
 ```bash
-export IMAGE=europe-west3-docker.pkg.dev/lookbeyond-gke-workshop/workshop/hallo-app:2.5
-bash scripts/basis.sh lab06 D
+gcloud services enable secretmanager.googleapis.com
+NR=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
+printf 'aus-dem-tresor' | gcloud secrets create hallo-db --data-file=-
+printf 'nicht-fuer-hallo' | gcloud secrets create hallo-db-fremd --data-file=-
+gcloud secrets add-iam-policy-binding hallo-db --role=roles/secretmanager.secretAccessor \
+  --member="principal://iam.googleapis.com/projects/$NR/locations/global/workloadIdentityPools/$PROJECT_ID.svc.id.goog/subject/ns/workshop/sa/hallo"
 ```
 
-Erwartet: `Pipeline GRUEN` und `Ausgangslage 06 steht.` Lest dann `out/lab06/basis/D/serviceaccount.yaml`, `secretproviderclass.yaml` und in `deployment.yaml` die Felder `serviceAccountName`, `nodeSelector` und `volumes`.
+`hallo-db-fremd` bekommt absichtlich kein Leserecht. Das braucht Störung 6.6.
 
-2. Belegt, woher das Passwort kommt, ohne den Wert zu zeigen:
+2. Guten Stand ausrollen. Die Pipeline setzt `PROJECT_ID` in die SecretProviderClass ein:
 
 ```bash
-kubectl logs deployment/hallo | grep Konfiguration
+bash scripts/pipeline.sh lab06-abschluss/tresor/
+```
+
+Lest dann [tresor/serviceaccount.yaml](tresor/serviceaccount.yaml), [tresor/secretproviderclass.yaml](tresor/secretproviderclass.yaml) und in [tresor/deployment.yaml](tresor/deployment.yaml) die Felder `serviceAccountName`, `nodeSelector` und `volumes`.
+
+3. Belegt, woher das Passwort kommt, ohne den Wert zu zeigen:
+
+```bash
+kubectl logs -l app=hallo --prefix | grep Konfiguration    # alle Pods, nicht nur einer
 kubectl exec deployment/hallo -- ls -l /var/secrets
 ```
 
-Im Logs Explorer findet ihr dieselbe Zeile mit `textPayload:"DB_PASSWORT aus Datei"` und eurem Namespace.
+Im Logs Explorer findet ihr dieselbe Zeile mit `textPayload:"DB_PASSWORT aus Datei"`.
 
-3. Störungen 6.4 bis 6.6, wie in Etappe B. Vor jeder Störung `bash scripts/basis.sh lab06 D` statt des Starters:
-
-```bash
-bash scripts/pipeline.sh out/lab06/stoerungen/6.4-tresor-name.yaml
-bash scripts/pipeline.sh out/lab06/stoerungen/6.5-identitaet.yaml
-bash scripts/pipeline.sh out/lab06/stoerungen/6.6-fremder-tresor.yaml
-```
-
-Der neue Pod bleibt in `ContainerCreating`. Die Anwendung startet nie, also gibt es keine Logzeile. Der Befund steht in den Events (`events.txt`, `kubectl describe pod`). Auch das ist ein Befund: keine Logzeile, Ursache in den Events.
-
-**Abgabe D, in den Chat:** Die Startzeile aus `kubectl logs` und aus dem Logs Explorer. Pro Störung Event-Zeile, Ursache und Reparatur.
-
-## Extra zum Ausprobieren: Den Lauf in GitHub Actions lesen
-
-In Demo 3.4d hat ein Merge auf `main` dieselbe Pipeline in GitHub Actions gestartet. Öffnet den Lauf unter `https://github.com/juice1000/gke-workshop/actions/workflows/deploy-demo.yml`. Fragt GitHub nach einer Anmeldung, zeigt der Trainer den Lauf.
-
-- Welcher Schritt im Lauf entspricht welcher Stufe `[1/5]` bis `[5/5]`?
-- Wo meldet sich der Runner bei Google Cloud an, und warum liegt dafür kein Schlüssel im Repository? Lest dazu [deploy-demo.yml](../.github/workflows/deploy-demo.yml).
-- Welcher Image-Tag lief, und zu welchem Commit gehört er?
-
-## Etappe C: Rechte prüfen (10 Minuten)
+4. Störungen 6.4 bis 6.6, wie in Etappe B. Vor jeder Störung `bash scripts/pipeline.sh lab06-abschluss/tresor/`:
 
 ```bash
-kubectl auth can-i create deployments.apps
-kubectl auth can-i create deployments.apps -n kube-system
-kubectl auth can-i get secrets
-kubectl auth can-i list nodes
+bash scripts/pipeline.sh lab06-abschluss/stoerungen/6.4-tresor-name.yaml
+bash scripts/pipeline.sh lab06-abschluss/stoerungen/6.5-identitaet.yaml
+bash scripts/pipeline.sh lab06-abschluss/stoerungen/6.6-fremder-tresor.yaml
 ```
 
-**Abgabe C, in den Chat:** Vier Antworten und eure Erklärung. Erwartet in der vorbereiteten Teilnehmerrolle: im eigenen Namespace Deployments und Secrets erlaubt, keine Deployment-Änderung in `kube-system`. Das Auflisten von Nodes hängt von zusätzlichen Rechten ab.
+Der neue Pod bleibt in `ContainerCreating`. Die Anwendung startet nie, also gibt es keine Logzeile. Der Befund steht in den Events (`events.txt`, `kubectl describe pod`).
 
-`can-i` zeigt das wirksame Ergebnis. Es beweist auf GKE allein nicht, ob eine Freigabe von IAM oder RBAC kommt. Zusätzliche IAM-Rechte können Zugriff erlauben, den eine enge RBAC-Rolle nicht gewährt. Vergleicht die Antworten mit der Konfiguration des Trainers.
+<details>
+<summary>Lösungen</summary>
 
-## Aufräumen (10 Minuten)
+| Störung | Event | Ursache | Reparatur |
+| --- | --- | --- | --- |
+| 6.4 Tresor-Name | `FailedMount`, `PermissionDenied ... (or it may not exist)` für `hallo-db-neu` | SecretProviderClass zeigt auf `hallo-db-neu`, das es nicht gibt | `hallo-db` eintragen |
+| 6.5 Identität | `FailedMount`, `PermissionDenied` | Pod läuft als `default`, das Leserecht hat nur `hallo` | `serviceAccountName: hallo` |
+| 6.6 Fremder Tresor | `FailedMount`, `PermissionDenied` | `hallo-db-fremd` existiert, aber `hallo` darf es nicht lesen | eigenes Secret `hallo-db` eintragen |
+
+Alle drei melden `PermissionDenied`. Secret Manager verrät ohne Leserecht nicht, ob ein Secret existiert. Den Unterschied zeigt der Name des Secrets in der Meldung und das Dienstkonto des Pods. Alle drei Fehler stehen nicht im Manifest selbst, sondern in der Verbindung zwischen Manifest, Dienstkonto und IAM-Freigabe.
+
+</details>
+
+## Aufräumen
+
+Alles aus Lab 4 bis 6 liegt im Namespace `workshop`. Ein Befehl löscht es, auch den Load Balancer aus Lab 5:
 
 ```bash
 kubectl config current-context
-kubectl delete -f out/lab06/starter/
-kubectl delete deployment verkehr --ignore-not-found
-kubectl delete httproute hallo --ignore-not-found
-kubectl delete serviceaccount hallo --ignore-not-found
-kubectl delete secretproviderclass hallo-db hallo-db-v2 --ignore-not-found
-kubectl delete secret hallo-secret
-kubectl get deployment,pods,service,configmap,secret
+kubectl delete namespace workshop
+gcloud secrets delete hallo-db --quiet
+gcloud secrets delete hallo-db-fremd --quiet
 ```
 
-In einem frischen Namespace kann ein systemseitig vorhandenes Objekt übrig bleiben. `kubectl get all` würde ConfigMaps und Secrets nicht vollständig abdecken.
+Cluster, Registry und Projekt löscht ihr, wenn ihr fertig seid: [SELBST-WEITERMACHEN.md](../SELBST-WEITERMACHEN.md), Abschnitt Aufräumen.

@@ -4,7 +4,6 @@ import json
 import os
 from pathlib import Path
 import subprocess
-import tempfile
 import time
 
 from pruefen import Checkpoint
@@ -73,9 +72,12 @@ def checkpoint(stage):
     subprocess.run(["python3", str(ROOT / "scripts/pruefen.py"), stage], env=env, check=True, timeout=90)
 
 
-def render(source, output):
-    subprocess.run(["python3", str(ROOT / "scripts/render.py"), str(ROOT / source),
-                    "--image", "hallo-app:2.0", "--output", str(output)], check=True)
+def mit_image(path, action="apply"):
+    """Wie in den Labs: Platzhalter per sed ersetzen und ueber stdin anwenden."""
+    path = ROOT / path
+    files = sorted(path.glob("*.yaml")) if path.is_dir() else [path]
+    text = "".join(f.read_text() for f in files).replace("WORKSHOP_IMAGE", "hallo-app:2.0")
+    command(action, "-f", "-", input_text=text)
 
 
 def has_event(app, message):
@@ -159,52 +161,46 @@ def main():
         command("delete", "-f", str(ROOT / f"lab03-defekt/loesungen/fall{number}.yaml"))
         wait_for(f"Fall {number}: aufgeraeumt", lambda a=app: not pods(a))
 
-    with tempfile.TemporaryDirectory(prefix="gke-labs-") as directory:
-        temp = Path(directory)
-        print("===== Lab 4: GKE-Manifeste lokal mit gleichem Image-Vertrag", flush=True)
-        render("lab04-gke/k8s", temp / "gke")
-        command("apply", "-f", str(temp / "gke"))
+    print("===== Lab 4: GKE-Manifeste lokal mit gleichem Image-Vertrag", flush=True)
+    mit_image("lab04-gke/k8s")
+    rollout()
+    checkpoint("gke")
+    mit_image("lab04-gke/k8s", "delete")
+
+    print("===== Lab 6: Stoerungen 6.1 bis 6.3, Verfuegbarkeit und Rollback", flush=True)
+    command("create", "secret", "generic", "hallo-secret", "--from-literal=DB_PASSWORT=nur-uebung")
+    faelle = [("6.1", "6.1-konfiguration"), ("6.2", "6.2-speicher"), ("6.3", "6.3-bereitschaft")]
+    for nummer, datei in faelle:
+        mit_image("lab06-abschluss/loesung")
         rollout()
-        checkpoint("gke")
-        command("delete", "-f", str(temp / "gke"))
+        checkpoint("abschluss")
+        before = {pod["metadata"]["uid"] for pod in pods() if ready(pod)}
+        mit_image(f"lab06-abschluss/stoerungen/{datei}.yaml")
 
-        print("===== Lab 6: Stoerungen 6.1 bis 6.3, Verfuegbarkeit und Rollback", flush=True)
-        render("lab06-abschluss", temp / "abschluss")
-        command("create", "secret", "generic", "hallo-secret", "--from-literal=DB_PASSWORT=nur-uebung")
-        baseline = temp / "abschluss/loesung"
-        faelle = [("6.1", "6.1-konfiguration"), ("6.2", "6.2-speicher"), ("6.3", "6.3-bereitschaft")]
-        for nummer, datei in faelle:
-            command("apply", "-f", str(baseline))
-            rollout()
-            checkpoint("abschluss")
-            before = {pod["metadata"]["uid"] for pod in pods() if ready(pod)}
-            command("apply", "-f", str(temp / f"abschluss/stoerungen/{datei}.yaml"))
+        def broken():
+            if nummer == "6.1":
+                return waiting_reason("CreateContainerConfigError")
+            if nummer == "6.2":
+                return any(status.get(where, {}).get("terminated", {}).get("reason") == "OOMKilled"
+                           for status in statuses() for where in ("state", "lastState"))
+            return has_event("hallo", "Readiness probe failed") and has_event("hallo", "404")
 
-            def broken():
-                if nummer == "6.1":
-                    return waiting_reason("CreateContainerConfigError")
-                if nummer == "6.2":
-                    return any(status.get(where, {}).get("terminated", {}).get("reason") == "OOMKilled"
-                               for status in statuses() for where in ("state", "lastState"))
-                return has_event("hallo", "Readiness probe failed") and has_event("hallo", "404")
-
-            wait_for(f"Stoerung {nummer}: erwartetes Fehlerbild", broken)
-            assert command("rollout", "status", "deployment/hallo", "--timeout=5s", success=False).returncode != 0
-            surviving = {pod["metadata"]["uid"] for pod in pods() if ready(pod)}
-            assert before <= surviving, "Alte bereite Pods gingen waehrend fehlerhaftem Rollout verloren"
-            assert "Version 2.0" in Checkpoint(CONTEXT, NAMESPACE).response()
-            command("rollout", "undo", "deployment/hallo")
-            rollout()
-            checkpoint("abschluss")
-            command("apply", "-f", str(temp / f"abschluss/repariert/{datei}.yaml"))
-            rollout()
-            checkpoint("abschluss")
-        command("delete", "-f", str(baseline))
-        command("delete", "secret", "hallo-secret")
+        wait_for(f"Stoerung {nummer}: erwartetes Fehlerbild", broken)
+        assert command("rollout", "status", "deployment/hallo", "--timeout=5s", success=False).returncode != 0
+        surviving = {pod["metadata"]["uid"] for pod in pods() if ready(pod)}
+        assert before <= surviving, "Alte bereite Pods gingen waehrend fehlerhaftem Rollout verloren"
+        assert "Version 2.0" in Checkpoint(CONTEXT, NAMESPACE).response()
+        command("rollout", "undo", "deployment/hallo")
+        rollout()
+        checkpoint("abschluss")
+        mit_image(f"lab06-abschluss/repariert/{datei}.yaml")
+        rollout()
+        checkpoint("abschluss")
+    mit_image("lab06-abschluss/loesung", "delete")
+    command("delete", "secret", "hallo-secret")
 
     print("===== Namespace-Rechte mit echter Kubernetes-Autorisierung", flush=True)
-    role = (ROOT / "trainer/rbac.yaml").read_text().replace("workshop-person01", NAMESPACE)
-    role = role.replace("TEILNEHMER_KONTO_ERSETZEN", "workshop-test-user")
+    role = (ROOT / "lab06-abschluss/rechte.yaml").read_text().replace("namespace: workshop\n", f"namespace: {NAMESPACE}\n")
     command("apply", "-f", "-", input_text=role)
     for namespace, verb, resource, expected in [
         (NAMESPACE, "create", "deployments.apps", True),
@@ -213,7 +209,7 @@ def main():
         (NAMESPACE, "list", "nodes", False),
     ]:
         result = command("auth", "can-i", verb, resource, "-n", namespace,
-                         "--as=workshop-test-user", success=False)
+                         "--as=tester", success=False)
         assert (result.returncode == 0) == expected, result.stdout + result.stderr
 
     print("===== Lab 7: cordon, Pending, uncordon und PDB", flush=True)

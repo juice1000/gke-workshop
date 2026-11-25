@@ -1,5 +1,11 @@
-# Demo 3.4d: Kopie der Loesung aus Lab 6. Fuer den roten Lauf den
-# Readiness-Pfad aendern, wie in Stoerung 6.3.
+---
+# Lab 6 Etappe D: hallo holt DB_PASSWORT aus Google Secret Manager, als Datei.
+# Kein kubectl create secret mehr.
+#
+#   serviceaccount.yaml hallo --------------> serviceAccountName
+#   secretproviderclass.yaml hallo-db ------> volumes[].csi.volumeAttributes
+#   Datei /var/secrets/DB_PASSWORT ---------> Startzeile "DB_PASSWORT aus Datei /var/secrets"
+#   sed setzt $IMAGE ein --------------------> image: WORKSHOP_IMAGE
 
 # FEST
 apiVersion: apps/v1
@@ -9,6 +15,7 @@ metadata:
   name: hallo
   # FREI: nur zum Filtern.
   labels:
+    workshop-lab: "06"
     app: hallo
 spec:
   replicas: 2
@@ -31,11 +38,16 @@ spec:
       labels:
         app: hallo
     spec:
+      # PASST ZU: serviceaccount.yaml. Nur dieses Konto darf das Secret lesen.
+      serviceAccountName: hallo
+      # FEST auf GKE Standard: nur Nodes mit Metadatenserver fuer Workload Identity.
+      nodeSelector:
+        iam.gke.io/gke-metadata-server-enabled: "true"
       terminationGracePeriodSeconds: 30
       containers:
         # PASST ZU: "kubectl set image deployment/hallo hallo=...".
         - name: hallo
-          # PASST ZU: render.py ersetzt dies durch $IMAGE.
+          # PASST ZU: sed ersetzt dies durch $IMAGE aus Lab 4.
           image: WORKSHOP_IMAGE
           imagePullPolicy: IfNotPresent
           # Vor dem Stoppen 10 s warten: So nimmt der Load Balancer des Gateways
@@ -59,13 +71,11 @@ spec:
                   # PASST ZU: name und Schluessel in configmap.yaml.
                   name: hallo-config
                   key: GREETING
-            # FREI: zeigt nur, wie ein Secret in den Container kommt.
-            - name: DB_PASSWORT
-              valueFrom:
-                secretKeyRef:
-                  # PASST ZU: kubectl create secret generic hallo-secret.
-                  name: hallo-secret
-                  key: DB_PASSWORT
+          volumeMounts:
+            # PASST ZU: volumes unten. Die Anwendung liest /var/secrets/DB_PASSWORT.
+            - name: secrets
+              mountPath: /var/secrets
+              readOnly: true
           # FREI: Auf GKE plant der Scheduler alle Teilnehmenden danach.
           resources:
             requests:
@@ -95,3 +105,12 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 2
             failureThreshold: 3
+      volumes:
+        - name: secrets
+          csi:
+            # FEST: Treiber des Secret-Manager-Add-ons.
+            driver: secrets-store-gke.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              # PASST ZU: metadata.name in secretproviderclass.yaml.
+              secretProviderClass: hallo-db

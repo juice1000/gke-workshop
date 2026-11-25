@@ -1,3 +1,4 @@
+---
 # Lab 6, Stoerung 6.2 repariert. Bezuege wie in ../loesung/deployment.yaml.
 # Der entscheidende Bezug: Das Speicherlimit PASST ZU der JVM: -Xms512m -Xmx512m belegen schon
 # 512 MiB Heap, dazu kommt JVM-Nebenspeicher. Deshalb 1Gi statt 512Mi.

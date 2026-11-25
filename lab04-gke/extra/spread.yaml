@@ -1,5 +1,6 @@
+---
 # Extra: drei Pods auf verschiedene Nodes verteilen.
-# Vorher render.py ausfuehren (ersetzt WORKSHOP_IMAGE).
+# Anwenden: sed "s#WORKSHOP_IMAGE#$IMAGE#" lab04-gke/extra/spread.yaml | kubectl apply -f -
 # app=hallo-spread muss in selector, Pod-Labels und labelSelector gleich sein.
 
 apiVersion: apps/v1
@@ -34,7 +35,7 @@ spec:
               app: hallo-spread
       containers:
         - name: hallo
-          # PASST ZU: render.py ersetzt dies durch $IMAGE.
+          # PASST ZU: sed ersetzt dies durch $IMAGE aus Lab 4.
           image: WORKSHOP_IMAGE
           imagePullPolicy: IfNotPresent
           ports:

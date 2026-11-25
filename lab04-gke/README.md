@@ -1,6 +1,6 @@
 # Lab 4: hallo-app auf GKE
 
-**Ziel:** Ihr ladet ein Image in Artifact Registry, deployt es auf GKE und findet dieselben Objekte in der Konsole. Dauer: 60 Minuten. **Voraussetzung:** [Cloud-Vorbereitung durch den Trainer](../trainer/README.md), euer Google-Konto hat Zugang. Ihr erstellt keinen Cluster.
+**Ziel:** Ihr ladet ein Image in Artifact Registry, deployt es auf euren eigenen GKE-Cluster und findet dieselben Objekte in der Konsole. Dauer: 60 Minuten. **Voraussetzung:** Projekt, Cluster und Registry aus [SELBST-WEITERMACHEN.md](../SELBST-WEITERMACHEN.md).
 
 Alle Befehle aus dem Repository-Hauptordner in Bash. Docker und gcloud laufen in derselben Umgebung, unter Windows also in WSL.
 
@@ -10,7 +10,6 @@ Alle Befehle aus dem Repository-Hauptordner in Bash. Docker und gcloud laufen in
 - Die Manifeste sind dieselben wie lokal. Nur der Image-Pfad ändert sich.
 - Ein Kontext ist Cluster plus Benutzer plus Standard-Namespace. Vor jeder Änderung prüft ihr ihn.
 - Die Konsole zeigt dieselben Objekte wie `kubectl`. Beides liest beim selben API-Server.
-- Euer Konto darf nur in eurem Namespace arbeiten.
 
 ## Das Bild dazu
 
@@ -29,254 +28,152 @@ Dockerfile --docker build--> Image hallo-app:2.0
 
 ### 1. Verbinden
 
-Was passiert: `gcloud` meldet euch an und schreibt einen neuen Kontext für den GKE-Cluster in eure kubeconfig. Dann setzt ihr euren Namespace als Standard.
-
-Die Werte sind für alle gleich. Nur den Namespace ändert ihr: Eure Nummer bekommt ihr vom Trainer. `REGION` ist der Standort der Registry, `LOCATION` der des Clusters.
+Was passiert: `gcloud` schreibt einen Kontext für euren Cluster in die kubeconfig. Dann legt ihr den Namespace `workshop` an und macht ihn zum Standard.
 
 ```bash
-export PROJECT_ID=lookbeyond-gke-workshop
+export PROJECT_ID=EURE_PROJEKT_ID
 export REGION=europe-west3
-export REPOSITORY=workshop
-export CLUSTER_NAME=workshop
-export LOCATION=europe-west3-b
-export WORKSHOP_NAMESPACE=workshop-person01        # eure Nummer vom Trainer
+export ZONE=europe-west3-b
 
-gcloud auth login                                  # Anmeldung im Browser, mit dem Konto, das ihr am Tag 1 genannt habt
-gcloud container clusters get-credentials "$CLUSTER_NAME" \
-  --location "$LOCATION" --project "$PROJECT_ID" --dns-endpoint   # legt den Kontext an
-export WORKSHOP_CONTEXT="$(kubectl config current-context)"
-kubectl config set-context "$WORKSHOP_CONTEXT" --namespace="$WORKSHOP_NAMESPACE"
+gcloud container clusters get-credentials workshop --zone "$ZONE" --project "$PROJECT_ID"
+kubectl create namespace workshop
+kubectl config set-context --current --namespace=workshop
 kubectl config get-contexts                        # * markiert den aktuellen Kontext
-bash lab00-check/check.sh cloud                    # prueft Zugang und Namespace
+bash lab00-check/check.sh cloud
 ```
 
-Erwartet: ein Kontext `gke_...` mit eurem Namespace, und `check.sh cloud` ohne Fehler.
+Erwartet: ein Kontext `gke_...` mit Namespace `workshop`, und `check.sh cloud` ohne Fehler.
 
-> **Hintergrund:** `get-credentials` legt nur die Verbindung an. Ob ihr etwas tun dürft, entscheiden IAM (dürft ihr zum Cluster) und RBAC (was dürft ihr im Namespace). Das vertieft Tag 3.
-
-**Gut zu wissen:** `--dns-endpoint` verbindet über einen DNS-Namen mit Google-Anmeldung statt über eine IP-Adresse. Auf unserem Cluster ist nur dieser Weg offen.
+Diese drei `export`-Zeilen und `IMAGE` aus Schritt 2 braucht ihr in jedem neuen Terminal, auch in Lab 5 und 6.
 
 ### 2. Image bauen und hochladen
 
-Was passiert: Ihr baut das Image unter dem vollen Registry-Namen und schiebt es nach Artifact Registry. Jede Person hat einen eigenen Image-Namen, damit niemand fremde Tags überschreibt.
-
 ```bash
-export IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/hallo-app-$WORKSHOP_NAMESPACE:2.0"
-gcloud auth configure-docker "$REGION-docker.pkg.dev"   # Docker darf mit eurem Konto pushen
-
-docker build --platform linux/amd64 --build-arg APP_VERSION=2.0 \
-  -t "$IMAGE" lab02-hallo-app                           # Image fuer amd64-Nodes
-docker push "$IMAGE"                                    # hochladen
+export IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/workshop/hallo-app:2.0"
+docker build --platform linux/amd64 --build-arg APP_VERSION=2.0 -t "$IMAGE" lab02-hallo-app
+docker push "$IMAGE"
+gcloud artifacts docker images list "$REGION-docker.pkg.dev/$PROJECT_ID/workshop" --include-tags
 ```
 
-Erwartet: Der Push endet mit einer Zeile `digest: sha256:...`.
-
-Prüft den Push: Listet alle Images im Repository und findet eures mit Tag und Digest. Findet es danach in der Konsole unter Artifact Registry.
-
-```bash
-gcloud artifacts docker images list "$REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY" --include-tags
-```
-
-> **Hintergrund:** Push und Pull sind getrennte Rechte. Euer Konto lädt hoch, die Identität der Nodes lädt herunter.
+Erwartet: Der Push endet mit `digest: sha256:...`, die Liste zeigt das Image mit Tag `2.0`. Findet es danach in der Konsole unter Artifact Registry.
 
 **Gut zu wissen:** `--platform linux/amd64` baut für die Prozessorarchitektur der GKE-Nodes. Auf einem Mac mit Apple-Chip wäre das Image sonst ARM und liefe auf den Nodes nicht.
 
-### 3. Manifeste vorbereiten und ausrollen
+### 3. Ausrollen
 
-Was passiert: In [k8s/](k8s/) steht statt eines Images der Platzhalter `WORKSHOP_IMAGE`. `render.py` schreibt eine Arbeitskopie mit eurem Image nach `out/lab04/`. Die rollt ihr aus.
+In [k8s/deployment.yaml](k8s/deployment.yaml) steht statt eines Images der Platzhalter `WORKSHOP_IMAGE`. `sed` setzt euer Image ein und gibt das Ergebnis direkt an `kubectl`. Die Dateien im Repository bleiben unverändert.
 
 ```bash
-python3 scripts/render.py lab04-gke/k8s --image "$IMAGE" --output out/lab04   # nur Dateien, kein Cluster
-kubectl config current-context                     # erwartet: gke_...
-kubectl apply -f out/lab04/
+sed "s#WORKSHOP_IMAGE#$IMAGE#" lab04-gke/k8s/*.yaml        # nur ansehen
+sed "s#WORKSHOP_IMAGE#$IMAGE#" lab04-gke/k8s/*.yaml | kubectl apply -f -
 kubectl rollout status deployment/hallo --timeout=600s
-kubectl get pods -o wide                           # NODE zeigt, wo die Pods laufen
+kubectl get pods -o wide                                     # NODE zeigt, wo die Pods laufen
 ```
 
 Erwartet: zwei Pods `Running` mit `1/1`.
 
-**Gut zu wissen:** `render.py` ersetzt nur den Platzhalter und überschreibt keine vorhandene Arbeitskopie. Für einen zweiten Versuch nehmt einen neuen Ordner, etwa `out/lab04-2`.
+**Gut zu wissen:** `kubectl apply -f -` liest die Manifeste von der Standardeingabe. Jede Datei beginnt mit `---`, deshalb trennt `kubectl` die aneinandergehängten Dateien sauber.
 
 ### 4. CLI und Konsole vergleichen
-
-Was passiert: Ihr seht dieselben Objekte zweimal, einmal mit `kubectl`, einmal in der Google Cloud Console.
 
 ```bash
 kubectl describe deployment hallo                       # Image, Replikas, Events
 kubectl logs -l app=hallo --prefix --tail=30            # Logs beider Pods
-kubectl get events --sort-by=.metadata.creationTimestamp
+kubectl get events --sort-by=.lastTimestamp
 kubectl port-forward service/hallo 8080:80              # im zweiten Terminal: curl http://127.0.0.1:8080/
 ```
 
 Erwartet: `Hallo von GKE von Pod ..., Version 2.0`.
 
-Öffnet in der Konsole Kubernetes Engine, dann Workloads. Findet euer Deployment über den Namespace. Vergleicht Pod-Namen, Image, Ereignisse und Logs mit der CLI. Sucht danach den Service.
-
-Ändert jetzt etwas und schaut zu, wie die Konsole folgt. Lasst die Seite des Deployments offen und aktualisiert sie nach jedem Befehl:
+Öffnet in der Konsole Kubernetes Engine, dann Workloads. Vergleicht Pod-Namen, Image, Ereignisse und Logs mit der CLI. Ändert dann etwas und aktualisiert die Seite nach jedem Befehl:
 
 ```bash
-kubectl delete pod -l app=hallo --wait=false   # Konsole: neue Pod-Namen, Ereignisse zum Ersatz
-kubectl scale deployment/hallo --replicas=3    # Konsole: drei Pods, Ereignis ScalingReplicaSet
+kubectl delete pod -l app=hallo --wait=false   # neue Pod-Namen, Ereignisse zum Ersatz
+kubectl scale deployment/hallo --replicas=3    # drei Pods, Ereignis ScalingReplicaSet
 kubectl scale deployment/hallo --replicas=2    # zurück auf den Stand der Datei
 ```
 
-Im Reiter Logs seht ihr die Startzeilen der neuen Pods. Bis sie dort stehen, dauert es etwa eine Minute.
-
 ### 5. Kontext wechseln
-
-Was passiert: Ihr springt zwischen minikube und GKE. Derselbe Befehl zeigt je nach Kontext einen anderen Cluster.
 
 ```bash
 kubectl config use-context minikube
 kubectl get pods                                  # euer lokaler Cluster
-kubectl config use-context "$WORKSHOP_CONTEXT"
-kubectl get pods                                  # GKE, euer Namespace
+kubectl config use-context gke_${PROJECT_ID}_${ZONE}_workshop
+kubectl get pods                                  # GKE
 ```
 
-Erwartet: zwei verschiedene Pod-Listen.
-
-```text
-kubeconfig
-  +-- minikube                              -> lokaler Cluster
-  +-- gke_lookbeyond-gke-workshop_..._workshop -> GKE
-        (Kontext = Cluster + Benutzer + Standard-Namespace)
-```
-
-> **Hintergrund:** Ein Kontext ist ein Verbindungsprofil, kein Recht. Wer den falschen Kontext aktiv hat, ändert den falschen Cluster. Deshalb vor jedem `apply` und `delete`: `kubectl config current-context`.
+Erwartet: zwei verschiedene Pod-Listen. Ein Kontext ist ein Verbindungsprofil. Wer den falschen aktiv hat, ändert den falschen Cluster. Deshalb vor jedem `apply` und `delete`: `kubectl config current-context`.
 
 ## Checkpoint
 
 ```bash
-kubectl config use-context "$WORKSHOP_CONTEXT"
 python3 scripts/pruefen.py gke
 ```
 
 Erwartet: `Ergebnis: 0 Pruefung(en) fehlgeschlagen`.
 
-**Abgabe:** Pod-Liste aus GKE, HTTP-Antwort und ein übereinstimmender Pod-Name aus der Konsole.
-
 ## Extra zum Ausprobieren
-
-Für alle, die mit dem Kern fertig sind. Jedes Extra bleibt in eurem Namespace und räumt am Ende selbst auf.
 
 ### Extra 1: Einen Fehler im Logs Explorer finden
 
-Das bereitet Tag 3 vor. Lasst den Tunnel aus Schritt 4 laufen und erzeugt im zweiten Terminal einen Fehler:
+Lasst den Tunnel aus Schritt 4 laufen und erzeugt im zweiten Terminal einen Fehler:
 
 ```bash
 curl -i http://127.0.0.1:8080/fehler              # HTTP 500 ist hier gewollt
-kubectl logs -l app=hallo --prefix --tail=50      # Zeile mit FEHLER
 ```
 
-Sucht dieselbe Zeile in der Konsole unter Logging, Logs Explorer. Setzt euren Namespace ein:
+Sucht die Zeile in der Konsole unter Logging, Logs Explorer:
 
 ```text
 resource.type="k8s_container"
-resource.labels.project_id="lookbeyond-gke-workshop"
-resource.labels.cluster_name="workshop"
-resource.labels.namespace_name="workshop-person01"
+resource.labels.namespace_name="workshop"
 resource.labels.container_name="hallo"
-textPayload:"FEHLER"
+severity>=ERROR
 ```
 
-Wählt ein aktuelles Zeitfenster und gebt der Übertragung etwas Zeit. Ohne die letzte Zeile seht ihr alle Logs der Anwendung. Im Monitoring findet ihr CPU, Speicher und `kubernetes.io/container/restart_count`. Die Fehlerroute erzeugt keinen Neustart.
+Gebt der Übertragung etwa eine Minute. Im Monitoring findet ihr CPU, Speicher und `kubernetes.io/container/restart_count`.
 
-### Extra 2: Was darf ich?
-
-```bash
-kubectl auth can-i create deployments                     # in eurem Namespace
-kubectl auth can-i get secrets
-kubectl auth can-i create deployments -n kube-system      # im Systembereich
-kubectl auth can-i list nodes                             # clusterweit
-kubectl auth can-i --list                                 # alles, was ihr hier duerft
-kubectl describe resourcequota kurs                       # wie viel ihr reservieren duerft
-```
-
-Welche Antworten sind `yes`, welche `no`? Woher kommt der Unterschied?
-
-Alle teilen sich dieselben Nodes. Das Kontingent ist ein Sicherheitsnetz gegen Versehen, keine Übung kommt in seine Nähe. Ein eigener `LoadBalancer` ist gesperrt, der Weg nach außen ist das Gateway (Extra 4).
-
-### Extra 3: Replikas auf Nodes verteilen
+### Extra 2: Replikas auf Nodes verteilen
 
 Ohne Regel können alle Replikas auf einem Node landen. [extra/spread.yaml](extra/spread.yaml) verlangt mit `topologySpreadConstraints` eine Verteilung über die Nodes.
 
 ```bash
-python3 scripts/render.py lab04-gke/extra --image "$IMAGE" --output out/lab04-extra
-kubectl apply -f out/lab04-extra/
+sed "s#WORKSHOP_IMAGE#$IMAGE#" lab04-gke/extra/spread.yaml | kubectl apply -f -
 kubectl rollout status deployment/hallo-spread --timeout=600s
 kubectl get pods -l app=hallo-spread -o wide      # Spalte NODE
+kubectl delete deployment hallo-spread
 ```
 
-Landen die drei Pods auf drei verschiedenen Nodes? Vergleicht mit der Spalte `NODE` eures Deployments `hallo`.
+### Extra 3: Von außen erreichbar
 
-Aufräumen: `kubectl delete -f out/lab04-extra/`. Bitte gleich danach, die Nodes teilen sich alle.
-
-### Extra 4: Von außen per Gateway erreichbar
-
-Bisher erreicht ihr die Anwendung nur über `port-forward`. Der Trainer hat einen gemeinsamen Eingang angelegt: ein Gateway mit einer öffentlichen Adresse. Ihr hängt mit einer `HTTPRoute` euren Service daran. Jede Person bekommt einen eigenen Pfad, alle teilen sich die Adresse.
-
-```text
-curl -> GATEWAY_IP/workshop-person01/ -> Gateway (Load Balancer von Google)
-     -> HTTPRoute in eurem Namespace -> Service hallo:80 -> Pods :8080
-```
-
-[gateway/httproute.yaml](gateway/httproute.yaml) verbindet Pfad und Service. Setzt euren Namespace ein und rollt die Route aus:
+Bisher erreicht ihr die Anwendung nur über `port-forward`. Ein Service vom Typ `LoadBalancer` bekommt von Google eine öffentliche IP:
 
 ```bash
-export GATEWAY_IP=ADRESSE_VOM_TRAINER
-sed "s/workshop-person01/$WORKSHOP_NAMESPACE/g" lab04-gke/gateway/httproute.yaml > out/lab04-route.yaml
-kubectl apply -f out/lab04-route.yaml
-kubectl describe httproute hallo                  # Conditions: Accepted und ResolvedRefs
-curl "http://$GATEWAY_IP/$WORKSHOP_NAMESPACE/"
-curl -i "http://$GATEWAY_IP/$WORKSHOP_NAMESPACE/fehler"
+kubectl expose deployment hallo --name=hallo-extern --type=LoadBalancer --port=80 --target-port=8080
+kubectl get service hallo-extern -w               # warten, bis EXTERNAL-IP eine Adresse zeigt
+curl http://EXTERNAL-IP/
+kubectl delete service hallo-extern               # kostet Geld, solange er steht
 ```
 
-Erwartet: `Hallo von GKE von Pod ...`. Mehrmals aufrufen: Der Pod-Name wechselt. Bis der Load Balancer eure Route kennt, dauert es einige Minuten (im Test etwa vier). Bis dahin kommt `404`. Wartet und wiederholt den Aufruf.
+Mehrmals aufrufen: Der Pod-Name wechselt. Findet den Load Balancer in der Konsole unter Netzwerkdienste.
 
-Ruft auch die Anwendung einer anderen Person auf, etwa `http://$GATEWAY_IP/workshop-person02/`. Was passiert mit eurer Route, wenn ihr den Service `hallo` löscht?
-
-Aufräumen: `kubectl delete -f out/lab04-route.yaml`. Die Adresse ist öffentlich, die Route bleibt nicht über Nacht stehen.
-
-## Aufräumen und Fallback
+## Aufräumen
 
 ```bash
 kubectl config current-context    # erwartet: gke_...
-kubectl delete -f out/lab04/
+sed "s#WORKSHOP_IMAGE#$IMAGE#" lab04-gke/k8s/*.yaml | kubectl delete -f -
 ```
 
-Den Namespace und die Registry verwaltet der Trainer. Für Tag 3 könnt ihr das Deployment nach Absprache stehen lassen. Vor Lab 6 wird es entfernt.
+Für Lab 5 könnt ihr das Deployment stehen lassen. `stoerung.sh start` ersetzt es.
 
-Ohne Cloud: Der Trainer zeigt Konsole und Registry. Ihr setzt Kontext und Namespace auf `minikube`/`workshop`, verwendet `IMAGE=hallo-app:2.0` und ladet das Image mit `minikube image load hallo-app:2.0`. Dann rendert ihr in einen neuen Ausgabeordner und übt Deployment, Checkpoint und Fehlersuche lokal. Cloud Logging, Monitoring und Cloud-Rechte bleiben eine Demo.
+## Fragen und Antworten
 
-## Für den Trainer
-
-**So erklärt ihr es:**
-
-- Artifact Registry ist für GKE, was `minikube image load` lokal war: der Ort, von dem der Cluster das Image holt.
-- Dieselben Manifeste wie lokal. Wer Lab 2 verstanden hat, versteht Lab 4. Neu sind nur Anmeldung, Registry und Konsole.
-- Kontext wie ein Lesezeichen im Browser: Es führt zu einem Cluster, gibt aber keine Rechte.
-- Google betreibt die Control Plane. Ihr seht sie nicht als Pods, ihr sprecht nur mit dem API-Server.
-
-**Häufige Fragen:**
-
-- *Ist ein Kontext ein Recht?* Nein. Er wählt Cluster, Benutzer und Namespace. Was ihr dürft, entscheiden IAM und RBAC.
-- *Wechsle ich mit dem Namespace den Node?* Nein. Nodes gehören zu keinem Namespace. Pods aus verschiedenen Namespaces teilen sich die Nodes.
+- *Ist ein Kontext ein Recht?* Nein. Er wählt Cluster, Benutzer und Namespace. Was ihr dürft, entscheiden IAM und RBAC (Lab 6, Etappe C).
+- *Wechsle ich mit dem Namespace den Node?* Nein. Nodes gehören zu keinem Namespace.
 - *Läuft der Traffic meiner Nutzer über kubectl?* Nein. `kubectl` und `port-forward` sind nur für euch. Nutzer kommen über Load Balancer oder Ingress zum Service.
 - *Warum GKE statt Cloud Run?* GKE gibt mehr Kontrolle über Nodes, Netz und komplexe Anwendungen, dafür mehr Betrieb. Für eine einfache zustandslose API ist Cloud Run oft einfacher.
-- *Füllt der Scheduler erst Node 1, dann Node 2?* Nein, das ist nicht garantiert. Verteilen erzwingt man mit `topologySpreadConstraints`, siehe Extra 3.
-
-**Nur nennen, nicht erklären:** DNS-Endpunkt, Auth-Plugin, `--platform`, was `render.py` intern tut, Autopilot-Details, die Rollen hinter `get-credentials`.
 
 **Wenn es hakt:**
 
-- `ImagePullBackOff`: Image-Pfad in `out/lab04/deployment.yaml` mit `echo "$IMAGE"` vergleichen, Push wirklich mit Digest beendet, Architektur `amd64`.
-- `Forbidden` oder falsche Pods: falscher Kontext oder Namespace. `kubectl config get-contexts` zeigt beides.
-- `render.py` meldet, dass Dateien existieren: neuen Ausgabeordner wählen, etwa `out/lab04-2`.
-
-**Kapazität für Extra 3:** Das Deployment `hallo-spread` fordert je Pod nur `10m` CPU und `384Mi` Speicher an. 15 Personen mit je drei Pods passen rechnerisch neben Lab 4 auf drei `e2-standard-4`, aber ohne viel Reserve. Lasst es trotzdem nicht stehen.
-
-**Vorbereitung Extra 4:** Gateway API im Cluster aktiv, [trainer/gateway.yaml](../trainer/gateway.yaml) angewendet, RBAC mit `httproutes`. Die Adresse steht in `kubectl -n workshop-gateway get gateway workshop`. Nur Namespaces mit dem Label `workshop=gke-einfuehrung` dürfen Routen anhängen. Das Gateway braucht beim Anlegen 5 bis 10 Minuten bis zur ersten Antwort, also vor dem Lab anlegen. Eine neue Route braucht etwa vier Minuten. Das Gateway am Abend löschen.
-
-**Lösung Extra 4:** Die Route bleibt nach dem Löschen des Service bestehen, meldet aber `ResolvedRefs: False` mit Grund `BackendNotFound`, und `curl` liefert nach einigen Minuten `500`. Gateway, Route und Service sind getrennte Objekte, verbunden nur über Namen.
-
-**Lösung Extra 2:** `yes` für Deployments und Secrets im eigenen Namespace, `no` für `kube-system` und für Nodes. Die Role `workshop-entwickler` gilt nur im eigenen Namespace und enthält keine clusterweiten Objekte.
+- `ImagePullBackOff`: `echo "$IMAGE"` mit `kubectl describe pod` vergleichen. Push mit Digest beendet? Architektur `amd64`? Leserecht der Nodes auf die Registry, siehe [SELBST-WEITERMACHEN.md](../SELBST-WEITERMACHEN.md).
+- Falsche Pods oder `NotFound`: falscher Kontext oder Namespace. `kubectl config get-contexts` zeigt beides.
