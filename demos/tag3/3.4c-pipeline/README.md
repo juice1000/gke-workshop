@@ -2,7 +2,7 @@
 
 **Folie:** Tag 3, 3.4 „Unsere Pipeline“  
 **Dauer:** etwa 4 Minuten  
-**Ändert den Cluster:** ja, rollt die Lab-5-Lösung und Störung 6.3 aus, stellt am Ende `betrieb/` wieder her  
+**Ändert den Cluster:** ja, rollt die Lab-6-Lösung und Störung 6.3 aus, stellt am Ende `betrieb/` wieder her  
 **Voraussetzung:** Ausgangslage aus [00-vorbereiten](../../tag2/00-vorbereiten/README.md)
 
 ```bash

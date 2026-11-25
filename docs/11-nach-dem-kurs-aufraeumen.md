@@ -36,7 +36,10 @@ gcloud container clusters resize workshop --node-pool=kurs --num-nodes=1 \
 - [ ] Übrige Load Balancer prüfen, erwartet: keine. `kubectl --context "$CTX" get services -A | grep LoadBalancer`
 - [ ] Teilnehmer-Namespaces ansehen, dann löschen: `kubectl --context "$CTX" get namespaces`, je Namespace `kubectl --context "$CTX" delete namespace workshop-personNN`.
 - [ ] IAM-Bindungen der Teilnehmenden entfernen. Die Zuordnung steht in `out/trainer/teilnehmer.tsv`. Je Konto `remove-iam-policy-binding` für `container.clusterViewer`, `logging.viewer`, `monitoring.viewer` und `monitoring.alertPolicyEditor` am Projekt sowie `artifactregistry.writer` am Repository `workshop`. Prüfen: `gcloud projects get-iam-policy "$PROJECT_ID"`.
+- [ ] Demo 3.4d (GitHub Actions) abbauen: RoleBinding und Role `workshop-entwickler` in `workshop-trainer` (`kubectl delete -f out/trainer/github/rbac.yaml`), Dienstkonto `gh-deployer` (`gcloud iam service-accounts delete gh-deployer@lookbeyond-gke-workshop.iam.gserviceaccount.com`), dazu seine Bindungen an `container.clusterViewer` am Projekt und `artifactregistry.writer` am Repository `workshop`, Provider und Pool (`gcloud iam workload-identity-pools providers delete github-oidc --workload-identity-pool=github --location=global`, dann `gcloud iam workload-identity-pools delete github --location=global`), Demo-Images `hallo-app:2.0-*` im Repository `workshop`.
 - [ ] Alarmrichtlinien aus Lab 5 löschen. Ansehen: Monitoring, Alerting, Policies, Namen beginnen mit `workshop-`. Löschen dort oder per API mit `curl -X DELETE` auf den Namen der Richtlinie.
+- [ ] E-Mail-Kanäle `workshop-* E-Mail` löschen (Monitoring, Alerting, Edit notification channels), erst nach den Richtlinien. Sonst gehen Alarme weiter an Kundenadressen.
+- [ ] Lab-Routen: `kubectl delete httproute hallo` in jedem Kurs-Namespace, falls Lab 6 Aufräumen ausgelassen wurde. Das Gateway selbst löscht der Trainer ohnehin nach jedem Kurstag.
 - [ ] Kontingente in den Namespaces verschwinden mit den Namespaces. `workshop-trainer` behält sein Kontingent, bis der Namespace gelöscht wird.
 - [ ] Personenbezogene Dateien lokal löschen: `out/konten.txt`, `out/trainer/`.
 

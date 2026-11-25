@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Demo 3.4c: Unsere Pipeline
 # Folie: Tag 3, 3.4 "Unsere Pipeline"
-# Zeigt: scripts/pipeline.sh einmal gruen mit der Lab-5-Loesung, einmal rot
+# Zeigt: scripts/pipeline.sh einmal gruen mit der Lab-6-Loesung, einmal rot
 # mit Stoerung 6.3. Rot heisst: Belege gesichert, zurueckgerollt, Exit-Code 1.
 # Am Ende gilt wieder lab02-hallo-app/betrieb/.
 # Voraussetzung: demos/tag2/00-vorbereiten/demo.sh. Dauer: etwa 4 Minuten.

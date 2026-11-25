@@ -54,7 +54,7 @@ Die vollständigen Belege und Grenzen stehen im [Teststatus](07-teststatus.md).
 - Interne Service-DNS-Auflösung und HTTP-Aufruf auf GKE geprüft.
 - Absichtlicher HTTP-500-Fehler, danach gesunde Liveness; zugehörige Fehlerzeile aus Cloud Logging abgerufen.
 - CPU-, Speicher- und Restart-Metrikdaten über die Cloud-Monitoring-API abgerufen. Die Konsolenoberfläche und Teilnehmerrechte bleiben offen.
-- Alle drei Lab-5-Fehler auf GKE beobachtet: fehlender ConfigMap-Schlüssel, `OOMKilled`, falscher Readiness-Pfad. Verfügbarkeit, Rollback und Reparaturen bestanden. Danach gesundes Lab 4 wiederhergestellt.
+- Alle drei Lab-6-Fehler auf GKE beobachtet: fehlender ConfigMap-Schlüssel, `OOMKilled`, falscher Readiness-Pfad. Verfügbarkeit, Rollback und Reparaturen bestanden. Danach gesundes Lab 4 wiederhergestellt.
 - Namespace-RBAC mit Kubernetes-ServiceAccount-Impersonation geprüft. Eigener Namespace erlaubt; fremder Namespace, `kube-system` und Node-Liste verweigert. Echte Google-Teilnehmerkonten bleiben separat zu prüfen.
 - Statische Validierung bestanden. Vollständiger lokaler Dry-Run am 17.11.2026 bestanden. Ein GitHub-Actions-Ergebnis wurde noch nicht bestätigt. Autopilot wurde nicht getestet.
 
