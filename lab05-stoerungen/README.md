@@ -1,6 +1,6 @@
 # Lab 5: Störungssuche mit Logs
 
-**Ziel:** Ihr findet Störungen, die `kubectl get pods` nicht oder nur halb zeigt. Ihr lest dazu Logs, Events und auf GKE Logs Explorer und Monitoring. Auf GKE legt ihr einen Alarm an, der eine Störung selbst meldet. Dauer: 60 Minuten, mit Alarm 80 Minuten, zu zweit. **Voraussetzung:** Kontext, Namespace und `IMAGE` aus [Lab 4](../lab04-gke/README.md). Eine laufende Anwendung aus Lab 4 oder Lab 6 ersetzt dieses Lab.
+**Ziel:** Ihr findet Störungen, die `kubectl get pods` nicht oder nur halb zeigt. Ihr lest dazu Logs, Events und auf GKE Logs Explorer und Monitoring. Auf GKE legt ihr einen Alarm an, der eine Störung selbst meldet. Dauer: 60 Minuten, mit Alarm 80 Minuten, jeder für sich. **Voraussetzung:** Kontext, Namespace und `IMAGE` aus [Lab 4](../lab04-gke/README.md). Eine laufende Anwendung aus Lab 4 oder Lab 6 ersetzt dieses Lab.
 
 Alle Befehle aus dem Repository-Hauptordner. Lest `stoerung.sh` erst nach dem Lab, es verrät die Ursachen.
 
