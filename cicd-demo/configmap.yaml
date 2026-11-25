@@ -1,0 +1,10 @@
+# Demo 3.4d: Diese Datei aendert ihr im GitHub-Webeditor. Ein Merge auf main
+# rollt die neue Begruessung ueber GitHub Actions nach workshop-trainer aus.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # PASST ZU: configMapKeyRef.name im Deployment (GREETING).
+  name: hallo-config
+data:
+  # Schluessel: PASST ZU configMapKeyRef.key im Deployment. Wert: FREI.
+  GREETING: Hallo aus GitHub Actions

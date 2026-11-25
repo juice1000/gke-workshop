@@ -1,0 +1,79 @@
+# Demo 3.4d: Ein Merge auf main fuehrt dieselbe Pipeline aus wie Lab 6
+# (scripts/pipeline.sh) und rollt nach GKE aus, Namespace workshop-trainer.
+# Anmeldung ohne Schluessel: Workload Identity Federation, Einrichtung in
+# trainer/github-actions.sh. Laeuft nur bei Aenderungen in cicd-demo/.
+name: Deploy-Demo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "cicd-demo/**"
+      - ".github/workflows/deploy-demo.yml"
+  workflow_dispatch:
+
+# Kein pull_request: Forks eines oeffentlichen Repos bekommen nie Cloud-Zugang.
+permissions:
+  contents: read
+  id-token: write
+
+concurrency: deploy-demo
+
+env:
+  PROJECT_ID: lookbeyond-gke-workshop
+  REGISTRY: europe-west3-docker.pkg.dev
+  WORKSHOP_NAMESPACE: workshop-trainer
+  IMAGE: europe-west3-docker.pkg.dev/lookbeyond-gke-workshop/workshop/hallo-app:2.0
+  PIPELINE_TIMEOUT: "180"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # Anmelden ohne JSON-Schluessel: GitHub weist sich per OIDC aus, Google
+      # tauscht das gegen ein kurzlebiges Token des Kontos gh-deployer.
+      - id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/837349060644/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: gh-deployer@lookbeyond-gke-workshop.iam.gserviceaccount.com
+          token_format: access_token
+
+      - name: Docker-Anmeldung an Artifact Registry
+        run: echo "${{ steps.auth.outputs.access_token }}" | docker login -u oauth2accesstoken --password-stdin "https://$REGISTRY"
+
+      - id: gke
+        uses: google-github-actions/get-gke-credentials@v3
+        with:
+          cluster_name: workshop
+          location: europe-west3-b
+          project_id: lookbeyond-gke-workshop
+          use_dns_based_endpoint: true
+          namespace: workshop-trainer
+
+      - name: Pipeline (Pruefen, Build, Deploy, Gate, Rollback)
+        run: |
+          python3 scripts/render.py cicd-demo --image "$IMAGE" --output out/cicd-demo
+          WORKSHOP_CONTEXT="$(kubectl config current-context)" bash scripts/pipeline.sh out/cicd-demo/ --build
+
+      - name: Zusammenfassung
+        if: always()
+        run: |
+          ergebnis="$(tail -1 out/pipeline/verlauf.txt 2>/dev/null || echo 'kein Lauf')"
+          {
+            echo "### Pipeline"
+            echo ""
+            echo "- Commit: \`${GITHUB_SHA::7}\`"
+            echo "- Verlauf: \`$ergebnis\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Belege hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-belege
+          path: out/pipeline/
+          if-no-files-found: ignore
