@@ -1,6 +1,6 @@
 # Lab 3: Fünf defekte Deployments
 
-**Ziel:** Ihr findet Ursachen anhand von Belegen, bevor ihr etwas ändert. Dauer: 35 Minuten, zu zweit. **Voraussetzung:** Image `hallo-app:1.0` in minikube, Kontext `minikube`, Namespace `workshop`. Die Anwendung aus Lab 2 ist aufgeräumt.
+**Ziel:** Ihr findet Ursachen anhand von Belegen, bevor ihr etwas ändert. Dauer: 35 Minuten, jeder für sich. **Voraussetzung:** Image `hallo-app:1.0` in minikube, Kontext `minikube`, Namespace `workshop`. Die Anwendung aus Lab 2 ist aufgeräumt.
 
 Alle Befehle aus dem Repository-Hauptordner.
 

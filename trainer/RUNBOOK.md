@@ -190,7 +190,7 @@ bash trainer/teilnehmer-anlegen.sh out/konten.txt --apply
 
 Das Skript legt Namespace und RoleBinding an und vergibt `container.clusterViewer`, `logging.viewer`, `monitoring.viewer` am Projekt und `artifactregistry.writer` am Repository. `out/trainer/teilnehmer.tsv` ordnet Nummer, Namespace und Konto zu. Die Kontoliste und die Tabelle enthalten personenbezogene Daten und bleiben unter `out/` (nicht in Git).
 
-Die Einzelschritte je Person oder Paar `NN` und Google-Konto:
+Die Einzelschritte je Person `NN` und Google-Konto:
 
 ```bash
 NN=01

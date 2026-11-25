@@ -16,8 +16,8 @@ Der Node verwendet ein eigenes IAM-Servicekonto mit der GKE-Node-Rolle und Leser
 2. Kubernetes-Version und eine dazu passende kubectl-Version festlegen. Der lokale Probelauf verwendet Kubernetes 1.35.0; die GKE-Version richtet sich nach dem vorbereiteten Cluster und Release Channel.
 3. Netzwerkzugang aus dem Kundennetz zum API-Endpunkt testen. Bei privaten Clustern den tatsächlichen VPN-/Proxy-Zugang mit dem Kunden durchspielen. Cloud Shell ist ein möglicher CLI-Fallback, ersetzt aber nicht ohne Weiteres den lokalen Docker-Build.
 4. Kubernetes Engine und Artifact Registry verfügbar machen, ein Docker-Repository anlegen. Anwendungslogs und Systemmetriken aktivieren. In der Konsole einen aktuellen Testeintrag und Container-Metriken nachweisen.
-5. Je Person oder Paar einen Namespace und eine abgegrenzte Rolle vorbereiten. Zwei echte Testkonten verwenden, nicht nur das eigene Admin-Konto.
-6. Für jeden Rollout Kapazität für drei Pods je Gruppe einplanen: zwei gesunde Pods plus ein neuer Pod. Die Basis fordert zusammen bis zu 750m CPU und 1536 MiB Speicher je gleichzeitigem Rollout. Release B reserviert 512 MiB für den fehlerhaften Pod und braucht nach der Reparatur bis zu 1 GiB Limit für diesen Pod.
+5. Je Person einen Namespace und eine abgegrenzte Rolle vorbereiten. Zwei echte Testkonten verwenden, nicht nur das eigene Admin-Konto.
+6. Für jeden Rollout Kapazität für drei Pods je Person einplanen: zwei gesunde Pods plus ein neuer Pod. Die Basis fordert zusammen bis zu 750m CPU und 1536 MiB Speicher je gleichzeitigem Rollout. Release B reserviert 512 MiB für den fehlerhaften Pod und braucht nach der Reparatur bis zu 1 GiB Limit für diesen Pod.
 7. Ein vorgebautes Image für die tatsächliche Node-Architektur bereithalten. Artifact-Registry-Push und Image-Pull unabhängig voneinander testen.
 
 ## Zugriffsmodell

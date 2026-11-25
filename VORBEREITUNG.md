@@ -134,7 +134,7 @@ Falls euer Netzwerk einen Proxy nutzt:
 
 ## Wenn etwas nicht geht
 
-Zeigt dem Trainer die Ausgabe von `bash lab00-check/check.sh` und die Fehlermeldung. Ein Rechner, auf dem es am ersten Tag nicht läuft, ist kein Problem: Ihr arbeitet dann zu zweit, und für den Cloud-Teil gibt es die Cloud Shell im Browser als Ausweg.
+Zeigt dem Trainer die Ausgabe von `bash lab00-check/check.sh` und die Fehlermeldung. Ein Rechner, auf dem es am ersten Tag nicht läuft, ist kein Problem: Ihr verfolgt dann die lokalen Teile per Bildschirmfreigabe beim Trainer, und für den Cloud-Teil gibt es die Cloud Shell im Browser als Ausweg.
 
 ### `invalid option name` oder `$'\r': command not found`
 
