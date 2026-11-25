@@ -43,4 +43,19 @@ class HalloApplicationTest {
         mvc.perform(get("/actuator/health/liveness")).andExpect(status().isOk());
         mvc.perform(get("/")).andExpect(status().isOk());
     }
+
+    @Test
+    void configReportNamesSourceButNeverValue(@org.junit.jupiter.api.io.TempDir java.nio.file.Path dir) throws Exception {
+        java.nio.file.Files.writeString(dir.resolve("DB_PASSWORT"), "secret-must-never-be-returned");
+        KonfigurationsBericht bericht = new KonfigurationsBericht(dir.toString());
+        org.junit.jupiter.api.Assertions.assertEquals("aus Datei " + dir, bericht.passwortQuelle());
+        org.junit.jupiter.api.Assertions.assertFalse(bericht.passwortQuelle().contains("secret-must-never-be-returned"));
+    }
+
+    @Test
+    void uiPageUsesRelativePaths() throws Exception {
+        mvc.perform(get("/ui.html"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("fetch(\"./\"")));
+    }
 }

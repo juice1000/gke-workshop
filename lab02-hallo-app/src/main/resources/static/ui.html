@@ -1,0 +1,95 @@
+<!doctype html>
+<!-- Oberflaeche der hallo-app. Fragt jede Sekunde "./" ab und zeigt, welcher Pod
+     antwortet. Nur relative Pfade: funktioniert direkt, per port-forward und
+     hinter dem Gateway unter /workshop-personNN/. -->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>hallo-app</title>
+<style>
+  :root { --bg:#f6f7f9; --fg:#1d2330; --muted:#5b6475; --card:#fff; --line:#dde1e8; --ok:#1f7a4d; --err:#b42318; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#14171d; --fg:#e7eaf0; --muted:#9aa3b2; --card:#1c2028; --line:#2c323d; --ok:#5ccf95; --err:#ff8a80; } }
+  body { margin:0; font:15px/1.45 system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width:760px; margin:0 auto; padding:24px 16px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  p.sub { margin:0 0 20px; color:var(--muted); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:16px; }
+  .gruss { font-size:24px; font-weight:600; }
+  .meta { color:var(--muted); margin-top:4px; }
+  .pods { display:flex; flex-wrap:wrap; gap:8px; }
+  .pod { border:1px solid var(--line); border-radius:6px; padding:6px 10px; font-family:ui-monospace, monospace; font-size:13px; }
+  table { width:100%; border-collapse:collapse; font-family:ui-monospace, monospace; font-size:13px; }
+  td { padding:3px 6px; border-top:1px solid var(--line); vertical-align:top; }
+  .ok { color:var(--ok); } .err { color:var(--err); }
+  button { font:inherit; padding:6px 12px; border-radius:6px; border:1px solid var(--line); background:var(--card); color:var(--fg); cursor:pointer; }
+</style>
+</head>
+<body>
+<main>
+  <h1>hallo-app</h1>
+  <p class="sub">Fragt jede Sekunde die Anwendung ab. Jede Zeile ist eine Antwort.</p>
+  <div class="card">
+    <div class="gruss" id="gruss">&hellip;</div>
+    <div class="meta" id="meta"></div>
+  </div>
+  <div class="card">
+    <strong>Pods, die in der letzten Minute geantwortet haben</strong>
+    <div class="pods" id="pods" style="margin-top:8px"></div>
+  </div>
+  <div class="card">
+    <button id="fehler">Fehler ausl&ouml;sen (/fehler)</button>
+    <span class="meta" id="fehlerText"></span>
+  </div>
+  <div class="card">
+    <table><tbody id="verlauf"></tbody></table>
+  </div>
+</main>
+<script>
+const verlauf = document.getElementById("verlauf");
+const gesehen = new Map();
+function zeile(zeit, text, ok) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = "<td></td><td></td>";
+  tr.children[0].textContent = zeit;
+  tr.children[1].textContent = text;
+  tr.children[1].className = ok ? "ok" : "err";
+  verlauf.prepend(tr);
+  while (verlauf.children.length > 30) verlauf.lastChild.remove();
+}
+function podsZeigen() {
+  const grenze = Date.now() - 60000;
+  const box = document.getElementById("pods");
+  box.innerHTML = "";
+  for (const [pod, t] of gesehen) {
+    if (t < grenze) { gesehen.delete(pod); continue; }
+    const d = document.createElement("div");
+    d.className = "pod"; d.textContent = pod; box.append(d);
+  }
+}
+async function abfragen() {
+  const zeit = new Date().toLocaleTimeString("de-DE");
+  try {
+    const r = await fetch("./", { cache: "no-store" });
+    const text = (await r.text()).trim();
+    zeile(zeit, r.status + " " + text, r.ok);
+    const m = text.match(/^(.*) von Pod (\S+), Version (.*)$/);
+    if (r.ok && m) {
+      document.getElementById("gruss").textContent = m[1];
+      document.getElementById("meta").textContent = "Pod " + m[2] + ", Version " + m[3];
+      gesehen.set(m[2], Date.now());
+    }
+  } catch (e) {
+    zeile(zeit, "keine Antwort (" + e.message + ")", false);
+  }
+  podsZeigen();
+}
+document.getElementById("fehler").onclick = async () => {
+  const r = await fetch("./fehler", { cache: "no-store" });
+  document.getElementById("fehlerText").textContent = " Antwort " + r.status + ". Sucht die Zeile in den Logs.";
+};
+abfragen();
+setInterval(abfragen, 1000);
+</script>
+</body>
+</html>

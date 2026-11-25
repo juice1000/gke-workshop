@@ -4,6 +4,15 @@
 
 Voraussetzung: Zielkontext und eigener Namespace aus Lab 4, erreichbares Image der Version 2.0. Die Anwendung aus Lab 4 oder Lab 5 läuft weiter, `apply` ersetzt sie. Alternativ funktioniert diese Übung lokal, siehe unten.
 
+**Festgefahren?** Wer länger als 10 Minuten nicht weiterkommt, setzt den Namespace auf einen bekannten guten Stand und macht mit dem nächsten Schritt weiter. Das Skript sichert eure Arbeitskopie `out/lab06/` vorher unter neuem Namen, rollt die fertige Lösung über die Pipeline aus und prüft sie:
+
+```bash
+bash scripts/basis.sh lab06              # gesunder Stand, danach z. B. weiter mit Etappe B
+bash scripts/basis.sh lab06 --pruefen    # nur prüfen, nichts ändern
+```
+
+Jeder Pipeline-Lauf steht mit Zeit und Ergebnis in `out/pipeline/verlauf.txt`. Den braucht ihr für die Abgabe.
+
 ## Etappe A: Selbst deployen (25 Minuten)
 
 1. Prüft `kubectl config get-contexts`. Aktueller Kontext, `WORKSHOP_CONTEXT` und Namespace müssen zusammenpassen.
@@ -13,6 +22,8 @@ Voraussetzung: Zielkontext und eigener Namespace aus Lab 4, erreichbares Image d
 python3 scripts/render.py lab06-abschluss --image "$IMAGE" --output out/lab06
 kubectl create secret generic hallo-secret --from-literal=DB_PASSWORT=uebung123
 ```
+
+Nach Lab 5 gibt es das Secret schon. Die Meldung `already exists` ist dann in Ordnung.
 
 3. Ergänzt `out/lab06/starter/deployment.yaml`. Ersetzt `TODO_IMAGE` durch den Wert von `IMAGE`. Schreibt die beiden Umgebungsvariablen, Ressourcen und drei Probes gemäß den TODO-Kommentaren. ConfigMap und Service sind fertig. Muster findet ihr in [Lab 2](../lab02-hallo-app/betrieb/deployment.yaml).
 4. Wendet nur `starter/` an:
@@ -123,6 +134,56 @@ git log -1 --oneline                    # derselbe Commit im Tag
 
 Die Pipeline ändert eure Datei nicht. Sie schreibt eine Kopie mit dem neuen Image nach `out/pipeline/build-ZEIT/`. Die Antwort der Anwendung zeigt jetzt `Version 2.0-COMMIT`. Uncommittete Änderungen stecken zwar im Image, aber nicht im Tag. Ein echter Build-Server baut deshalb nur aus Commits.
 
+## Etappe D: Das Passwort kommt aus Google Secret Manager (20 Minuten, nur GKE)
+
+Bisher kam `DB_PASSWORT` aus `kubectl create secret`. Jetzt liegt es in Secret Manager, dem Tresor von Google Cloud. Der Pod holt es beim Start als Datei. Er meldet sich dabei mit seinem eigenen Kubernetes-Dienstkonto `hallo` an (Workload Identity, Block 3.3). Kein Schlüssel, kein `kubectl create secret`.
+
+```text
+Secret Manager: hallo-db-person01
+   ^ Leserecht nur für ns/workshop-person01/sa/hallo (vom Trainer vergeben)
+Pod hallo, serviceAccountName: hallo
+   CSI-Treiber liest beim Start --> Datei /var/secrets/DB_PASSWORT
+   Startzeile im Log: "Konfiguration: ... DB_PASSWORT aus Datei /var/secrets"
+```
+
+1. Gesunden Stand für Etappe D herstellen. Das Image `2.2` hat der Trainer gebaut, es schreibt die Startzeile:
+
+```bash
+export IMAGE=europe-west3-docker.pkg.dev/lookbeyond-gke-workshop/workshop/hallo-app:2.2
+bash scripts/basis.sh lab06 D
+```
+
+Erwartet: `Pipeline GRUEN` und `Ausgangslage 06 steht.` Lest dann `out/lab06/basis/D/serviceaccount.yaml`, `secretproviderclass.yaml` und in `deployment.yaml` die Felder `serviceAccountName`, `nodeSelector` und `volumes`.
+
+2. Belegt, woher das Passwort kommt, ohne den Wert zu zeigen:
+
+```bash
+kubectl logs deployment/hallo | grep Konfiguration
+kubectl exec deployment/hallo -- ls -l /var/secrets
+```
+
+Im Logs Explorer findet ihr dieselbe Zeile mit `textPayload:"DB_PASSWORT aus Datei"` und eurem Namespace.
+
+3. Störungen 6.4 bis 6.6, wie in Etappe B. Vor jeder Störung `bash scripts/basis.sh lab06 D` statt des Starters:
+
+```bash
+bash scripts/pipeline.sh out/lab06/stoerungen/6.4-tresor-name.yaml
+bash scripts/pipeline.sh out/lab06/stoerungen/6.5-identitaet.yaml
+bash scripts/pipeline.sh out/lab06/stoerungen/6.6-fremder-tresor.yaml
+```
+
+Der neue Pod bleibt in `ContainerCreating`. Die Anwendung startet nie, also gibt es keine Logzeile. Der Befund steht in den Events (`events.txt`, `kubectl describe pod`). Auch das ist ein Befund: keine Logzeile, Ursache in den Events.
+
+**Abgabe D:** Die Startzeile aus `kubectl logs` und aus dem Logs Explorer. Pro Störung Event-Zeile, Ursache und Reparatur.
+
+## Extra zum Ausprobieren: Den Lauf in GitHub Actions lesen
+
+In Demo 3.4d hat ein Merge auf `main` dieselbe Pipeline in GitHub Actions gestartet. Öffnet den Lauf unter `https://github.com/juice1000/gke-workshop/actions/workflows/deploy-demo.yml`. Fragt GitHub nach einer Anmeldung, zeigt der Trainer den Lauf.
+
+- Welcher Schritt im Lauf entspricht welcher Stufe `[1/5]` bis `[5/5]`?
+- Wo meldet sich der Runner bei Google Cloud an, und warum liegt dafür kein Schlüssel im Repository? Lest dazu [deploy-demo.yml](../.github/workflows/deploy-demo.yml).
+- Welcher Image-Tag lief, und zu welchem Commit gehört er?
+
 ## Etappe C: Rechte prüfen (10 Minuten)
 
 ```bash
@@ -141,21 +202,12 @@ kubectl auth can-i list nodes
 ```bash
 kubectl config current-context
 kubectl delete -f out/lab06/starter/
+kubectl delete deployment verkehr --ignore-not-found
+kubectl delete httproute hallo --ignore-not-found
+kubectl delete serviceaccount hallo --ignore-not-found
+kubectl delete secretproviderclass hallo-db hallo-db-v2 --ignore-not-found
 kubectl delete secret hallo-secret
 kubectl get deployment,pods,service,configmap,secret
 ```
 
 In einem frischen Namespace kann ein systemseitig vorhandenes Objekt übrig bleiben. `kubectl get all` würde ConfigMaps und Secrets nicht vollständig abdecken.
-
-## Ohne Cloud
-
-```bash
-export WORKSHOP_CONTEXT=minikube
-export WORKSHOP_NAMESPACE=workshop
-export IMAGE=hallo-app:2.0
-kubectl config use-context "$WORKSHOP_CONTEXT"
-kubectl config set-context "$WORKSHOP_CONTEXT" --namespace="$WORKSHOP_NAMESPACE"
-minikube image load hallo-app:2.0
-```
-
-Dann Etappen A und B unverändert mit einer neuen Arbeitskopie ausführen. Die Pipeline läuft genauso gegen minikube. Mit `--build` lädt sie das Image per `minikube image load` statt per `docker push` und baut für die Architektur eures Rechners. In minikube habt ihr normalerweise Admin-Rechte. Daher zeigt Etappe C dort andere Ergebnisse; die Cloud-Abgrenzung wird gemeinsam besprochen.

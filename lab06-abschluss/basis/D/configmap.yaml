@@ -1,0 +1,11 @@
+# ConfigMap fuer Lab 6. Fertig, keine Aufgabe.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # PASST ZU: configMapKeyRef.name im Deployment (GREETING).
+  name: hallo-config
+  labels:
+    workshop-lab: "06"
+data:
+  # Schluessel: PASST ZU configMapKeyRef.key im Deployment. Wert: FREI.
+  GREETING: Hallo zum Abschluss
