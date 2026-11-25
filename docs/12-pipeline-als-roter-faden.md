@@ -107,6 +107,28 @@ Rules for fault files:
 - Rollback stays `rollout undo` today (slides show it). Phase 2: re-apply the last green manifest set (`out/pipeline/letzter-gruener-stand/`), which also reverts Service and ConfigMap changes. Note the difference in the README
 - Write `out/pipeline/verlauf.txt`: one line per run, time, manifest, GRUEN/ROT/GESTOPPT. Participants use it for the Abgabe
 
+## Fixed limits for the whole workshop (decided 25 Nov)
+
+One fixed quota per namespace for the whole course; labs are built around it. Source: `trainer/kontingent.yaml`, applied by `trainer/teilnehmer-anlegen.sh`, live in `workshop-trainer` and `workshop-person01` to `16`.
+
+| Limit | Value | Largest normal need |
+| --- | --- | --- |
+| `requests.cpu` | 4 | about 1 (Lab 4 Extra 3: 3 + 1 pods of 250m, plus `verkehr`) |
+| `requests.memory` | 8Gi | about 2Gi |
+| `pods` | 20 | 5 |
+| `services.loadbalancers` | 0 | 0, the way in from outside is the shared Gateway |
+
+LimitRange: a pod without `resources` gets 100m CPU and 256Mi as request, no default limit (a default memory limit would kill the JVM).
+
+Rules for every lab and fault:
+
+- No exercise may fail because of the quota unless the quota is the lesson. Healthy states stay below a quarter of each limit
+- Oversized requests no longer reach the scheduler: the quota rejects them first. So 7.1 teaches the quota itself (real platform teams set quotas): pipeline red, but no pod to `describe`, the cause is only in the ReplicaSet events. The pipeline evidence must include them (verified 25 Nov in `workshop-trainer` with `requests.cpu: "5"` and `PIPELINE_TIMEOUT=60`: ROT, rolled back, `events.txt` has `FailedCreate ... exceeded quota: kurs, requested: requests.cpu=5`, `describe.txt` has nothing about it)
+- Scheduling faults with `FailedScheduling` use a label no node has (7.3) or local `cordon` (Lab 7 part 2)
+- Lab 3 case 4 (100 CPU request) runs locally only. On GKE it would show `exceeded quota` instead of `Pending`
+
+Cluster capacity: 3 x e2-standard-4, project CPU quota 12 of 12 used. A request for 20 was denied on 25 Nov, a request for 16 is pending (Cloud Quotas preference `cpus-all-regions-20`).
+
 ## Teaching point to build in
 
 Not every fault turns the pipeline red. Lab 6 faults are caught by the gate. Lab 5 faults pass it: GRUEN, and users still get errors. That is the bridge between 3.4 (CI/CD) and 3.2 (logs): a gate checks what you told it to check. Every fault table in the solutions gets a column **Pipeline: rot / gruen**.
@@ -123,7 +145,7 @@ Not every fault turns the pipeline red. Lab 6 faults are caught by the gate. Lab
 | 6.1 | `6.1-konfiguration.yaml` | ConfigMap key `GRUSS` does not exist | rot | describe: CreateContainerConfigError |
 | 6.2 | `6.2-speicher.yaml` | 512 MiB heap in 512 MiB limit | rot | describe: Last State OOMKilled |
 | 6.3 | `6.3-bereitschaft.yaml` | readiness path does not exist | rot | describe: Readiness probe failed |
-| 7.1 | `7.1-platz.yaml` | requests larger than any node | rot (timeout) | events: FailedScheduling |
+| 7.1 | `7.1-kontingent.yaml` | CPU request above the namespace quota (`requests.cpu: 5`, quota 4) | rot (timeout) | no new pod at all; `kubectl describe rs`, events: `FailedCreate ... exceeded quota` |
 | 7.2 | `7.2-wartung.yaml` | PDB minAvailable equals replicas | gruen | `drain` blocked (local) |
 | 7.3 | `7.3-ort.yaml` | nodeSelector on a label no node has | rot (timeout) | events: node affinity |
 
@@ -211,6 +233,55 @@ What Claude Code does for this:
 - [ ] Faults 1 and 4 on GKE: confirm each shows in the Logs Explorer within about a minute (fault 1: `Liveness probe failed` in `log_id("events")`, fault 4: `textPayload:"FEHLER"` for container `hallo` and `-> 500` in `verkehr`). Note that the ERROR lines arrive with severity INFO
 - [ ] Lab 5 runs after Lab 4 and before Lab 6. `start` deletes the Lab 4 `hallo`; Lab 6 Etappe A (and `basis.sh lab06`) must work from the state Lab 5 leaves behind. Test that order once
 
+## GitHub Actions: a merge to main runs the pipeline (Demo 3.4d, today)
+
+Decided on 25 Nov: the trainer shows live how a merge to `main` triggers the same pipeline in GitHub Actions and deploys to GKE. Participants watch and read the run; they need no GitHub account and get no deploy rights.
+
+**Where it belongs:** 3.4 CI/CD, as **Demo 3.4d**, right after Demo 3.4c (pipeline.sh on the laptop). Story: "Same script, same five stages. Now nobody runs it by hand, a merge does." Plus an Extra in Lab 6 (reading the run). TeamCity stays the customer's tool; GitHub Actions is the example we can show, and the slide says so.
+
+Timing in 3.4 (40 min, unchanged): 10 talk, 5 Demo 3.4c, 8 Demo 3.4d, 12 their TeamCity flow, 5 check-in. Merge at the start of 3.4 so the run is done when the demo slide comes.
+
+### What exists already
+
+`.github/workflows/test.yml` runs `validate.sh` and the minikube labs on every push and pull request. That is the CI half and is shown first (the PR check). Do not change it, except: it must not run on changes that only touch `cicd-demo/`, so the demo stays fast (`paths-ignore`).
+
+### New: `.github/workflows/deploy-demo.yml` (the CD half)
+
+- Trigger: `push` to `main` with `paths: [cicd-demo/**, .github/workflows/deploy-demo.yml]`, plus `workflow_dispatch`. Nothing else, so Claude Code's commits to labs and docs never deploy. No `pull_request` trigger (public repo, forks must never get cloud access)
+- `concurrency: deploy-demo`, `timeout-minutes: 15`, `permissions: contents: read, id-token: write`
+- Steps:
+  1. `actions/checkout`
+  2. `google-github-actions/auth@v3` with Workload Identity Federation and impersonation of `gh-deployer@PROJECT_ID.iam.gserviceaccount.com`. **No JSON key, no secret in the repo** (ties to 3.3 and to check-in "Die Pipeline bekommt ein eigenes Konto")
+  3. Docker login to `europe-west3-docker.pkg.dev` (gcloud credential helper or the access token from step 2)
+  4. `google-github-actions/get-gke-credentials@v3` with `cluster_name: workshop`, `location: europe-west3-b`, `use_dns_based_endpoint: true` (our cluster has no IP endpoint), `namespace: workshop-trainer`
+  5. Render `cicd-demo/` with `scripts/render.py` into `out/cicd-demo/`, then `bash scripts/pipeline.sh out/cicd-demo/ --build` with `WORKSHOP_CONTEXT` = the context from step 4, `WORKSHOP_NAMESPACE=workshop-trainer`, `IMAGE=europe-west3-docker.pkg.dev/lookbeyond-gke-workshop/workshop/hallo-app:2.0`. The pipeline tags `2.0-<short sha>`, so the commit is visible in the image
+  6. Always: upload `out/pipeline/` as artifact `pipeline-belege`, write GRUEN or ROT plus image and commit to `$GITHUB_STEP_SUMMARY`
+- Verify every action version and input against its README before use (checked 25 Nov: `auth@v3`, `get-gke-credentials@v3` with input `use_dns_based_endpoint`)
+
+### New: `cicd-demo/`
+
+- `configmap.yaml` with `GREETING: "Hallo aus GitHub Actions"`, `deployment.yaml` (copy of the Lab 6 solution, `WORKSHOP_IMAGE` placeholder), `service.yaml`, `README.md` (German, for the trainer: the demo in 5 steps)
+- Demo flow, green: in the GitHub web UI change `GREETING`, commit to a new branch, open a PR (test.yml runs), merge. deploy-demo runs: auth without key, build, push, deploy, gate GRUEN. Then `kubectl -n workshop-trainer get deploy hallo -o wide` shows the image with the commit
+- Demo flow, red: PR that sets the readiness path to the one from 6.3, merge, deploy-demo goes ROT, rolls back, evidence as artifact, the job is red in the Actions list. Then revert via PR
+- Add `demos/tag3/3.4d-github-actions/README.md` in the demo pattern (no script needed, it is a browser demo): URLs, what to click, what to say, what to do if the run hangs
+
+### Trainer setup: `trainer/github-actions.sh` (idempotent, trainer only)
+
+- Workload Identity pool `github` and OIDC provider `github-oidc` (issuer `https://token.actions.githubusercontent.com`), attribute mapping `google.subject=assertion.sub`, `attribute.repository=assertion.repository`, `attribute.ref=assertion.ref`, attribute condition `assertion.repository=='juice1000/gke-workshop' && assertion.ref=='refs/heads/main'`
+- Service account `gh-deployer`, `roles/iam.workloadIdentityUser` for `principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/juice1000/gke-workshop`
+- IAM for `gh-deployer`: `roles/container.clusterViewer` on the project (same as participants, works with the DNS endpoint for them) and `roles/artifactregistry.writer` on repository `workshop` only
+- RBAC: RoleBinding in `workshop-trainer` only, user `gh-deployer@PROJECT_ID.iam.gserviceaccount.com`, role `workshop-entwickler`. `can-i` as that SA in a participant namespace must be no. This is the least-privilege story for the slide
+- Cleanup in `docs/11-nach-dem-kurs-aufraeumen.md`: pool, provider, SA, RoleBinding, demo images
+- Do not enable branch protection today (Claude Code pushes to main). Mention in the README that a real setup requires PR plus green CI before merge
+
+### Lab 6 Extra: read the run (participants)
+
+In `lab06-abschluss/README.md`, Extra: open the trainer's run under `https://github.com/juice1000/gke-workshop/actions` (logs of a public repository; if a GitHub login is required, the trainer shows it). Questions: Which step is which pipeline stage? Where does the runner log in to Google Cloud, and why is there no key? Which image tag ran, and which commit is it?
+
+### Slides (done separately, after the first green run)
+
+One slide in 3.4 after "Unsere Pipeline": "Merge auf main: dieselbe Pipeline in GitHub Actions", the five stages next to the workflow steps, a GKE strip with Demo 3.4d.
+
 ## Scope and order
 
 | Phase | When | What |
@@ -220,6 +291,7 @@ What Claude Code does for this:
 | 1a | Today, before 16:00 SGT | Lab 5 short version for 3.2 (section above): README Kurzfassung, capacity and Logs Explorer check on GKE |
 | 1b | Today if time allows | Lab 5 faults as YAML 5.1 to 5.5, smoke test |
 | 1c | Today, before the lunch break (19:00 SGT) | Secret Manager: trainer setup, Lab 6 Etappe D with 6.4 to 6.6, startup log line in hallo-app, tested in `workshop-trainer` |
+| 1d | Today, before 18:00 SGT (3.4 starts 18:20 SGT) | GitHub Actions Demo 3.4d: trainer setup, `deploy-demo.yml`, `cicd-demo/`, one green and one red run on GKE, Lab 6 Extra. If it is not green by then, 3.4 shows `test.yml` as CI only |
 | 2 | After the course | Lab 7 faults 7.1 to 7.3, Lab 2/3/4 conversion, rollback to last green state, slides for all days |
 
 Phase 1 must not break what the Day 3 slides show: `bash scripts/pipeline.sh MANIFEST`, stage names, GRUEN/ROT, exit codes, `out/pipeline/<zeit>/` evidence. List every renamed path in your summary so the slides can follow (Lab 6 B slide, Spickzettel, Demo 3.4c).
@@ -232,6 +304,7 @@ Phase 1 must not break what the Day 3 slides show: `bash scripts/pipeline.sh MAN
 - [ ] Every fault in the solutions has a Logs Explorer query or the note why there is no log line
 - [ ] Secret Manager: add-on on, one secret and binding per participant, Etappe D green in `workshop-trainer`, 6.4 to 6.6 red with the event the table names, startup log line visible in the Logs Explorer
 - [ ] `can-i create secretproviderclasses.secrets-store.csi.x-k8s.io` is yes for a participant account, `can-i` on another namespace stays no
+- [ ] GitHub Actions: a merge touching `cicd-demo/` deploys to `workshop-trainer` without any key in the repo, ROT run rolls back and uploads evidence, commits outside `cicd-demo/` trigger no deploy, `gh-deployer` cannot touch participant namespaces
 - [ ] READMEs (main and practice) use the rhythm, practice without solutions
 - [ ] shellcheck clean, Bash 3.2, ASCII, in `validate.sh`
 - [ ] Results in `docs/07-teststatus.md`, commit on main separate from other changes

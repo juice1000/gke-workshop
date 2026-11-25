@@ -1,6 +1,6 @@
 # Lab 7: Störungssuche mit Logs
 
-**Ziel:** Ihr findet Störungen, die `kubectl get pods` nicht oder nur halb zeigt. Ihr lest dazu Logs, Events und auf GKE Logs Explorer und Monitoring. Dauer: 60 Minuten, zu zweit. **Voraussetzung:** Kontext, Namespace und `IMAGE` aus [Lab 4](../lab04-gke/README.md). Eine laufende Anwendung aus Lab 4 oder Lab 5 ersetzt dieses Lab.
+**Ziel:** Ihr findet Störungen, die `kubectl get pods` nicht oder nur halb zeigt. Ihr lest dazu Logs, Events und auf GKE Logs Explorer und Monitoring. Auf GKE legt ihr einen Alarm an, der eine Störung selbst meldet. Dauer: 60 Minuten, mit Alarm 80 Minuten, zu zweit. **Voraussetzung:** Kontext, Namespace und `IMAGE` aus [Lab 4](../lab04-gke/README.md). Eine laufende Anwendung aus Lab 4 oder Lab 5 ersetzt dieses Lab.
 
 Alle Befehle aus dem Repository-Hauptordner. Lest `stoerung.sh` erst nach dem Lab, es verrät die Ursachen.
 
@@ -116,6 +116,54 @@ Schaut auf das Histogramm über den Treffern. Wann beginnt die Störung, wann en
 
 **Gut zu wissen:** Die Zeilen `ERROR ... FEHLER` der Anwendung kommen im Logs Explorer mit Schweregrad `INFO` an. Spring Boot schreibt alles auf die Standardausgabe, und GKE stuft das als `INFO` ein. Ein Filter auf `severity>=ERROR` findet sie nicht, sucht nach dem Text: `textPayload:"FEHLER"`.
 
+### 5. Alarm: Die Störung meldet sich selbst (GKE, 20 Minuten)
+
+Bisher habt ihr Störungen gesucht. Im Betrieb meldet sich eine Störung über einen Alarm. Ihr legt eine Alarmrichtlinie an, die bei Neustarts von `hallo` in eurem Namespace auslöst. Dann baut ihr Störung 1 ein und wartet, bis der Alarm kommt.
+
+Regeln: Alarmrichtlinien gelten im ganzen Projekt, alle sehen alle. Beginnt den Namen mit eurem Namespace und ändert nur eure eigene. Ihr wählt keinen Benachrichtigungskanal, der Alarm erscheint als Vorfall (Incident) in der Konsole.
+
+**Weg A, Konsole** (Bezeichnungen der englischen Konsole):
+
+1. Monitoring, Alerting, `Create policy`.
+2. Metrik `Kubernetes Container`, `Container`, `Restart count` (`kubernetes.io/container/restart_count`).
+3. Filter: `namespace_name` gleich eurem Namespace, `container_name` gleich `hallo`.
+4. Daten umformen: `Rolling window` 1 Minute, `Rolling window function` `delta`. Über alle Zeitreihen: `sum`.
+5. Auslöser: `Threshold`, `Above threshold`, Wert `0`.
+6. Benachrichtigung: keinen Kanal wählen. Name: `workshop-person01: hallo startet neu` mit eurer Nummer. Unter `Documentation` schreibt ihr die erste Handlung für den Bereitschaftsdienst, etwa aus eurem Alarmvorschlag in [Lab 6](../lab06-betrieb/README.md).
+7. Speichern.
+
+**Weg B, dieselbe Richtlinie als Datei** ([alarm.json](alarm.json)) über die Monitoring-API:
+
+```bash
+sed "s/workshop-person01/$WORKSHOP_NAMESPACE/g" lab07-stoerungen/alarm.json > out/alarm.json
+curl -s -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "Content-Type: application/json" -d @out/alarm.json \
+  "https://monitoring.googleapis.com/v3/projects/lookbeyond-gke-workshop/alertPolicies" | grep -m1 '"name"'
+```
+
+Notiert den ausgegebenen `name` (`projects/.../alertPolicies/NUMMER`), ihr braucht ihn zum Löschen. Vergleicht die Datei mit den Feldern aus Weg A: Jede Einstellung der Konsole steht dort als Feld.
+
+Auslösen:
+
+```bash
+bash lab07-stoerungen/stoerung.sh start
+bash lab07-stoerungen/stoerung.sh 1
+```
+
+Nach etwa vier Minuten steht unter Monitoring, Alerting ein offener Vorfall. Öffnet ihn: Welche Zeitreihe hat ausgelöst, mit welchem Wert? Folgt dann eurer eigenen `Documentation`. Führt sie euch zur Ursache? Repariert und beobachtet, wann der Vorfall schließt.
+
+Fragen dazu:
+
+- Warum kommt der Alarm erst nach Minuten, die Neustarts aber nach Sekunden?
+- Welche der fünf Störungen meldet dieser Alarm, welche nicht? Was für einen Alarm bräuchte Störung 2?
+
+Aufräumen: Richtlinie in der Konsole löschen, oder mit dem notierten Namen:
+
+```bash
+curl -s -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  "https://monitoring.googleapis.com/v3/NAME_AUS_WEG_B"
+```
+
 ## Checkpoint
 
 ```bash
@@ -124,7 +172,7 @@ bash lab07-stoerungen/stoerung.sh pruefen
 
 Erwartet nach der letzten Reparatur: `Ergebnis: 0 Pruefung(en) fehlgeschlagen`.
 
-**Abgabe:** Die Tabelle für mindestens drei verschiedene Störungen, davon eine mit Fundort im Logs Explorer.
+**Abgabe:** Die Tabelle für mindestens drei verschiedene Störungen, davon eine mit Fundort im Logs Explorer. Auf GKE dazu: Öffnungs- und Schließzeit eures Vorfalls und die Antworten auf die beiden Fragen aus Abschnitt 5.
 
 ## Extra zum Ausprobieren
 
@@ -189,6 +237,10 @@ Logs Explorer und Monitoring zeigt der Trainer.
 | 3 Fehlendes Secret | weiter `200`, aber nur von einem Pod | ein Pod ohne Logs | `Error: secret "hallo-secret" not found`, `CreateContainerConfigError` | Secret gelöscht, ein Pod neu gestartet | Secret neu anlegen, der Pod startet von selbst |
 | 4 Fehlerflut | zwei von drei Anfragen `GET /fehler -> 500` | `ERROR ... FEHLER` in Serie | nichts | Client `verkehr` ruft `/fehler` auf (`PFADE`) | `kubectl set env deployment/verkehr PFADE=/` |
 | 5 Gemischte Antworten | zwei verschiedene Begrüßungen im Wechsel | nichts Auffälliges | nichts | ConfigMap geändert, nur ein Pod neu gestartet | richtigen Wert festlegen, `kubectl apply -f out/lab07/configmap.yaml`, `kubectl rollout restart deployment/hallo` |
+
+Alarm (Abschnitt 5): Getestet am 25.11.2026 in `workshop-trainer`. Störung 1 um 05:23:02 UTC, Vorfall offen um 05:27:04, ohne Benachrichtigungskanal. Verzögerung: `restart_count` wird alle 60 Sekunden gemessen und erscheint bis zu 3 Minuten später, dazu das Ausrichtungsfenster. Der Alarm meldet nur Störung 1 sicher. Störung 3 startet einen Pod nicht, statt ihn neu zu starten. Störungen 2, 4 und 5 haben keine Neustarts. Für 2 bräuchte es einen Alarm auf Nutzersicht, etwa eine logbasierte Metrik auf `curl-Fehler` in `verkehr` oder einen Uptime-Check über das Gateway. Das ist dieselbe Lehre wie beim Pipeline-Gate: Ein Alarm prüft, was ihr ihm gesagt habt.
+
+Teilnehmende haben dafür `roles/monitoring.alertPolicyEditor` am Projekt (`trainer/teilnehmer-anlegen.sh`). Die Rolle gilt projektweit, eine Person kann fremde Richtlinien ändern. Deshalb die Namensregel. Nach dem Kurs alle Richtlinien löschen, siehe [Aufräumen](../docs/11-nach-dem-kurs-aufraeumen.md).
 
 Störung 4 zeigt: Der Server loggt den Fehler, aber nicht, wer ihn auslöst. Die Spur zum Verursacher liegt beim Client. Störung 5 hat keine Fehlermeldung, nur einen Widerspruch in den Antworten.
 

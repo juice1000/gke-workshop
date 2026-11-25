@@ -252,3 +252,10 @@ Die GKE-Ergebnisse beziehen sich auf Standard mit Trainerrechten. Autopilot, Kun
 - Danach angehoben auf 4 CPU, 8 GiB, 20 Pods, damit keine Uebung daran scheitert. Angewendet auf `workshop-trainer` und `workshop-person01` bis `16`. Laufende Pods unveraendert. `workshop-person12` hatte schon einen eigenen `LoadBalancer`, der bleibt.
 - Audit-Log-Abfrage aus Lab 7 Extra 3 mit dem Trainerkonto geprueft. Mit Teilnehmerrechten (`roles/logging.viewer`) nicht geprueft.
 - Live-Beobachtung in Lab 4 (Konsole), Lab 5 (`get pods -w`) und Lab 6 (`get pods -w`) ergaenzt, nicht im Kurs erprobt.
+
+## Alarm-Uebung Lab 7 Abschnitt 5 und Kontingent-Fehler (25.11.2026, GKE)
+
+- Alarmrichtlinie aus `lab07-stoerungen/alarm.json` fuer `workshop-trainer` per Monitoring-API angelegt. Stoerung 1 um 05:23:02 UTC, `restart_count`-Delta sichtbar ab 05:24, Vorfall offen um 05:27:04. Ohne Benachrichtigungskanal.
+- Weg B aus dem README (sed, curl POST, `grep -m1 '"name"'`, curl DELETE) mit dem Trainerkonto durchgespielt. Weg A (Konsole) nicht durchgeklickt. Mit Teilnehmerrechten (`roles/monitoring.alertPolicyEditor`, vergeben an 15 Konten) nicht geprueft.
+- Neuer Fehler 7.1 (Brief docs/12): Deployment mit `requests.cpu: "5"` ueber `pipeline.sh`, Zeitgrenze 60 s: ROT, zurueckgerollt, `events.txt` zeigt `FailedCreate ... exceeded quota`.
+- CPU-Kontingent des Projekts: Antrag auf 20 abgelehnt, Antrag auf 16 offen.

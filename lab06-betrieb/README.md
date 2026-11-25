@@ -78,7 +78,7 @@ kubectl --context minikube -n workshop get pdb
 
 Bei zwei bereiten Pods erlaubt `minAvailable: 1` eine freiwillige Unterbrechung. Ein PDB schützt nicht vor Containerabstürzen, direktem `delete pod` oder jedem Node-Ausfall. Es wird unter anderem von der Eviction-API berücksichtigt. Die Deployment-Rolloutstrategie bleibt eine eigene Einstellung. Ein einzelner Node kann trotz PDB keine Verfügbarkeit während seiner vollständigen Abschaltung garantieren.
 
-Formuliert einen Alarm mit Bedingung, Dauer und Handlung. Beispiel: Ein Container startet innerhalb von zehn Minuten wiederholt neu. Dann prüft der Bereitschaftsdienst zuerst `Last State`, vorige Logs und den letzten Rollout. Legt den Alarm hier nur als Vorschlag vor.
+Formuliert einen Alarm mit Bedingung, Dauer und Handlung. Beispiel: Ein Container startet innerhalb von zehn Minuten wiederholt neu. Dann prüft der Bereitschaftsdienst zuerst `Last State`, vorige Logs und den letzten Rollout. Legt den Alarm hier als Vorschlag vor. Auf GKE legt ihr ihn in [Lab 7, Abschnitt 5](../lab07-stoerungen/README.md) wirklich an und löst ihn mit einer Störung aus.
 
 **Abgabe:** Clustereinstellungen, Erklärung des `Pending`-Pods, Bedeutung von `ALLOWED DISRUPTIONS` und ein handlungsfähiger Alarmvorschlag.
 

@@ -29,6 +29,7 @@ Der Node verwendet ein eigenes IAM-Servicekonto mit der GKE-Node-Rolle und Leser
 | GKE-Node-Servicekonto | Private Images laden | `roles/artifactregistry.reader` am Repository, passende Node-OAuth-Scopes bei Standard |
 | Teilnehmerkonto oder Trainerdemo | Logs Explorer | `roles/logging.viewer` im Übungsprojekt |
 | Teilnehmerkonto oder Trainerdemo | Monitoring ansehen | `roles/monitoring.viewer` im Übungsprojekt |
+| Teilnehmerkonto | Alarm-Übung in Lab 7 | `roles/monitoring.alertPolicyEditor` im Übungsprojekt, projektweit, Namensregel `workshop-personNN: ...` |
 | Anwendungs-Pod | Antworten und Health liefern | Kein Zugriff auf Cloud-APIs nötig |
 
 Die genauen Freigaben richten sich nach den Organisationsrichtlinien. Logging- und Monitoring-Viewer sind keine Namespace-Rollen. Falls projektweite Sicht nicht vorgesehen ist, zeigt der Trainer diese Bereiche als Demo. Auch die Workload-Ansicht der Konsole kann zusätzliche Leserechte erwarten. Prüft den Rundgang mit einem Teilnehmerkonto und dokumentiert jede Abweichung.
