@@ -103,7 +103,7 @@ Der Vorbereitungscluster startet mit einem Node `e2-standard-2` und 30 GB Standa
 
 ```bash
 gcloud container clusters create "$CLUSTER" \
-  --location="$ZONE" --6.3-bereitschafthannel=regular --cluster-version=1.36.4-gke.2377000 \
+  --location="$ZONE" --release-channel=regular --cluster-version=1.36.4-gke.2377000 \
   --num-nodes=1 --machine-type=e2-standard-2 --disk-size=30 --disk-type=pd-standard \
   --image-type=COS_CONTAINERD --network=gke-workshop --subnetwork=gke-workshop \
   --enable-ip-alias --cluster-secondary-range-name=pods --services-secondary-range-name=services \
