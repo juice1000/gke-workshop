@@ -30,6 +30,58 @@ Alle Befehle aus dem Repository-Hauptordner. Lest `stoerung.sh` erst nach dem La
 
 Die Uhrzeit im Container ist UTC.
 
+## Kurzfassung (30 Minuten, Tag 3)
+
+Zu zweit, zwei Störungen: 5.1 und 5.4. Die Langfassung darunter bleibt für später und als Nachschlagewerk.
+
+**0. Neues Terminal? Umgebung aus Lab 4 setzen** (eure Nummer einsetzen):
+
+```bash
+export WORKSHOP_NAMESPACE=workshop-person01
+export WORKSHOP_CONTEXT=gke_lookbeyond-gke-workshop_europe-west3-b_workshop
+export IMAGE=europe-west3-docker.pkg.dev/lookbeyond-gke-workshop/workshop/hallo-app:2.2
+export GATEWAY_IP=ADRESSE_VOM_TRAINER
+kubectl config use-context "$WORKSHOP_CONTEXT"
+kubectl config set-context "$WORKSHOP_CONTEXT" --namespace="$WORKSHOP_NAMESPACE"
+```
+
+`hallo-app:2.2` ist dieselbe Anwendung wie eure, vom Trainer gebaut, mit einer Browser-Oberfläche. So muss niemand vor dem Lab neu bauen.
+
+**1. Ausgangslage** (dauert 1 bis 2 Minuten):
+
+```bash
+bash lab05-stoerungen/stoerung.sh start
+bash lab05-stoerungen/stoerung.sh pruefen       # erwartet: 0 Pruefung(en) fehlgeschlagen
+```
+
+Zweites Terminal, läuft die ganze Zeit mit:
+
+```bash
+kubectl logs deployment/verkehr -f
+```
+
+Im Browser, läuft ebenfalls mit: `http://GATEWAY_IP/workshop-person01/ui.html` (eure Nummer). Die Seite fragt jede Sekunde über das öffentliche Gateway an und zeigt, welcher Pod antwortet. Beim ersten `start` braucht eine neue Route einige Minuten. Danach bleibt sie stehen, auch über `start` und Lab 6 hinweg.
+
+**2. Runde 5.1**
+
+```bash
+bash lab05-stoerungen/stoerung.sh 1
+```
+
+Beobachtet zuerst den Verkehr. Sucht dann mit der Tabelle in Abschnitt 2 den Fundort. Repariert mit `kubectl`, nicht mit `start`. Dann:
+
+```bash
+bash lab05-stoerungen/stoerung.sh pruefen
+bash lab05-stoerungen/stoerung.sh aufloesen
+bash lab05-stoerungen/stoerung.sh start         # gesund für Runde 5.4
+```
+
+**3. Runde 5.4:** dasselbe mit `bash lab05-stoerungen/stoerung.sh 4`.
+
+**Abgabe:** pro Störung eine Zeile: Symptom beim Nutzer, Fundort (Befehl und Zeile), Ursache, Reparatur. Eine der beiden Zeilen belegt ihr mit einer Abfrage im Logs Explorer (Abschnitt 4).
+
+Früher fertig? Weitere Störungen mit `zufall` (Abschnitt 3) oder der Alarm (Abschnitt 5).
+
 ## Kern
 
 ### 1. Ausgangslage herstellen
@@ -120,7 +172,7 @@ Schaut auf das Histogramm über den Treffern. Wann beginnt die Störung, wann en
 
 Bisher habt ihr Störungen gesucht. Im Betrieb meldet sich eine Störung über einen Alarm. Ihr legt eine Alarmrichtlinie an, die bei Neustarts von `hallo` in eurem Namespace auslöst. Dann baut ihr Störung 5.1 ein (`stoerung.sh 1`) und wartet, bis der Alarm kommt.
 
-Regeln: Alarmrichtlinien gelten im ganzen Projekt, alle sehen alle. Beginnt den Namen mit eurem Namespace und ändert nur eure eigene. Ihr wählt keinen Benachrichtigungskanal, der Alarm erscheint als Vorfall (Incident) in der Konsole.
+Regeln: Alarmrichtlinien gelten im ganzen Projekt, alle sehen alle. Beginnt den Namen mit eurem Namespace und ändert nur eure eigene. Der Trainer hat für jede Person einen E-Mail-Kanal angelegt: `workshop-person01 E-Mail` geht an euer Kurskonto. Wählt nur euren eigenen. Der Alarm kommt dann als E-Mail und als Vorfall (Incident) in der Konsole.
 
 **Weg A, Konsole** (Bezeichnungen der englischen Konsole):
 
@@ -129,14 +181,19 @@ Regeln: Alarmrichtlinien gelten im ganzen Projekt, alle sehen alle. Beginnt den 
 3. Filter: `namespace_name` gleich eurem Namespace, `container_name` gleich `hallo`.
 4. Daten umformen: `Rolling window` 1 Minute, `Rolling window function` `delta`. Über alle Zeitreihen: `sum`.
 5. Auslöser: `Threshold`, `Above threshold`, Wert `0`.
-6. Benachrichtigung: keinen Kanal wählen. Name: `workshop-person01: hallo startet neu` mit eurer Nummer. Unter `Documentation` schreibt ihr die erste Handlung für den Bereitschaftsdienst, etwa aus eurem Alarmvorschlag in [Lab 7](../lab07-betrieb/README.md).
+6. Benachrichtigung: `Notification channels`, euren Kanal `workshop-person01 E-Mail` (eure Nummer). Name: `workshop-person01: hallo startet neu` mit eurer Nummer. Unter `Documentation` schreibt ihr die erste Handlung für den Bereitschaftsdienst, etwa aus eurem Alarmvorschlag in [Lab 7](../lab07-betrieb/README.md).
 7. Speichern.
 
 **Weg B, dieselbe Richtlinie als Datei** ([alarm.json](alarm.json)) über die Monitoring-API:
 
 ```bash
-sed "s/workshop-person01/$WORKSHOP_NAMESPACE/g" lab05-stoerungen/alarm.json > out/alarm.json
-curl -s -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+TOKEN=$(gcloud auth print-access-token)
+KANAL=$(curl -s -G -H "Authorization: Bearer $TOKEN" \
+  "https://monitoring.googleapis.com/v3/projects/lookbeyond-gke-workshop/notificationChannels" \
+  --data-urlencode "filter=display_name=\"$WORKSHOP_NAMESPACE E-Mail\"" | sed -n 's/^ *"name": "\(.*\)",*$/\1/p' | head -1)
+echo "$KANAL"      # erwartet: projects/lookbeyond-gke-workshop/notificationChannels/NUMMER
+sed -e "s/workshop-person01/$WORKSHOP_NAMESPACE/g" -e "s#KANAL#$KANAL#" lab05-stoerungen/alarm.json > out/alarm.json
+curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" -d @out/alarm.json \
   "https://monitoring.googleapis.com/v3/projects/lookbeyond-gke-workshop/alertPolicies" | grep -m1 '"name"'
 ```
@@ -150,7 +207,7 @@ bash lab05-stoerungen/stoerung.sh start
 bash lab05-stoerungen/stoerung.sh 1
 ```
 
-Nach etwa vier Minuten steht unter Monitoring, Alerting ein offener Vorfall. Öffnet ihn: Welche Zeitreihe hat ausgelöst, mit welchem Wert? Folgt dann eurer eigenen `Documentation`. Führt sie euch zur Ursache? Repariert und beobachtet, wann der Vorfall schließt.
+Nach etwa vier Minuten steht unter Monitoring, Alerting ein offener Vorfall, und eine E-Mail von Google Cloud Alerting kommt an euer Kurskonto (auch im Spam-Ordner nachsehen). Öffnet ihn: Welche Zeitreihe hat ausgelöst, mit welchem Wert? Folgt dann eurer eigenen `Documentation`. Führt sie euch zur Ursache? Repariert und beobachtet, wann der Vorfall schließt.
 
 Fragen dazu:
 
@@ -201,24 +258,7 @@ Ihr seht etwa `io.k8s.apps.v1.deployments.patch` mit eurem eigenen Konto. Im Bet
 
 ## Aufräumen
 
-```bash
-kubectl config current-context
-kubectl delete -f out/lab05/
-kubectl delete secret hallo-secret
-```
-
-## Ohne Cloud
-
-Alles außer Abschnitt 4 läuft auch lokal:
-
-```bash
-export WORKSHOP_CONTEXT=minikube
-export WORKSHOP_NAMESPACE=workshop
-export IMAGE=hallo-app:2.0
-bash lab05-stoerungen/stoerung.sh start
-```
-
-Logs Explorer und Monitoring zeigt der Trainer.
+Nicht vor Lab 6: Lab 6 übernimmt Service, Secret und Route. Am Ende des Tages räumt Lab 6 alles ab.
 
 ## Für den Trainer
 

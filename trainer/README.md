@@ -30,6 +30,7 @@ Der Node verwendet ein eigenes IAM-Servicekonto mit der GKE-Node-Rolle und Leser
 | Teilnehmerkonto oder Trainerdemo | Logs Explorer | `roles/logging.viewer` im Übungsprojekt |
 | Teilnehmerkonto oder Trainerdemo | Monitoring ansehen | `roles/monitoring.viewer` im Übungsprojekt |
 | Teilnehmerkonto | Alarm-Übung in Lab 5 | `roles/monitoring.alertPolicyEditor` im Übungsprojekt, projektweit, Namensregel `workshop-personNN: ...` |
+| Trainer | E-Mail-Kanal pro Person für die Alarm-Übung | `bash trainer/alarm-kanaele.sh`, legt `workshop-personNN E-Mail` an das Konto aus `out/trainer/teilnehmer.tsv` an. Teilnehmende lesen Kanäle über `monitoring.viewer` |
 | Anwendungs-Pod | Antworten und Health liefern | Kein Zugriff auf Cloud-APIs nötig |
 
 Die genauen Freigaben richten sich nach den Organisationsrichtlinien. Logging- und Monitoring-Viewer sind keine Namespace-Rollen. Falls projektweite Sicht nicht vorgesehen ist, zeigt der Trainer diese Bereiche als Demo. Auch die Workload-Ansicht der Konsole kann zusätzliche Leserechte erwarten. Prüft den Rundgang mit einem Teilnehmerkonto und dokumentiert jede Abweichung.

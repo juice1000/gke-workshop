@@ -1,5 +1,5 @@
-# Lab 5: Deployment hallo, wie Lab 4 plus Secret wie Lab 6.
-# Nur die Arbeitskopie aus out/lab05/ anwenden (render.py ersetzt das Image).
+# Lab 6, Ausgangsloesung: So sieht out/lab06/starter/deployment.yaml nach
+# den TODOs aus. Stoerungen 6.1 bis 6.3 heissen auch hallo: apply aktualisiert es.
 #
 #   service.yaml selector app=hallo --> template.metadata.labels
 #   configmap.yaml hallo-config ------> env GREETING
@@ -10,10 +10,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  # PASST ZU: deployment/hallo in Befehlen.
+  # PASST ZU: ../stoerungen/, ../repariert/ und deployment/hallo.
   name: hallo
   # FREI: nur zum Filtern.
   labels:
+    workshop-lab: "06"
     app: hallo
 spec:
   replicas: 2
@@ -36,13 +37,14 @@ spec:
       labels:
         app: hallo
     spec:
+      # Ausdruecklich: setzt nach Etappe D das Dienstkonto zurueck.
+      serviceAccountName: default
       terminationGracePeriodSeconds: 30
       containers:
         # PASST ZU: "kubectl set image deployment/hallo hallo=...".
         - name: hallo
-          # PASST ZU: render.py ersetzt dies durch $IMAGE aus Schritt 2.
+          # PASST ZU: render.py ersetzt dies durch $IMAGE.
           image: WORKSHOP_IMAGE
-          # FEST: Fehlt das Image, laedt der Node es aus der Registry.
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -59,10 +61,11 @@ spec:
                   # PASST ZU: name und Schluessel in configmap.yaml.
                   name: hallo-config
                   key: GREETING
-            # PASST ZU: stoerung.sh start legt hallo-secret an.
+            # FREI: zeigt nur, wie ein Secret in den Container kommt.
             - name: DB_PASSWORT
               valueFrom:
                 secretKeyRef:
+                  # PASST ZU: kubectl create secret generic hallo-secret.
                   name: hallo-secret
                   key: DB_PASSWORT
           # FREI: Auf GKE plant der Scheduler alle Teilnehmenden danach.
@@ -72,7 +75,7 @@ spec:
               memory: 512Mi
             limits:
               memory: 512Mi
-          # Probes wie lokal. path: FEST. port: PASST ZU 8080.
+          # Probes. path: FEST. port: PASST ZU 8080.
           startupProbe:
             httpGet:
               path: /actuator/health/liveness

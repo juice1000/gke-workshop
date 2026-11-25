@@ -12,6 +12,7 @@
       "trigger": {"count": 1}
     }
   }],
+  "notificationChannels": ["KANAL"],
   "alertStrategy": {"autoClose": "1800s"},
   "documentation": {"content": "Zuerst Last State, kubectl logs --previous und Events pruefen.", "mimeType": "text/markdown"}
 }

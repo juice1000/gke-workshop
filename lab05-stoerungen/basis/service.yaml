@@ -4,6 +4,8 @@ kind: Service
 metadata:
   # PASST ZU: http://hallo in verkehr.yaml.
   name: hallo
+  labels:
+    workshop-lab: "05"
 spec:
   # PASST ZU: template.metadata.labels in deployment.yaml.
   selector:

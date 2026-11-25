@@ -65,14 +65,17 @@ einbauen() {
 case "$AKTION" in
   start)
     [ -n "${IMAGE:-}" ] || fail "IMAGE ist nicht gesetzt (Lab 4, Schritt 2)."
-    # Loeschen und neu anlegen statt apply: so bleibt keine Aenderung einer Stoerung zurueck.
-    if [ -f "$AUSGABE/deployment.yaml" ]; then
-      k delete -f "$AUSGABE/" --ignore-not-found --wait=true >/dev/null
-    fi
+    # Deployments und ConfigMap loeschen und neu anlegen: so bleibt keine Aenderung
+    # einer Stoerung zurueck. Service und HTTPRoute bleiben stehen, apply setzt sie
+    # zurueck. So bleibt der oeffentliche Pfad ueber das Gateway erreichbar.
+    k delete deployment hallo verkehr --ignore-not-found --wait=true >/dev/null
+    k delete configmap hallo-config --ignore-not-found >/dev/null
     # Jedes Mal frisch rendern, damit immer das aktuelle IMAGE gilt.
     rm -rf "$AUSGABE"
-    python3 scripts/render.py lab05-stoerungen/k8s --image "$IMAGE" --output "$AUSGABE" >/dev/null || exit 1
-    k delete deployment hallo --ignore-not-found --wait=true >/dev/null
+    python3 scripts/render.py lab05-stoerungen/basis --image "$IMAGE" --output "$AUSGABE" >/dev/null || exit 1
+    # Pfad pro Person in der HTTPRoute (/workshop-person01 fuer workshop-person01).
+    sed "s/WORKSHOP_PERSON/${WORKSHOP_NAMESPACE#workshop-}/g" "$AUSGABE/httproute.yaml" > "$AUSGABE/httproute.yaml.neu" \
+      && mv "$AUSGABE/httproute.yaml.neu" "$AUSGABE/httproute.yaml"
     k delete secret hallo-secret --ignore-not-found >/dev/null
     k create secret generic hallo-secret --from-literal=DB_PASSWORT=uebung123 >/dev/null || exit 1
     k apply -f "$AUSGABE/" || exit 1
@@ -80,6 +83,7 @@ case "$AKTION" in
     k rollout status deployment/verkehr --timeout=300s || exit 1
     rm -f "$MERKER"
     printf '\nAusgangslage steht. Verkehr mitlesen: kubectl logs deployment/verkehr -f\n'
+    printf 'Im Browser: http://GATEWAY_IP/%s/ui.html (neue Route: einige Minuten)\n' "$WORKSHOP_NAMESPACE"
     ;;
   1|2|3|4|5)
     ausgangslage_da

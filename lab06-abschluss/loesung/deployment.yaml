@@ -1,5 +1,5 @@
 # Lab 6, Ausgangsloesung: So sieht out/lab06/starter/deployment.yaml nach
-# den TODOs aus. Releases A, B, C heissen auch hallo: apply aktualisiert es.
+# den TODOs aus. Stoerungen 6.1 bis 6.3 heissen auch hallo: apply aktualisiert es.
 #
 #   service.yaml selector app=hallo --> template.metadata.labels
 #   configmap.yaml hallo-config ------> env GREETING
@@ -36,6 +36,8 @@ spec:
       labels:
         app: hallo
     spec:
+      # Ausdruecklich: setzt nach Etappe D das Dienstkonto zurueck.
+      serviceAccountName: default
       terminationGracePeriodSeconds: 30
       containers:
         # PASST ZU: "kubectl set image deployment/hallo hallo=...".

@@ -10,6 +10,7 @@ metadata:
   # FREI.
   name: verkehr
   labels:
+    workshop-lab: "05"
     app: verkehr
 spec:
   replicas: 1
