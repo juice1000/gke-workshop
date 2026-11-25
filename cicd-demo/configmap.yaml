@@ -7,4 +7,4 @@ metadata:
   name: hallo-config
 data:
   # Schluessel: PASST ZU configMapKeyRef.key im Deployment. Wert: FREI.
-  GREETING: Hallo aus GitHub Actions (triggered by Julien)
+  GREETING: Hallo aus S-Management! (aus ConfigMap, Version 2.0)
