@@ -22,7 +22,15 @@
   table { width:100%; border-collapse:collapse; font-family:ui-monospace, monospace; font-size:13px; }
   td { padding:3px 6px; border-top:1px solid var(--line); vertical-align:top; }
   .ok { color:var(--ok); } .err { color:var(--err); }
-  button { font:inherit; padding:6px 12px; border-radius:6px; border:1px solid var(--line); background:var(--card); color:var(--fg); cursor:pointer; }
+  .aktion { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  button { font:inherit; padding:10px 16px; min-height:44px; border-radius:6px; border:1px solid var(--line); background:var(--card); color:var(--fg); cursor:pointer; transition:background .1s, transform .05s; }
+  button:hover { background:var(--line); }
+  button:active { transform:scale(.97); }
+  button:disabled { opacity:.6; cursor:wait; }
+  button:focus-visible { outline:2px solid var(--fg); outline-offset:2px; }
+  #fehlerText { color:var(--muted); transition:opacity .3s; }
+  #fehlerText.weg { opacity:0; }
+  @media (max-width:480px) { button { width:100%; } }
 </style>
 </head>
 <body>
@@ -37,9 +45,9 @@
     <strong>Pods, die in der letzten Minute geantwortet haben</strong>
     <div class="pods" id="pods" style="margin-top:8px"></div>
   </div>
-  <div class="card">
-    <button id="fehler">Fehler ausl&ouml;sen (/fehler)</button>
-    <span class="meta" id="fehlerText"></span>
+  <div class="card aktion">
+    <button id="fehler" type="button">Fehler ausl&ouml;sen (/fehler)</button>
+    <span id="fehlerText" class="weg" aria-live="polite"></span>
   </div>
   <div class="card">
     <table><tbody id="verlauf"></tbody></table>
@@ -84,9 +92,27 @@ async function abfragen() {
   }
   podsZeigen();
 }
-document.getElementById("fehler").onclick = async () => {
-  const r = await fetch("./fehler", { cache: "no-store" });
-  document.getElementById("fehlerText").textContent = " Antwort " + r.status + ". Sucht die Zeile in den Logs.";
+const knopf = document.getElementById("fehler");
+const hinweis = document.getElementById("fehlerText");
+let hinweisTimer;
+function zeigeHinweis(text) {
+  clearTimeout(hinweisTimer);
+  hinweis.textContent = text;
+  hinweis.classList.remove("weg");
+  hinweisTimer = setTimeout(() => hinweis.classList.add("weg"), 3000);
+}
+knopf.onclick = async () => {
+  knopf.disabled = true;
+  hinweis.textContent = "Sende ...";
+  hinweis.classList.remove("weg");
+  try {
+    const r = await fetch("./fehler", { cache: "no-store" });
+    zeigeHinweis("Antwort " + r.status + ". Sucht die Zeile in den Logs.");
+  } catch (e) {
+    zeigeHinweis("Keine Antwort (" + e.message + ")");
+  } finally {
+    knopf.disabled = false;
+  }
 };
 abfragen();
 setInterval(abfragen, 1000);

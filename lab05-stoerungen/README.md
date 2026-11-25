@@ -39,13 +39,13 @@ Jeder für sich, zwei Störungen: 5.1 und 5.4. Die Langfassung darunter bleibt f
 ```bash
 export WORKSHOP_NAMESPACE=workshop-person01
 export WORKSHOP_CONTEXT=gke_lookbeyond-gke-workshop_europe-west3-b_workshop
-export IMAGE=europe-west3-docker.pkg.dev/lookbeyond-gke-workshop/workshop/hallo-app:2.4
+export IMAGE=europe-west3-docker.pkg.dev/lookbeyond-gke-workshop/workshop/hallo-app:2.5
 export GATEWAY_IP=ADRESSE_VOM_TRAINER
 kubectl config use-context "$WORKSHOP_CONTEXT"
 kubectl config set-context "$WORKSHOP_CONTEXT" --namespace="$WORKSHOP_NAMESPACE"
 ```
 
-`hallo-app:2.4` ist dieselbe Anwendung wie eure, vom Trainer gebaut, mit einer Browser-Oberfläche. So muss niemand vor dem Lab neu bauen.
+`hallo-app:2.5` ist dieselbe Anwendung wie eure, vom Trainer gebaut, mit einer Browser-Oberfläche. So muss niemand vor dem Lab neu bauen.
 
 **1. Ausgangslage** (dauert 1 bis 2 Minuten):
 

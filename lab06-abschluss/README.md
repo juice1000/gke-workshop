@@ -146,10 +146,10 @@ Pod hallo, serviceAccountName: hallo
    Startzeile im Log: "Konfiguration: ... DB_PASSWORT aus Datei /var/secrets"
 ```
 
-1. Gesunden Stand für Etappe D herstellen. Das Image `2.4` hat der Trainer gebaut, es schreibt die Startzeile:
+1. Gesunden Stand für Etappe D herstellen. Das Image `2.5` hat der Trainer gebaut, es schreibt die Startzeile:
 
 ```bash
-export IMAGE=europe-west3-docker.pkg.dev/lookbeyond-gke-workshop/workshop/hallo-app:2.4
+export IMAGE=europe-west3-docker.pkg.dev/lookbeyond-gke-workshop/workshop/hallo-app:2.5
 bash scripts/basis.sh lab06 D
 ```
 
